@@ -19,6 +19,9 @@
     0 0 0 calc(var(--ring-width) + 1.5px) rgb(0 0 0 / 0.6);
 }
 
+/* Idle logos are ghosts: the whole logo at about 30% opacity with no disc
+   behind it, so the screen shows through (measured from GTA: black parts at
+   35%, white at 25%). Only the selected station is solid. */
 .station-art {
   display: grid;
   place-items: center;
@@ -26,12 +29,12 @@
   height: 100%;
   overflow: hidden;
   border-radius: 50%;
-  background: #000;
   opacity: var(--idle-opacity);
-  filter: grayscale(1) brightness(1.15);
+  filter: grayscale(1);
 }
 
 .station[data-selected] .station-art {
+  background: #000;
   opacity: 1;
 }
 

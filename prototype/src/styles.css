@@ -260,9 +260,12 @@ body {
   transition: transform 200ms ease-out;
 }
 
-/* Wheel overlay: blur, desaturate and darken what's behind, as in GTA V
-   Enhanced. The Mac app needs a screen capture to desaturate other apps,
-   which means asking for Screen Recording permission; blur alone doesn't. */
+/* Wheel overlay, measured from GTA V: the screen stays sharp but loses about
+   half its colour, cools slightly and gets a heavy vignette that follows the
+   screen's shape. Untouched out to ~45% of the way to the corners, then down
+   to roughly a third of the brightness in the corners. The tint and vignette
+   are plain overlays; the Mac app needs a screen capture, and so Screen
+   Recording permission, only for the desaturation. */
 
 .wheel-backdrop {
   position: fixed;
@@ -270,6 +273,16 @@ body {
   z-index: 10;
   -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--saturation)) brightness(var(--brightness));
   backdrop-filter: blur(var(--blur)) saturate(var(--saturation)) brightness(var(--brightness));
+  background:
+    radial-gradient(
+      ellipse farthest-corner,
+      transparent 46%,
+      rgb(4 8 18 / calc(0.12 * var(--vignette))) 60%,
+      rgb(4 8 18 / calc(0.29 * var(--vignette))) 74%,
+      rgb(4 8 18 / calc(0.54 * var(--vignette))) 88%,
+      rgb(4 8 18 / calc(0.7 * var(--vignette))) 100%
+    ),
+    rgb(70 120 210 / 0.07);
   cursor: none;
 }
 

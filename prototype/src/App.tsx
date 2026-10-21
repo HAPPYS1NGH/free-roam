@@ -43,17 +43,18 @@ function Studio({ library }: { library: Library }) {
       holdDelayMs: [150, 0, 400, 10],
       deadzone: [1.5, 0.5, 6, 0.1],
       dwellMs: [1000, 0, 2000, 50],
-      backdropBlur: [2.5, 0, 5, 0.1],
-      backdropSaturation: [0.3, 0, 1, 0.05],
-      backdropBrightness: [0.85, 0.4, 1, 0.01],
+      backdropBlur: [0, 0, 5, 0.1],
+      backdropSaturation: [0.45, 0, 1, 0.05],
+      backdropBrightness: [1.04, 0.4, 1.2, 0.01],
+      vignette: [1, 0, 1.5, 0.05],
       duckVolume: [0.4, 0, 1, 0.05],
       retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
       retuneVolume: [0.6, 0, 1, 0.05],
       uiVolume: [0.6, 0, 1, 0.05],
     },
-    { id: "harness-v3", persist: true, onAction },
+    { id: "harness-v4", persist: true, onAction },
   )
-  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v2", persist: true, onAction })
+  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v3", persist: true, onAction })
   // Dead zone and blur are %H like the rest of the HUD.
   const unit = useViewport().height / 100
 
@@ -87,6 +88,7 @@ function Studio({ library }: { library: Library }) {
       backdropBlur: harness.backdropBlur,
       backdropSaturation: harness.backdropSaturation,
       backdropBrightness: harness.backdropBrightness,
+      vignette: harness.vignette,
       duckVolume: harness.duckVolume,
       retuneTake: harness.retuneTake,
       retuneVolume: harness.retuneVolume,
@@ -104,9 +106,12 @@ function Studio({ library }: { library: Library }) {
   }
 
   const speed = SPEEDS[harness.speed] ?? 1
-  // The blur and the wheel arrive and leave together, so they share timing.
   const openTransition = transitionFor(look.open as TransitionConfig, speed, reduced)
   const closeTransition = transitionFor(look.close as TransitionConfig, speed, reduced)
+  // The screen filter has its own, slower timing: it keeps fading out after
+  // the wheel has already gone, as in GTA.
+  const filterIn = transitionFor(look.filterIn as TransitionConfig, speed, reduced)
+  const filterOut = transitionFor(look.filterOut as TransitionConfig, speed, reduced)
   const playing = slots.find((slot) => slot.id === wheel.playingId)
 
   return (
@@ -127,13 +132,20 @@ function Studio({ library }: { library: Library }) {
                 "--blur": `${harness.backdropBlur * unit}px`,
                 "--saturation": harness.backdropSaturation,
                 "--brightness": harness.backdropBrightness,
+                "--vignette": harness.vignette,
               } as CSSProperties
             }
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1, transition: openTransition }}
-            exit={{ opacity: 0, transition: closeTransition }}
+            animate={{ opacity: 1, pointerEvents: "auto", transition: filterIn }}
+            // The cursor comes back as soon as the wheel goes, not after the fade.
+            exit={{ opacity: 0, pointerEvents: "none", transition: filterOut }}
           />
         )}
+      </AnimatePresence>
+      {/* A separate group, because AnimatePresence holds every exiting child
+          until the slowest one finishes, and the wheel leaves long before the
+          filter does. */}
+      <AnimatePresence>
         {wheel.open && (
           <div key="wheel" className="wheel-layer">
             <RadioWheel

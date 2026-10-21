@@ -18,20 +18,25 @@ export const RING_COLOURS: Record<string, string> = {
   Navy: "#2D6EB9",
 }
 
-// The wheel opens dozens of times a day from the keyboard, so it only fades:
-// no scale, no stagger, and the highlight moves instantly.
+// Timings measured frame by frame from GTA V: the wheel pops in and out within
+// a frame and the highlight jumps, while the screen filter eases in over
+// 150ms and lets go over 450ms after the wheel has gone.
 export const radioWheelControls = {
-  open: { type: "easing", duration: 0.08, ease: [0.23, 1, 0.32, 1] },
-  close: { type: "easing", duration: 0.07, ease: [0.4, 0, 1, 1] },
+  open: { type: "easing", duration: 0.04, ease: [0.23, 1, 0.32, 1] },
+  close: { type: "easing", duration: 0.04, ease: [0.4, 0, 1, 1] },
+  filterIn: { type: "easing", duration: 0.15, ease: [0.4, 0, 0.6, 1] },
+  filterOut: { type: "easing", duration: 0.45, ease: [0.4, 0, 0.6, 1] },
   iconSize: [8.3, 5, 14, 0.1],
+  maxIconSize: [10, 5, 16, 0.1],
   iconPitch: [9.15, 6, 16, 0.05],
+  minRadius: [22, 12, 30, 0.5],
   maxRadius: [30.5, 18, 45, 0.5],
   raise: [4.3, 0, 10, 0.1],
   ringPreset: { type: "select", options: [...Object.keys(RING_COLOURS), "Custom"], default: "Blue" },
   ringColor: "#65B4D4",
   ringWidth: [0.55, 0.2, 1.5, 0.05],
   selectedScale: [1.03, 1, 1.2, 0.01],
-  idleOpacity: [0.35, 0.1, 1, 0.01],
+  idleOpacity: [0.3, 0.05, 1, 0.01],
   selectedInColour: true,
   captionSize: [2.6, 1.5, 4, 0.05],
   captionPitch: [3.4, 2, 5, 0.05],
@@ -43,10 +48,15 @@ export const radioWheelControls = {
 export type RadioWheelLook = ResolvedValues<typeof radioWheelControls>
 
 // GTA spaces logos a fixed distance apart, so the ring grows with the station
-// count until it hits a maximum, and logos shrink only once it's full.
+// count between minRadius and maxRadius. GTA has 18+ stations; with fewer the
+// ring got too small to hold the caption, hence the minimum. Logos always keep
+// GTA's logo-to-gap proportion, so they grow (up to maxIconSize) when a short
+// list is spread round the minimum ring and shrink once the ring is full.
 export function ringGeometry(look: RadioWheelLook, count: number, unit: number) {
-  const radius = Math.min((count * look.iconPitch) / (2 * Math.PI), look.maxRadius) * unit
-  const icon = Math.min(look.iconSize * unit, (0.95 * 2 * Math.PI * radius) / count)
+  const natural = (count * look.iconPitch) / (2 * Math.PI)
+  const radius = Math.min(Math.max(natural, look.minRadius), look.maxRadius) * unit
+  const pitch = (2 * Math.PI * radius) / count
+  const icon = Math.min((pitch * look.iconSize) / look.iconPitch, look.maxIconSize * unit)
   return { radius, icon }
 }
 
@@ -144,13 +154,14 @@ export function RadioWheel({ slots, highlighted, look, openTransition, closeTran
         )
       })}
       {/* The first line sits above the ring's centre and the rest hang below it,
-          as in GTA, so a one-line caption ("Radio Off") stays in the same place. */}
+          as in GTA, so a one-line caption ("Radio Off") stays in the same place.
+          Long lines truncate short of the logos instead of running under them. */}
       <div
         className="wheel-caption"
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        style={{ top: centre - look.captionRaise * unit - pitch / 2, maxWidth: radius * 2 }}
+        style={{ top: centre - look.captionRaise * unit - pitch / 2, maxWidth: (radius - icon / 2) * 1.8 }}
       >
         <span>{caption.station}</span>
         {caption.artist && <span className="caption-artist">{caption.artist}</span>}
