@@ -12,10 +12,11 @@ type Options = {
   // GTA's wheel behaves. A smaller radius turns the pick faster: circling the
   // whole ring takes about 2π × pickRadius pixels of mouse travel.
   pickRadius: number
-  // Scrolling moves one station per scrollStep pixels with no rate limit and
-  // keeps the remainder, so a trackpad flick sweeps the ring at GTA speed
-  // (~30 stations a second) or faster. The first event of a gesture steps
-  // straight away, so a slow mouse-wheel notch moves exactly one station.
+  // Scrolling moves one station per scrollStep pixels, but never more than
+  // one per wheel event, so a mouse-wheel notch is one station however hard
+  // macOS accelerates it and a trackpad flick tops out at one per frame. The
+  // first event of a gesture steps straight away, so a slow notch moves
+  // exactly one station.
   scrollStep: number
   dwellMs: number
   holdDelayMs: number
@@ -198,11 +199,11 @@ export function useWheel(options: Options) {
       if (Math.sign(delta) !== Math.sign(scrollDistance)) scrollDistance = 0
       scrollDistance += delta
       const { scrollStep } = settings.current
-      while (Math.abs(scrollDistance) >= scrollStep) {
-        const direction = scrollDistance > 0 ? 1 : -1
-        step(direction)
-        scrollDistance -= direction * scrollStep
-      }
+      if (Math.abs(scrollDistance) < scrollStep) return
+      step(scrollDistance > 0 ? 1 : -1)
+      // Drop whole steps beyond the first. Several stations in one event would
+      // jump the highlight past them in a single frame with a single tick.
+      scrollDistance %= scrollStep
     }
 
     // Only "keep open" mode commits on click; normally releasing Q commits.
