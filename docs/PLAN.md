@@ -23,7 +23,7 @@ Hold a key, a wheel like GTA's radio wheel appears, flick the mouse, and Apple M
 Checked on this Mac or known limits of macOS:
 
 - `swift build` works with the Command Line Tools. Tests and universal (Intel + Apple Silicon) builds need full Xcode, so install it before Phase 2.
-- Static can't desaturate other apps' windows without Screen Recording permission. The overlay uses blur and a dark tint only, and the prototype sticks to the same effects so it ports one to one.
+- Static can't desaturate other apps' windows without Screen Recording permission. The vignette and cool tint are plain overlays and need no permission; only the desaturation needs a screen capture.
 - Apple Music doesn't expose energy or tempo, so weapon stats come from your library: plays, length, track count and last played.
 - The app is unsigned, so each user clicks "Open Anyway" once in System Settings and approves "Static wants to control Music" once.
 - Ad-hoc signed builds may lose the Music permission on every rebuild. If that gets annoying during development, we create a free self-signed certificate on this Mac and sign with it.
@@ -35,7 +35,7 @@ Checked on this Mac or known limits of macOS:
   Hotkey.onKeyDown
     MusicBridge.setVolume(40%)           Apple Event → Music.app
     OverlayPanel.show()                  transparent window over the screen
-      RadioWheelView springs in
+      RadioWheelView appears, screen filter fades in
   every frame while held
     mouse movement since open → angle → highlighted slot
 ⌥Q released
@@ -60,7 +60,7 @@ Music.app changes track
 
 The goal is to settle how the wheel looks and moves, down to the exact numbers, before writing any Swift.
 
-- [x] Radio wheel copied from GTA V: ring layout, greyed idle logos, accent ring, outlined caption, blurred and desaturated backdrop
+- [x] Radio wheel copied from GTA V: ring layout, see-through idle logos, accent ring, outlined caption, desaturated and vignetted backdrop
 - [x] Station logos: a 2×2 mosaic of each playlist's album covers (`npm run library` exports yours into a gitignored folder)
 - [x] Live tuning after a 1 second rest, a quick tap of Q for the next station, scrolling to step, and a broadcast clock so stations start mid-song
 - [x] Synthesised sounds: open, close, hover tick and three retune takes (`npm run sounds`)
@@ -105,7 +105,7 @@ static/
 - Playlists are always addressed by persistent ID and names are escaped, so a playlist called `"; do shell script …` can't inject AppleScript.
 - Volume dip: ramp to 40% when the wheel opens. Restore it when the wheel closes and when the app quits.
 - Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. The first run uses your playlists in library order.
-- Backdrop: blur alone works without extra permissions; desaturating other apps like GTA needs a screen capture and Screen Recording permission. Decide which before building.
+- Backdrop: the vignette and tint work without extra permissions; desaturating other apps like GTA needs a screen capture and Screen Recording permission. Decide which before building.
 - Edge cases:
   - Music isn't running: don't launch it just to show the wheel; launch it when a station is picked.
   - A playlist was deleted: it drops off the ring.
