@@ -4,26 +4,47 @@ export type SoundName = "open" | "close" | "hover" | (typeof RETUNE_TAKES)[numbe
 
 const SOUND_NAMES: SoundName[] = ["open", "close", "hover", ...RETUNE_TAKES]
 
-const buffers = new Map<SoundName, AudioBuffer>()
-let context: AudioContext | null = null
-let preloading: Promise<void> | null = null
+// "Local" plays WAVs from public/sounds/local/, a gitignored folder for
+// sounds that can't be committed. Any sound missing there falls back to the
+// synthesised one.
+export const SOUND_PACKS = ["Local", "Synth"] as const
+export type SoundPack = (typeof SOUND_PACKS)[number]
 
-async function load(decoder: BaseAudioContext, name: SoundName) {
-  const response = await fetch(`/sounds/${name}.wav`)
-  if (!response.ok) throw new Error(`HTTP ${response.status}`)
-  buffers.set(name, await decoder.decodeAudioData(await response.arrayBuffer()))
+const synthBuffers = new Map<SoundName, AudioBuffer>()
+const localBuffers = new Map<SoundName, AudioBuffer>()
+let context: AudioContext | null = null
+let preloading: Promise<number> | null = null
+
+// Resolves to null when the file doesn't exist; rejects if it can't be decoded.
+async function load(decoder: BaseAudioContext, url: string) {
+  const response = await fetch(url)
+  // Vite answers unknown paths with index.html, so check what came back.
+  if (!response.ok || !response.headers.get("content-type")?.includes("audio")) return null
+  return decoder.decodeAudioData(await response.arrayBuffer())
+}
+
+function loadInto(decoder: BaseAudioContext, buffers: Map<SoundName, AudioBuffer>, folder: string, name: SoundName) {
+  const url = `${folder}/${name}.wav`
+  return load(decoder, url).then(
+    (buffer) => {
+      if (buffer) buffers.set(name, buffer)
+      // Most setups have no local pack, so only a missing synthesised sound is worth a warning.
+      else if (buffers === synthBuffers) console.warn(`Sound "${name}" missing (run npm run sounds)`)
+    },
+    (error) => console.warn(`Sound ${url} could not be decoded:`, error),
+  )
 }
 
 // Decodes with an offline context, which browsers allow before any user
-// gesture, so the very first open already has its sound ready.
+// gesture, so the very first open already has its sound ready. Resolves to
+// the number of local sounds found.
 export function preloadSounds() {
   if (preloading) return preloading
   const decoder = new OfflineAudioContext(1, 1, 44100)
-  preloading = Promise.allSettled(SOUND_NAMES.map((name) => load(decoder, name))).then((results) => {
-    results.forEach((result, i) => {
-      if (result.status === "rejected") console.warn(`Sound "${SOUND_NAMES[i]}" unavailable (run npm run sounds):`, result.reason)
-    })
-  })
+  preloading = Promise.all([
+    ...SOUND_NAMES.map((name) => loadInto(decoder, synthBuffers, "/sounds", name)),
+    ...SOUND_NAMES.map((name) => loadInto(decoder, localBuffers, "/sounds/local", name)),
+  ]).then(() => localBuffers.size)
   return preloading
 }
 
@@ -72,8 +93,8 @@ function fadeOutRetune(audio: AudioContext) {
   activeRetune = null
 }
 
-export function playSound(name: SoundName, volume: number) {
-  const buffer = buffers.get(name)
+export function playSound(name: SoundName, volume: number, pack: SoundPack = "Synth") {
+  const buffer = (pack === "Local" ? localBuffers.get(name) : undefined) ?? synthBuffers.get(name)
   if (!context || !buffer || volume <= 0) return
   const level = name === "hover" ? volume * hoverGain(performance.now()) : volume
   if (level <= 0) return

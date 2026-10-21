@@ -1,28 +1,30 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { slotAngle, slotForVector } from "./geometry"
-import { playSound, unlockAudio, type SoundName } from "./sound"
+import { playSound, unlockAudio, type SoundName, type SoundPack } from "./sound"
 import type { Slot } from "./stations"
 
 type Options = {
   slots: Slot[]
   deadzone: number
+  // The pick is read from mouse movement since the wheel opened, not from
+  // where the cursor is. That virtual cursor is clamped to pickRadius pixels,
+  // so a flick "sticks" until you push in another direction, the same way
+  // GTA's wheel behaves. A smaller radius turns the pick faster: circling the
+  // whole ring takes about 2π × pickRadius pixels of mouse travel.
+  pickRadius: number
+  // Scrolling moves one station per scrollStep pixels with no rate limit and
+  // keeps the remainder, so a trackpad flick sweeps the ring at GTA speed
+  // (~30 stations a second) or faster. The first event of a gesture steps
+  // straight away, so a slow mouse-wheel notch moves exactly one station.
+  scrollStep: number
   dwellMs: number
   holdDelayMs: number
   keepOpen: boolean
-  sounds: { retuneTake: SoundName; retuneVolume: number; uiVolume: number }
+  sounds: { pack: SoundPack; retuneTake: SoundName; retuneVolume: number; uiVolume: number }
 }
 
-// The pick is read from mouse movement since the wheel opened, not from where
-// the cursor is. The virtual cursor is clamped, so a flick "sticks" until you
-// push in another direction, the same way GTA's wheel behaves.
-const CURSOR_LIMIT = 160
 // Roughly how long Music.app takes to start a playlist after the command.
 const SWITCH_DELAY_MS = 250
-// Scrolling moves one station per SCROLL_STEP pixels with no rate limit and
-// keeps the remainder, so a trackpad flick sweeps the ring as fast as GTA's
-// (up to ~30 stations a second). The first event of a gesture steps straight
-// away, so each notch of a mouse wheel still moves exactly one station.
-const SCROLL_STEP = 30
 const SCROLL_GESTURE_GAP_MS = 120
 const LINE_HEIGHT = 16
 const PEEK_MS = 1200
@@ -53,7 +55,7 @@ export function useWheel(options: Options) {
   const dwellTimer = useRef(0)
   const holdTimer = useRef(0)
 
-  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolume)
+  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolume, settings.current.sounds.pack)
 
   const playingIndex = () => {
     const id = playingRef.current ?? "off"
@@ -66,8 +68,8 @@ export function useWheel(options: Options) {
     if (!slot) return
     const nextId = slot.kind === "off" ? null : slot.id
     if (nextId === playingRef.current) return
-    const { retuneTake, retuneVolume } = settings.current.sounds
-    playSound(retuneTake, retuneVolume)
+    const { pack, retuneTake, retuneVolume } = settings.current.sounds
+    playSound(retuneTake, retuneVolume, pack)
     playingRef.current = nextId
     window.setTimeout(() => setPlayingId(nextId), SWITCH_DELAY_MS)
   }
@@ -121,7 +123,8 @@ export function useWheel(options: Options) {
     const count = settings.current.slots.length
     const next = (highlightRef.current + direction + count) % count
     const angle = slotAngle(next, count)
-    cursor.current = { x: Math.sin(angle) * CURSOR_LIMIT, y: -Math.cos(angle) * CURSOR_LIMIT }
+    const { pickRadius } = settings.current
+    cursor.current = { x: Math.sin(angle) * pickRadius, y: -Math.cos(angle) * pickRadius }
     highlight(next)
   }
 
@@ -165,9 +168,10 @@ export function useWheel(options: Options) {
       c.x += e.movementX
       c.y += e.movementY
       const length = Math.hypot(c.x, c.y)
-      if (length > CURSOR_LIMIT) {
-        c.x *= CURSOR_LIMIT / length
-        c.y *= CURSOR_LIMIT / length
+      const { pickRadius } = settings.current
+      if (length > pickRadius) {
+        c.x *= pickRadius / length
+        c.y *= pickRadius / length
       }
       // Inside the dead zone the current pick stays, so a jittery hand on
       // release doesn't change station.
@@ -193,10 +197,11 @@ export function useWheel(options: Options) {
       // Reversing mid-swipe responds at once instead of first unwinding.
       if (Math.sign(delta) !== Math.sign(scrollDistance)) scrollDistance = 0
       scrollDistance += delta
-      while (Math.abs(scrollDistance) >= SCROLL_STEP) {
+      const { scrollStep } = settings.current
+      while (Math.abs(scrollDistance) >= scrollStep) {
         const direction = scrollDistance > 0 ? 1 : -1
         step(direction)
-        scrollDistance -= direction * SCROLL_STEP
+        scrollDistance -= direction * scrollStep
       }
     }
 

@@ -21,3 +21,6 @@ prototype/dist/
 
 # Your exported Music library (prototype only)
 prototype/public/library/
+
+# Sounds you can't commit, e.g. ones you don't have the rights to share
+prototype/public/sounds/local/

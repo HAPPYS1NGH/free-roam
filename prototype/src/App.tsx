@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { Desktop } from "./Desktop"
 import { loadLibrary, type Library } from "./library"
 import { RadioWheel, radioWheelControls } from "./RadioWheel"
-import { preloadSounds, RETUNE_TAKES, type SoundName } from "./sound"
+import { preloadSounds, RETUNE_TAKES, SOUND_PACKS, type SoundName, type SoundPack } from "./sound"
 import { slotsFor } from "./stations"
 import { transitionFor } from "./timing"
 import { buildTokens, downloadJson } from "./tokens"
@@ -17,17 +17,18 @@ const NOTICE_MS = 1600
 
 export function App() {
   const [library, setLibrary] = useState<Library | null>(null)
+  const [localSounds, setLocalSounds] = useState(0)
 
   useEffect(() => {
-    void preloadSounds()
+    preloadSounds().then(setLocalSounds)
     loadLibrary().then(setLibrary)
   }, [])
 
   if (!library) return <Desktop playlist={null} volume={1} wheelOpen={false} />
-  return <Studio library={library} />
+  return <Studio library={library} localSounds={localSounds} />
 }
 
-function Studio({ library }: { library: Library }) {
+function Studio({ library, localSounds }: { library: Library; localSounds: number }) {
   const reduced = useReducedMotion() ?? false
   const slots = useMemo(() => slotsFor(library.playlists), [library])
   const [notice, setNotice] = useState<string | null>(null)
@@ -42,12 +43,15 @@ function Studio({ library }: { library: Library }) {
       replayOpen: { type: "action", label: "Replay open" },
       holdDelayMs: [150, 0, 400, 10],
       deadzone: [1.5, 0.5, 6, 0.1],
+      pickRadius: [60, 20, 200, 5],
+      scrollStep: [12, 4, 60, 1],
       dwellMs: [1000, 0, 2000, 50],
       backdropBlur: [0, 0, 5, 0.1],
       backdropSaturation: [0.45, 0, 1, 0.05],
       backdropBrightness: [1.04, 0.4, 1.2, 0.01],
       vignette: [1, 0, 1.5, 0.05],
       duckVolume: [0.4, 0, 1, 0.05],
+      soundPack: { type: "select", options: [...SOUND_PACKS], default: "Local" },
       retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
       retuneVolume: [0.6, 0, 1, 0.05],
       uiVolume: [0.8, 0, 1, 0.05],
@@ -61,10 +65,13 @@ function Studio({ library }: { library: Library }) {
   const wheel = useWheel({
     slots,
     deadzone: harness.deadzone * unit,
+    pickRadius: harness.pickRadius,
+    scrollStep: harness.scrollStep,
     dwellMs: harness.dwellMs,
     holdDelayMs: harness.holdDelayMs,
     keepOpen: harness.keepOpen,
     sounds: {
+      pack: harness.soundPack as SoundPack,
       retuneTake: harness.retuneTake as SoundName,
       retuneVolume: harness.retuneVolume,
       uiVolume: harness.uiVolume,
@@ -84,6 +91,8 @@ function Studio({ library }: { library: Library }) {
     const tokens = buildTokens("GTA radio wheel", look, {
       holdDelayMs: harness.holdDelayMs,
       deadzone: harness.deadzone,
+      pickRadius: harness.pickRadius,
+      scrollStep: harness.scrollStep,
       dwellMs: harness.dwellMs,
       backdropBlur: harness.backdropBlur,
       backdropSaturation: harness.backdropSaturation,
@@ -158,13 +167,20 @@ function Studio({ library }: { library: Library }) {
           </div>
         )}
       </AnimatePresence>
-      <Hint keepOpen={harness.keepOpen} notice={notice} library={library} />
+      <Hint
+        keepOpen={harness.keepOpen}
+        notice={notice}
+        library={library}
+        sounds={harness.soundPack === "Local" && localSounds > 0 ? `${localSounds} local sounds` : "synthesised sounds"}
+      />
       <DialRoot position="top-right" theme="dark" />
     </>
   )
 }
 
-function Hint({ keepOpen, notice, library }: { keepOpen: boolean; notice: string | null; library: Library }) {
+type HintProps = { keepOpen: boolean; notice: string | null; library: Library; sounds: string }
+
+function Hint({ keepOpen, notice, library, sounds }: HintProps) {
   if (notice) {
     return (
       <div className="hint" role="status" aria-live="polite">
@@ -190,6 +206,7 @@ function Hint({ keepOpen, notice, library }: { keepOpen: boolean; notice: string
         {library.source === "library"
           ? `Your library: ${library.playlists.length} playlists`
           : "Mock playlists. Run npm run library to use yours"}
+        {` · ${sounds}`}
       </span>
     </div>
   )
