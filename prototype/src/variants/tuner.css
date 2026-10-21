@@ -1,0 +1,138 @@
+.tuner {
+  position: relative;
+  color: white;
+}
+
+.tuner > svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.tuner-rim {
+  fill: none;
+  stroke: rgb(255 255 255 / 0.12);
+  stroke-width: 1;
+}
+
+.tuner-tick {
+  stroke: rgb(255 255 255 / 0.28);
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.tuner-tick-major {
+  stroke: rgb(255 255 255 / 0.75);
+  stroke-width: 2;
+}
+
+.tuner-label {
+  position: absolute;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  color: rgb(255 255 255 / 0.55);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+}
+
+.tuner-label[data-highlighted] {
+  color: var(--needle);
+}
+
+.tuner-label-freq {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font: 500 15px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.tuner-label-freq[data-on-air]::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.tuner-label-name {
+  max-width: 104px;
+  font: 600 12px/1.1 var(--font-condensed);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tuner-arm {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.tuner-needle {
+  position: absolute;
+  left: -1.5px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--needle);
+  box-shadow: 0 0 10px color-mix(in oklch, var(--needle) 60%, transparent);
+}
+
+.tuner-readout {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 0 16px;
+  border-radius: 50%;
+  background: #0b0a09;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.1) inset,
+    0 0 0 4px rgb(0 0 0 / 0.35);
+  text-align: center;
+}
+
+.tuner-readout-freq {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font: 500 34px/1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--needle);
+}
+
+.tuner-readout-freq small {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.tuner-readout-title {
+  max-width: 100%;
+  font: 600 15px/1.1 var(--font-condensed);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.tuner-readout-subtitle {
+  max-width: 100%;
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

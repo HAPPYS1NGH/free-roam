@@ -1,0 +1,145 @@
+.arcade {
+  position: relative;
+  font-family: var(--font-condensed);
+  color: white;
+}
+
+.arcade > svg {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.arcade-wedge {
+  fill: rgb(10 10 12 / var(--wedge-alpha));
+  stroke: rgb(255 255 255 / 0.07);
+  stroke-width: 1;
+}
+
+/* No transition: the highlight follows the flick instantly, like a game HUD. */
+.arcade-wedge[data-highlighted] {
+  fill: var(--highlight);
+  stroke: none;
+}
+
+.arcade-slot {
+  position: absolute;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.arcade-badge {
+  display: grid;
+  place-items: center;
+  width: var(--badge);
+  height: var(--badge);
+  border-radius: calc(var(--badge) * 0.24);
+  background: linear-gradient(160deg, oklch(0.7 0.16 var(--hue)), oklch(0.46 0.17 calc(var(--hue) + 30)));
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.14) inset,
+    0 2px 8px rgb(0 0 0 / 0.35);
+  font-size: calc(var(--badge) * 0.36);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+}
+
+.arcade-badge[data-long] {
+  font-size: calc(var(--badge) * 0.28);
+}
+
+.arcade-badge-off {
+  background: rgb(255 255 255 / 0.1);
+  color: rgb(255 255 255 / 0.85);
+}
+
+.arcade-badge-empty {
+  background: none;
+  box-shadow: none;
+  border: 1.5px dashed rgb(255 255 255 / 0.35);
+  color: rgb(255 255 255 / 0.55);
+}
+
+.arcade-freq {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.arcade-freq[data-on-air] {
+  color: var(--on-air);
+}
+
+.arcade-slot[data-highlighted] .arcade-freq {
+  color: rgb(0 0 0 / 0.65);
+}
+
+.arcade-slot[data-highlighted] .arcade-badge-off {
+  background: rgb(0 0 0 / 0.12);
+  color: rgb(0 0 0 / 0.75);
+}
+
+.arcade-slot[data-highlighted] .arcade-badge-empty {
+  border-color: rgb(0 0 0 / 0.35);
+  color: rgb(0 0 0 / 0.5);
+}
+
+.arcade-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 20px;
+  border-radius: 50%;
+  background: rgb(8 8 10 / 0.8);
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 0.08) inset;
+  text-align: center;
+}
+
+.arcade-frequency {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.arcade-frequency[data-on-air] {
+  color: var(--on-air);
+}
+
+.arcade-title {
+  max-width: 100%;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.02;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.arcade-subtitle {
+  max-width: 100%;
+  font-family: var(--font-system);
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.68);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -1,0 +1,309 @@
+:root {
+  --font-condensed: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+  background: #17131f;
+  color: white;
+  font-family: var(--font-system);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Desktop */
+
+.desktop {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+  background:
+    radial-gradient(60% 80% at 12% 18%, oklch(0.56 0.16 300) 0%, transparent 62%),
+    radial-gradient(50% 70% at 88% 26%, oklch(0.62 0.15 35) 0%, transparent 60%),
+    radial-gradient(80% 90% at 50% 110%, oklch(0.46 0.14 255) 0%, transparent 70%),
+    oklch(0.27 0.07 280);
+}
+
+.menubar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 28px;
+  padding: 0 14px;
+  font-size: 13px;
+  background: rgb(0 0 0 / 0.22);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  backdrop-filter: blur(20px) saturate(1.5);
+}
+
+.menubar-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  white-space: nowrap;
+}
+
+.menubar-static {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 20px;
+  border-radius: 5px;
+}
+
+.menubar-static[data-active] {
+  background: rgb(255 255 255 / 0.22);
+}
+
+.editor {
+  position: absolute;
+  left: 5%;
+  top: 64px;
+  width: min(720px, 62vw);
+  height: min(500px, 62vh);
+  overflow: hidden;
+  border-radius: 12px;
+  background: #1d1c21;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.09),
+    0 4px 12px rgb(0 0 0 / 0.25),
+    0 24px 60px rgb(0 0 0 / 0.45);
+}
+
+.window-titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-bottom: 1px solid #2b2a30;
+  font-size: 12px;
+  color: rgb(255 255 255 / 0.55);
+}
+
+.traffic {
+  display: flex;
+  gap: 8px;
+  margin-right: 10px;
+}
+
+.traffic span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ff5f57;
+}
+
+.traffic span:nth-child(2) {
+  background: #febc2e;
+}
+
+.traffic span:nth-child(3) {
+  background: #28c840;
+}
+
+.editor pre {
+  margin: 0;
+  padding: 16px 0;
+  font: 13px/1.7 var(--font-mono);
+  color: #d6d3dc;
+}
+
+.code-line {
+  display: flex;
+  white-space: pre;
+}
+
+.code-line-number {
+  width: 48px;
+  padding-right: 16px;
+  text-align: right;
+  color: rgb(255 255 255 / 0.25);
+  font-variant-numeric: tabular-nums;
+}
+
+.tok-k {
+  color: #fc5fa3;
+}
+
+.tok-t {
+  color: #5dd8ff;
+}
+
+.tok-f {
+  color: #67b7a4;
+}
+
+.tok-s {
+  color: #fc6a5d;
+}
+
+/* Bottom-left, above the hint, so the tuning panel never covers it. */
+.mini-player {
+  position: absolute;
+  left: 24px;
+  bottom: 100px;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  gap: 12px;
+  width: 340px;
+  padding: 12px;
+  border-radius: 14px;
+  background: rgb(28 27 32 / 0.82);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  backdrop-filter: blur(24px) saturate(1.6);
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.09),
+    0 4px 12px rgb(0 0 0 / 0.2),
+    0 18px 40px rgb(0 0 0 / 0.35);
+}
+
+.mini-art {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  background: linear-gradient(160deg, oklch(0.7 0.16 var(--hue)), oklch(0.46 0.17 calc(var(--hue) + 30)));
+  outline: 1px solid rgb(255 255 255 / 0.1);
+  outline-offset: -1px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mini-meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.mini-title,
+.mini-artist,
+.mini-source {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.mini-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mini-artist {
+  font-size: 13px;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.mini-source {
+  font-size: 11px;
+  color: rgb(255 255 255 / 0.4);
+}
+
+.mini-volume {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgb(255 255 255 / 0.5);
+}
+
+.mini-volume-track {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.15);
+}
+
+.mini-volume-fill {
+  display: block;
+  height: 100%;
+  background: rgb(255 255 255 / 0.75);
+  transform: scaleX(var(--volume));
+  transform-origin: left;
+  transition: transform 200ms ease-out;
+}
+
+/* Wheel overlay. Blur and tint only: that's what NSVisualEffectView can do,
+   so the Mac app can match it exactly. */
+
+.wheel-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: rgb(0 0 0 / var(--tint));
+  -webkit-backdrop-filter: blur(24px) saturate(1.1);
+  backdrop-filter: blur(24px) saturate(1.1);
+  cursor: none;
+}
+
+.wheel-backdrop[data-keep-open] {
+  cursor: default;
+}
+
+.wheel-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 11;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+/* Harness hint, styled to match the picker so it reads as chrome. */
+
+.hint {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(10, 10, 10, 0.78);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) inset;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgb(255 255 255 / 0.6);
+}
+
+.hint strong {
+  color: white;
+  font-weight: 600;
+}
+
+.hint kbd {
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgb(255 255 255 / 0.14);
+  color: white;
+  font: 600 11px var(--font-system);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mini-volume-fill {
+    transition: none;
+  }
+}
