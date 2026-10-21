@@ -18,9 +18,13 @@ type Options = {
 const CURSOR_LIMIT = 160
 // Roughly how long Music.app takes to start a playlist after the command.
 const SWITCH_DELAY_MS = 250
-// One mouse-wheel notch moves one station, like GTA's scroll-to-retune.
-const SCROLL_STEP = 40
-const SCROLL_REPEAT_MS = 70
+// Scrolling moves one station per SCROLL_STEP pixels with no rate limit and
+// keeps the remainder, so a trackpad flick sweeps the ring as fast as GTA's
+// (up to ~30 stations a second). The first event of a gesture steps straight
+// away, so each notch of a mouse wheel still moves exactly one station.
+const SCROLL_STEP = 30
+const SCROLL_GESTURE_GAP_MS = 120
+const LINE_HEIGHT = 16
 const PEEK_MS = 1200
 
 function isTextField(target: EventTarget | null) {
@@ -123,7 +127,7 @@ export function useWheel(options: Options) {
 
   useEffect(() => {
     let scrollDistance = 0
-    let lastStep = 0
+    let lastScroll = 0
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTextField(e.target)) return
@@ -173,12 +177,27 @@ export function useWheel(options: Options) {
     const onWheel = (e: WheelEvent) => {
       if (!openRef.current || isHarnessChrome(e.target)) return
       e.preventDefault()
-      scrollDistance += e.deltaY
+      const unit =
+        e.deltaMode === WheelEvent.DOM_DELTA_LINE ? LINE_HEIGHT : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1
+      // Trackpads scroll on both axes; follow whichever one the swipe favours.
+      const delta = (Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX) * unit
+      if (delta === 0) return
       const now = performance.now()
-      if (Math.abs(scrollDistance) < SCROLL_STEP || now - lastStep < SCROLL_REPEAT_MS) return
-      step(scrollDistance > 0 ? 1 : -1)
-      scrollDistance = 0
-      lastStep = now
+      const newGesture = now - lastScroll > SCROLL_GESTURE_GAP_MS
+      lastScroll = now
+      if (newGesture) {
+        scrollDistance = 0
+        step(delta > 0 ? 1 : -1)
+        return
+      }
+      // Reversing mid-swipe responds at once instead of first unwinding.
+      if (Math.sign(delta) !== Math.sign(scrollDistance)) scrollDistance = 0
+      scrollDistance += delta
+      while (Math.abs(scrollDistance) >= SCROLL_STEP) {
+        const direction = scrollDistance > 0 ? 1 : -1
+        step(direction)
+        scrollDistance -= direction * SCROLL_STEP
+      }
     }
 
     // Only "keep open" mode commits on click; normally releasing Q commits.
