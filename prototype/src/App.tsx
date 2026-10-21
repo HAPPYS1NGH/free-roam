@@ -59,7 +59,7 @@ function Studio({ library, localSounds }: { library: Library; localSounds: numbe
     },
     { id: "harness-v5", persist: true, onAction },
   )
-  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v3", persist: true, onAction })
+  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v4", persist: true, onAction })
   // Dead zone and blur are %H like the rest of the HUD.
   const unit = useViewport().height / 100
 

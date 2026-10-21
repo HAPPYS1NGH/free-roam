@@ -4,24 +4,38 @@
   font-synthesis: none;
 }
 
+/* Every station is art on a solid black disc, as in GTA, inset to leave an
+   even black rim. Idle stations are ghosts: the whole disc, art and all, at
+   about 30% opacity, so the black reads as a dark see-through circle
+   (measured from GTA: black parts at 34%, white at 30%). An opaque disc
+   under the art read as a solid grey blob. */
 .station {
   position: absolute;
+  width: var(--disc);
+  height: var(--disc);
+  padding: var(--rim);
   translate: -50% -50%;
   border-radius: 50%;
+  background: #000;
+  opacity: var(--idle-opacity);
 }
 
-/* No transitions anywhere below: GTA's highlight jumps instantly, and the
-   pick follows the mouse, so any easing would read as lag. */
+/* No transitions anywhere below: GTA's highlight jumps instantly, and a
+   scroll sweeps up to 30 stations a second, so any easing would trail the
+   input. GTA keeps the disc the same size and adds the ring outside it. The
+   ring is a border, not a box-shadow, so no hairline of screen shows between
+   the blue and the black. It overlaps the neighbours a little, as in GTA, so
+   it paints above them. */
 .station[data-selected] {
-  scale: var(--selected-scale);
-  box-shadow:
-    0 0 0 var(--ring-width) var(--ring),
-    0 0 0 calc(var(--ring-width) + 1.5px) rgb(0 0 0 / 0.6);
+  z-index: 1;
+  width: calc(var(--selected-disc) + 2 * var(--ring-width));
+  height: calc(var(--selected-disc) + 2 * var(--ring-width));
+  padding: var(--selected-rim);
+  border: var(--ring-width) solid var(--ring);
+  box-shadow: 0 0 0 1.5px rgb(0 0 0 / 0.6);
+  opacity: 1;
 }
 
-/* Idle logos are ghosts: the whole logo at about 30% opacity with no disc
-   behind it, so the screen shows through (measured from GTA: black parts at
-   35%, white at 25%). Only the selected station is solid. */
 .station-art {
   display: grid;
   place-items: center;
@@ -29,13 +43,7 @@
   height: 100%;
   overflow: hidden;
   border-radius: 50%;
-  opacity: var(--idle-opacity);
   filter: grayscale(1);
-}
-
-.station[data-selected] .station-art {
-  background: #000;
-  opacity: 1;
 }
 
 .radio-wheel[data-colour] .station[data-selected] .station-art {
@@ -54,9 +62,10 @@
   grid-template-rows: 1fr 1fr;
 }
 
+/* GTA's glyph is as big as a logo, so it fills the art circle. */
 .station-off svg {
-  width: 56%;
-  height: 56%;
+  width: 100%;
+  height: 100%;
 }
 
 .station-fallback {

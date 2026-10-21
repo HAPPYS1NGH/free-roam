@@ -16,12 +16,14 @@ function iconProps(size: number): SVGProps<SVGSVGElement> {
   }
 }
 
-// The "no entry" mark GTA uses for its Radio Off slot.
+// The "no entry" mark GTA uses for its Radio Off slot. It fills its box, and
+// its stroke is about 5% of its width, as measured from GTA. The slash ends
+// square on the ring's centre line, so its corners hide inside the ring.
 export function RadioOffIcon({ size = 24 }: IconProps) {
   return (
-    <svg {...iconProps(size)}>
-      <circle cx="12" cy="12" r="8.5" />
-      <path d="M6 6l12 12" />
+    <svg {...iconProps(size)} strokeWidth={1.25}>
+      <circle cx="12" cy="12" r="11.25" />
+      <path d="M4.05 4.05 19.95 19.95" strokeLinecap="butt" />
     </svg>
   )
 }
