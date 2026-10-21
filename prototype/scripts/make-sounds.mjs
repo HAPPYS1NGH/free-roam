@@ -4,17 +4,26 @@
 // No game audio (or any recorded audio) is used, sampled or copied, so the
 // project owns every file. Output is deterministic: same code, same bytes.
 //
-//   retune.wav    Radio static when tuning to a new station (main take, ~450 ms):
-//                 bright FM-dial hiss, one tuning whistle pass, light crackle.
-//   retune-b.wav  Alternative take: drier and shorter (~320 ms), a tight squelch.
-//   retune-c.wav  Alternative take: warm, crunchy AM-style (~560 ms) with a wider
-//                 dial sweep, two whistle passes and a ghost station underneath.
-//   open.wav      Soft rising whoosh when the wheel appears (~140 ms).
-//   close.wav     Softer falling whoosh when the wheel disappears (~105 ms).
-//   hover.wav     Tiny dry tick when the highlight moves between stations (~26 ms).
+// The palette is soft and dark on purpose: these play dozens of times a day,
+// so the energy stays mostly below the 2-5 kHz band where ears are most
+// sensitive, there are no pure tones above 1.5 kHz, and nothing is driven or
+// clipped.
+//
+//   retune.wav    Muffled car-radio "kssh" between FM stations (main take,
+//                 ~400 ms): band-limited hiss with a slow resonant dial sweep
+//                 and light multipath flutter, darkening as it fades.
+//   retune-b.wav  Alternative take: a short, tight squelch tail (~260 ms).
+//   retune-c.wav  Alternative take: warm, low-passed AM-style fade (~500 ms)
+//                 with a slow, deeper flutter.
+//   open.wav      Low rising breath of air with a soft thump (~140 ms).
+//   close.wav     The same falling and shorter (~110 ms).
+//   hover.wav     Soft wooden "tok" when the highlight moves (~34 ms), low and
+//                 rounded so a fast sweep stays calm.
 //
 // Run with `npm run sounds`; output lands in public/sounds/ as 16-bit mono
-// 44.1 kHz WAV, DC-blocked, faded at both ends and peak-normalised.
+// 44.1 kHz WAV, DC-blocked and faded at both ends. Each sound is normalised
+// to its own peak level so the mix is baked in: hover sits under open and
+// close, which sit under retune.
 import { mkdirSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -129,64 +138,62 @@ function encodeWav(samples) {
 
 // The three retune takes share one signal chain and differ only in these
 // settings, so they stay comparable by ear. Times are seconds, filters Hz.
-//   band       highpass and lowpass edges of the hiss
+//   band       highpass and lowpass edges of the hiss (gentle 12 dB/oct)
+//   highCut    lowpass that tilts the hiss down, like a car radio's high cut
+//              on a weak signal; this is what makes it muffled, not shrill
 //   closeTo    output lowpass target in the tail, so the static darkens as it
-//              ducks, like a receiver's squelch closing on the new station
-//   sweep      resonant band gliding across the noise like a moving dial
-//   whistles   heterodyne passes: the beat note between dial and a carrier
-//              glides down to a low growl and back up (analogue tuning whistle)
-//   ghost      a buzzy voice-like fragment of a station the dial passes
-//   crush      sample-and-hold plus bit reduction for AM-style grit
+//              fades, like a receiver's squelch closing on the new station
+//   sweep      broad resonant band gliding across the hiss like a moving dial;
+//              Q stays low so it colours the noise without ever ringing
+//   flutter    slow amplitude wobble, the multipath fading of a weak signal
+//   sag        how far the body settles after the onset, so the burst reads
+//              as a "kssh" rather than a flat wash of noise
+//   duckAt     where the body starts decaying into the tail
 const RETUNE_TAKES = {
   retune: {
     seed: 2026,
-    duration: 0.45,
-    band: [350, 6500],
-    closeTo: 1800,
-    sweep: { from: 4200, to: 1400, q: 1.3, mix: 1.6 },
-    whistles: [{ centre: 0.16, slope: 22000, width: 0.08, level: 0.32 }],
-    flutter: [{ rate: 22, depth: 0.3 }],
-    crackle: { rate: 30, level: 0.55 },
-    pop: 0.9,
-    duckAt: 0.25,
-    drive: 1.5,
-    peakDb: -1.5,
+    duration: 0.4,
+    attack: 0.008,
+    band: [300, 3500],
+    highCut: 2700,
+    closeTo: 1200,
+    sweep: { from: 2200, to: 800, q: 1.2, mix: 0.9 },
+    flutter: [
+      { rate: 16, depth: 0.16 },
+      { rate: 5, depth: 0.1 },
+    ],
+    sag: 0.25,
+    duckAt: 0.13,
+    peakDb: -6,
   },
   "retune-b": {
     seed: 77,
-    duration: 0.32,
-    band: [600, 7500],
-    closeTo: 3000,
-    sweep: { from: 6000, to: 2600, q: 1.1, mix: 0.6 },
-    whistles: [{ centre: 0.045, slope: 60000, width: 0.025, level: 0.2 }],
-    flutter: [{ rate: 30, depth: 0.22 }],
-    crackle: { rate: 12, level: 0.35 },
-    pop: 1.2,
-    duckAt: 0.15,
-    drive: 1.6,
-    peakDb: -1,
+    duration: 0.26,
+    attack: 0.004,
+    band: [450, 3500],
+    highCut: 3000,
+    closeTo: 1500,
+    sweep: { from: 1900, to: 1150, q: 1, mix: 0.7 },
+    flutter: [{ rate: 26, depth: 0.12 }],
+    sag: 0,
+    duckAt: 0.05,
+    peakDb: -5.5,
   },
   "retune-c": {
     seed: 1983,
-    duration: 0.56,
-    band: [220, 3200],
-    closeTo: 1100,
-    sweep: { from: 2600, to: 650, q: 2.2, mix: 1.4 },
-    whistles: [
-      { centre: 0.12, slope: 14000, width: 0.07, level: 0.34 },
-      { centre: 0.36, slope: 16000, width: 0.06, level: 0.26 },
-    ],
-    ghost: { centre: 0.25, width: 0.08, level: 1.6 },
+    duration: 0.5,
+    attack: 0.014,
+    band: [200, 2600],
+    highCut: 1400,
+    closeTo: 700,
+    sweep: { from: 1300, to: 420, q: 1.5, mix: 1.1 },
     flutter: [
-      { rate: 14, depth: 0.35 },
-      { rate: 4, depth: 0.3 },
+      { rate: 8, depth: 0.26 },
+      { rate: 2.5, depth: 0.2 },
     ],
-    crackle: { rate: 70, level: 0.8 },
-    pop: 0.7,
-    duckAt: 0.36,
-    drive: 2.6,
-    crush: { hold: 3, bits: 7 },
-    peakDb: -2,
+    sag: 0.1,
+    duckAt: 0.2,
+    peakDb: -6,
   },
 }
 
@@ -196,140 +203,110 @@ function makeRetune(take) {
   const tailTau = (take.duration - take.duckAt) / 4
   const highpass = createFilter("highpass")
   const lowpass = createFilter("lowpass")
-  // Two output lowpasses (24 dB/oct) keep drive, crush, pops and crackle
-  // inside the radio band instead of fizzing up to 20 kHz.
-  const outputLowpass = [createFilter("lowpass"), createFilter("lowpass")]
+  const highCut = createFilter("lowpass")
   const dial = createFilter("bandpass")
-  const formant = createFilter("bandpass")
+  const outputLowpass = createFilter("lowpass")
   const flutters = take.flutter.map(({ rate, depth }) => ({ wander: createWander(random, rate), depth }))
-  const whistlePhases = take.whistles.map(() => 0)
-  const ghostPitch = createWander(random, 7)
-  const ghostFormant = createWander(random, 9)
-  const syllable = createWander(random, 11)
-  const crushLevels = take.crush ? 2 ** (take.crush.bits - 1) : 0
-  let ghostPhase = 0
-  let crackle = 0
-  let crackleDecay = 0
-  let held = 0
   const samples = []
 
   for (let i = 0; i < length; i++) {
     const t = i / SAMPLE_RATE
     const noise = random() * 2 - 1
-    const bright = highpass(noise, take.band[0], 0.707)
-    const hiss = lowpass(bright, take.band[1], 0.707)
+    const hiss = lowpass(highpass(noise, take.band[0], 0.6), take.band[1], 0.6)
 
     const dialHz = take.sweep.from * (take.sweep.to / take.sweep.from) ** (t / take.duration)
-    const swept = dial(noise, dialHz, take.sweep.q) * take.sweep.mix * 2
+    const swept = dial(hiss, dialHz, take.sweep.q) * take.sweep.mix
 
     let flutter = 1
     for (const { wander, depth } of flutters) flutter *= 1 + depth * wander()
 
-    let whistle = 0
-    take.whistles.forEach(({ centre, slope, width, level }, w) => {
-      const beatHz = Math.min(5000, 180 + slope * Math.abs(t - centre))
-      whistlePhases[w] += (2 * Math.PI * beatHz) / SAMPLE_RATE
-      whistle += Math.sin(whistlePhases[w]) * level * Math.exp(-(((t - centre) / width) ** 2))
-    })
+    let mix = highCut(hiss + swept, take.highCut, 0.6) * flutter
 
-    // Crackle: short noise bursts, denser at the start of the retune.
-    const crackleChance = (take.crackle.rate * (1.5 - t / take.duration)) / SAMPLE_RATE
-    if (random() < crackleChance) {
-      crackle = take.crackle.level * (0.5 + random() * 0.5)
-      crackleDecay = Math.exp(-1 / (SAMPLE_RATE * (0.0004 + random() * 0.0015)))
-    }
-    crackle *= crackleDecay
-    const crackleOut = crackle * (random() * 2 - 1)
+    const tail = t < take.duckAt ? 1 : Math.exp(-(t - take.duckAt) / 0.06)
+    mix = outputLowpass(mix, take.closeTo + (take.band[1] - take.closeTo) * tail, 0.6)
 
-    let ghost = 0
-    if (take.ghost) {
-      ghostPhase = (ghostPhase + (140 + 35 * ghostPitch()) / SAMPLE_RATE) % 1
-      let buzz = 0
-      for (let k = 1; k <= 18; k++) buzz += Math.sin(2 * Math.PI * k * ghostPhase) / k
-      const window = Math.exp(-(((t - take.ghost.centre) / take.ghost.width) ** 2))
-      const voiced = Math.max(0, syllable()) ** 2
-      ghost = formant(buzz, 950 + 450 * ghostFormant(), 5) * voiced * window * take.ghost.level
-    }
-
-    const pop = bright * take.pop * Math.exp(-t / 0.006)
-    let mix = (hiss * 1.6 + swept) * flutter + whistle + crackleOut + ghost + pop
-    mix = Math.tanh(mix * take.drive) / Math.tanh(take.drive)
-
-    if (take.crush) {
-      if (i % take.crush.hold === 0) held = Math.round(mix * crushLevels) / crushLevels
-      mix = held
-    }
-
-    const tail = t < take.duckAt ? 1 : Math.exp(-(t - take.duckAt) / 0.05)
-    const outputHz = take.closeTo + (take.band[1] * 1.25 - take.closeTo) * tail
-    for (const filter of outputLowpass) mix = filter(mix, outputHz, 0.707)
-
-    const attack = raisedCosine(t / 0.003)
-    const duck = t < take.duckAt ? 1 : Math.exp(-(t - take.duckAt) / tailTau)
+    const attack = raisedCosine(t / take.attack)
+    const body = 1 - take.sag * Math.min(1, t / take.duckAt)
+    const duck = t < take.duckAt ? body : body * Math.exp(-(t - take.duckAt) / tailTau)
     samples.push(mix * attack * duck)
   }
-  return finish(samples, { peakDb: take.peakDb, fadeInMs: 0.5, fadeOutMs: 20 })
+  return finish(samples, { peakDb: take.peakDb, fadeInMs: 0.5, fadeOutMs: 40 })
 }
 
-// Upward band-passed air with a small low thump and tick, as the wheel fans out.
+// A soft breath of low-mid air rising as the wheel fans out, over a gentle
+// low thump. Felt more than heard.
 function makeOpen() {
   const random = seededRandom(31)
   const length = Math.round(SAMPLE_RATE * 0.14)
   const air = createFilter("bandpass")
+  const outputLowpass = [createFilter("lowpass"), createFilter("lowpass")]
   let thumpPhase = 0
   const samples = []
 
   for (let i = 0; i < length; i++) {
     const t = i / SAMPLE_RATE
-    const centre = 450 * (2800 / 450) ** Math.min(1, t / 0.09)
-    const swell = raisedCosine(t / 0.03) * (t < 0.03 ? 1 : Math.exp(-(t - 0.03) / 0.03))
-    const whoosh = air(random() * 2 - 1, centre, 1.6) * 2.5 * swell
-    thumpPhase += (2 * Math.PI * (70 + 80 * Math.exp(-t / 0.04))) / SAMPLE_RATE
-    const thump = Math.sin(thumpPhase) * raisedCosine(t / 0.003) * Math.exp(-t / 0.02) * 0.5
-    const tick = Math.sin(2 * Math.PI * 1600 * t) * Math.exp(-t / 0.002) * 0.25
-    samples.push(whoosh + thump + tick)
+    const centre = 260 * (950 / 260) ** Math.min(1, t / 0.1)
+    const swell = raisedCosine(t / 0.045) * (t < 0.045 ? 1 : Math.exp(-(t - 0.045) / 0.035))
+    const whoosh = air(random() * 2 - 1, centre, 0.9) * swell
+    thumpPhase += (2 * Math.PI * (90 + 50 * Math.exp(-t / 0.03))) / SAMPLE_RATE
+    const thump = Math.sin(thumpPhase) * raisedCosine(t / 0.006) * Math.exp(-t / 0.03) * 0.12
+    let mix = whoosh + thump
+    for (const filter of outputLowpass) mix = filter(mix, 1800, 0.707)
+    samples.push(mix)
   }
-  return finish(samples, { peakDb: -8, fadeInMs: 0.5, fadeOutMs: 10 })
+  return finish(samples, { peakDb: -13, fadeInMs: 0.5, fadeOutMs: 25 })
 }
 
-// The open whoosh in reverse direction: faster, darker and quieter.
+// The open breath falling instead of rising: shorter, darker and quieter.
 function makeClose() {
   const random = seededRandom(32)
-  const length = Math.round(SAMPLE_RATE * 0.105)
+  const length = Math.round(SAMPLE_RATE * 0.11)
   const air = createFilter("bandpass")
+  const outputLowpass = [createFilter("lowpass"), createFilter("lowpass")]
   let thumpPhase = 0
   const samples = []
 
   for (let i = 0; i < length; i++) {
     const t = i / SAMPLE_RATE
-    const centre = 2400 * (380 / 2400) ** Math.min(1, t / 0.07)
-    const swell = raisedCosine(t / 0.012) * (t < 0.012 ? 1 : Math.exp(-(t - 0.012) / 0.022))
-    const whoosh = air(random() * 2 - 1, centre, 1.6) * 2.5 * swell
-    thumpPhase += (2 * Math.PI * (60 + 50 * Math.exp(-t / 0.03))) / SAMPLE_RATE
-    const thump = Math.sin(thumpPhase) * raisedCosine(t / 0.003) * Math.exp(-t / 0.015) * 0.3
-    samples.push(whoosh + thump)
+    const centre = 850 * (240 / 850) ** Math.min(1, t / 0.075)
+    const swell = raisedCosine(t / 0.015) * (t < 0.015 ? 1 : Math.exp(-(t - 0.015) / 0.028))
+    const whoosh = air(random() * 2 - 1, centre, 0.9) * swell
+    thumpPhase += (2 * Math.PI * (80 + 40 * Math.exp(-t / 0.025))) / SAMPLE_RATE
+    const thump = Math.sin(thumpPhase) * raisedCosine(t / 0.005) * Math.exp(-t / 0.022) * 0.1
+    let mix = whoosh + thump
+    for (const filter of outputLowpass) mix = filter(mix, 1500, 0.707)
+    samples.push(mix)
   }
-  return finish(samples, { peakDb: -11, fadeInMs: 0.5, fadeOutMs: 10 })
+  return finish(samples, { peakDb: -14, fadeInMs: 0.5, fadeOutMs: 20 })
 }
 
-// A soft, short tap: a slightly falling mid note, a faint overtone and a
-// sub-millisecond transient. Low pitch and fast decay keep rapid repeats calm.
+// A soft wooden "tok": a low note that drops slightly in pitch, a quieter
+// inharmonic second mode for the wood, and a puff of low-passed noise for the
+// felt tip. A 1 ms attack and a 2 kHz output lowpass keep it rounded, so
+// thirty of these a second blur into a purr instead of a buzz.
 function makeHover() {
   const random = seededRandom(7)
-  const length = Math.round(SAMPLE_RATE * 0.026)
-  const click = createFilter("bandpass")
-  let phase = 0
+  const length = Math.round(SAMPLE_RATE * 0.034)
+  const felt = createFilter("lowpass")
+  const outputLowpass = [createFilter("lowpass"), createFilter("lowpass")]
+  let bodyPhase = 0
+  let modePhase = 0
   const samples = []
 
   for (let i = 0; i < length; i++) {
     const t = i / SAMPLE_RATE
-    phase += (2 * Math.PI * (1250 + 250 * Math.exp(-t / 0.004))) / SAMPLE_RATE
-    const body = Math.sin(phase) * Math.exp(-t / 0.0035)
-    const overtone = Math.sin(2 * Math.PI * 2950 * t) * Math.exp(-t / 0.0015) * 0.35
-    const transient = click(random() * 2 - 1, 3800, 0.9) * raisedCosine(t / 0.0004) * Math.exp(-t / 0.0006) * 1.8
-    samples.push(body + overtone + transient)
+    const pitchDrop = Math.exp(-t / 0.003)
+    bodyPhase += (2 * Math.PI * (560 + 140 * pitchDrop)) / SAMPLE_RATE
+    modePhase += (2 * Math.PI * (1080 + 200 * pitchDrop)) / SAMPLE_RATE
+    const attack = raisedCosine(t / 0.001)
+    const body = Math.sin(bodyPhase) * Math.exp(-t / 0.005)
+    const mode = Math.sin(modePhase) * Math.exp(-t / 0.0025) * 0.3
+    const tap = felt(random() * 2 - 1, 1400, 0.7) * Math.exp(-t / 0.0012) * 0.5
+    let mix = (body + mode + tap) * attack
+    for (const filter of outputLowpass) mix = filter(mix, 2000, 0.707)
+    samples.push(mix)
   }
-  return finish(samples, { peakDb: -10, fadeInMs: 0.3, fadeOutMs: 4 })
+  return finish(samples, { peakDb: -17, fadeInMs: 0.3, fadeOutMs: 8 })
 }
 
 const sounds = {

@@ -35,19 +35,62 @@ export function unlockAudio() {
   }
 }
 
-// The hover tick fires on every station you pass, so it gets a slight random
-// pitch (±4%) to keep fast sweeps from sounding mechanical.
-const PITCH_VARIATION: Partial<Record<SoundName, number>> = { hover: 0.04 }
+// The hover tick fires on every station the highlight passes, up to about 30
+// a second in a fast sweep. Ticks closer together than HOVER_MIN_GAP_MS are
+// dropped, and each tick that plays is scaled by 1 / busyness, where every
+// tick adds 1 to a busyness that decays with HOVER_BUSY_DECAY_MS. A 30/s
+// sweep plays about every other tick at around half gain, a soft purr only a
+// few dB louder overall than one tick, and after ~400 ms of rest the next tick
+// is back to full volume.
+const HOVER_MIN_GAP_MS = 35
+const HOVER_BUSY_DECAY_MS = 100
+let lastHoverAt = -Infinity
+let hoverBusyness = 0
+
+function hoverGain(now: number) {
+  const elapsed = now - lastHoverAt
+  if (elapsed < HOVER_MIN_GAP_MS) return 0
+  hoverBusyness = hoverBusyness * Math.exp(-elapsed / HOVER_BUSY_DECAY_MS) + 1
+  lastHoverAt = now
+  return 1 / hoverBusyness
+}
+
+// Only one retune plays at a time: a new one fades out the last over a few
+// milliseconds (a ramp, not a cut, so it doesn't click) instead of stacking.
+const RETUNE_FADE_S = 0.012
+const retuneNames = new Set<SoundName>(RETUNE_TAKES)
+let activeRetune: { source: AudioBufferSourceNode; gain: GainNode } | null = null
+
+function fadeOutRetune(audio: AudioContext) {
+  if (!activeRetune) return
+  const { source, gain } = activeRetune
+  const now = audio.currentTime
+  gain.gain.cancelScheduledValues(now)
+  gain.gain.setValueAtTime(gain.gain.value, now)
+  gain.gain.linearRampToValueAtTime(0, now + RETUNE_FADE_S)
+  source.stop(now + RETUNE_FADE_S)
+  activeRetune = null
+}
 
 export function playSound(name: SoundName, volume: number) {
   const buffer = buffers.get(name)
   if (!context || !buffer || volume <= 0) return
+  const level = name === "hover" ? volume * hoverGain(performance.now()) : volume
+  if (level <= 0) return
+  const isRetune = retuneNames.has(name)
+  if (isRetune) fadeOutRetune(context)
+
   const source = context.createBufferSource()
   const gain = context.createGain()
-  gain.gain.value = volume
+  gain.gain.value = level
   source.buffer = buffer
-  const variation = PITCH_VARIATION[name] ?? 0
-  source.playbackRate.value = 1 + (Math.random() * 2 - 1) * variation
   source.connect(gain).connect(context.destination)
   source.start()
+  if (!isRetune) return
+
+  const playing = { source, gain }
+  activeRetune = playing
+  source.onended = () => {
+    if (activeRetune === playing) activeRetune = null
+  }
 }

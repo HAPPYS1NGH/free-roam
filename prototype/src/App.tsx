@@ -50,7 +50,7 @@ function Studio({ library }: { library: Library }) {
       duckVolume: [0.4, 0, 1, 0.05],
       retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
       retuneVolume: [0.6, 0, 1, 0.05],
-      uiVolume: [0.6, 0, 1, 0.05],
+      uiVolume: [0.8, 0, 1, 0.05],
     },
     { id: "harness-v4", persist: true, onAction },
   )
