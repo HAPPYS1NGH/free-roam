@@ -35,6 +35,10 @@ export function unlockAudio() {
   }
 }
 
+// The hover tick fires on every station you pass, so it gets a slight random
+// pitch (±4%) to keep fast sweeps from sounding mechanical.
+const PITCH_VARIATION: Partial<Record<SoundName, number>> = { hover: 0.04 }
+
 export function playSound(name: SoundName, volume: number) {
   const buffer = buffers.get(name)
   if (!context || !buffer || volume <= 0) return
@@ -42,6 +46,8 @@ export function playSound(name: SoundName, volume: number) {
   const gain = context.createGain()
   gain.gain.value = volume
   source.buffer = buffer
+  const variation = PITCH_VARIATION[name] ?? 0
+  source.playbackRate.value = 1 + (Math.random() * 2 - 1) * variation
   source.connect(gain).connect(context.destination)
   source.start()
 }
