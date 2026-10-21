@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 
-// Scales a wheel of `size` pixels down so it never overflows a small window.
-export function useFit(size: number) {
+// GTA sizes its HUD from the screen height, so the wheel does too.
+export function useViewport() {
   const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight })
 
   useEffect(() => {
@@ -10,5 +10,5 @@ export function useFit(size: number) {
     return () => window.removeEventListener("resize", onResize)
   }, [])
 
-  return Math.min(1, (viewport.height - 140) / size, (viewport.width - 32) / size)
+  return viewport
 }

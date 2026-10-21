@@ -1,23 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { slotAngle, slotForVector } from "./geometry"
-import { playSound, unlockAudio } from "./sound"
-import type { Station } from "./stations"
+import { playSound, unlockAudio, type SoundName } from "./sound"
+import type { Slot } from "./stations"
 
 type Options = {
-  stations: Station[]
+  slots: Slot[]
   deadzone: number
+  dwellMs: number
   keepOpen: boolean
-  staticVolume: number
-  tickVolume: number
+  sounds: { retuneTake: SoundName; retuneVolume: number; uiVolume: number }
 }
 
-// The flick is read from mouse movement since the wheel opened, not from where
-// the cursor is. The virtual cursor is clamped so a flick "sticks" until you
-// move back toward the centre, the same way a thumbstick wheel behaves.
+// The pick is read from mouse movement since the wheel opened, not from where
+// the cursor is. The virtual cursor is clamped, so a flick "sticks" until you
+// push in another direction, the same way GTA's wheel behaves.
 const CURSOR_LIMIT = 160
 // Roughly how long Music.app takes to start a playlist after the command.
 const SWITCH_DELAY_MS = 250
-const PEEK_MS = 1100
+// One mouse-wheel notch moves one station, like GTA's scroll-to-retune.
+const SCROLL_STEP = 40
+const SCROLL_REPEAT_MS = 70
+const PEEK_MS = 1200
 
 function isTextField(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
@@ -25,105 +28,105 @@ function isTextField(target: EventTarget | null) {
 }
 
 function isHarnessChrome(target: EventTarget | null) {
-  return target instanceof Element && !!target.closest(".dialkit-root, .proto-picker")
+  return target instanceof Element && !!target.closest(".dialkit-root")
 }
 
 export function useWheel(options: Options) {
+  const firstStation = options.slots.find((slot) => slot.kind === "playlist")?.id ?? null
   const [open, setOpen] = useState(options.keepOpen)
-  const [highlighted, setHighlighted] = useState<number | null>(null)
-  const [playingId, setPlayingId] = useState<string | null>("gym")
-  const [trackIndex, setTrackIndex] = useState(0)
+  const [highlighted, setHighlighted] = useState(0)
+  const [playingId, setPlayingId] = useState<string | null>(firstStation)
 
   // Event handlers read these instead of state so they always see the latest
   // values without re-subscribing on every render.
   const settings = useRef(options)
   settings.current = options
   const openRef = useRef(options.keepOpen)
-  const highlightRef = useRef<number | null>(null)
-  const playingRef = useRef<string | null>("gym")
+  const highlightRef = useRef(0)
+  const playingRef = useRef<string | null>(firstStation)
   const cursor = useRef({ x: 0, y: 0 })
+  const dwellTimer = useRef(0)
 
-  const highlight = (index: number | null) => {
+  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolume)
+
+  const playingIndex = () => {
+    const id = playingRef.current ?? "off"
+    return Math.max(0, settings.current.slots.findIndex((slot) => slot.id === id))
+  }
+
+  const tune = (index: number) => {
+    window.clearTimeout(dwellTimer.current)
+    const slot = settings.current.slots[index]
+    if (!slot) return
+    const nextId = slot.kind === "off" ? null : slot.id
+    if (nextId === playingRef.current) return
+    const { retuneTake, retuneVolume } = settings.current.sounds
+    playSound(retuneTake, retuneVolume)
+    playingRef.current = nextId
+    window.setTimeout(() => setPlayingId(nextId), SWITCH_DELAY_MS)
+  }
+
+  // GTA retunes live as you pass over stations. Waiting for the highlight to
+  // rest briefly means a sweep across the ring doesn't send Music a play
+  // command for every station on the way.
+  const highlight = (index: number) => {
     if (index === highlightRef.current) return
     highlightRef.current = index
     setHighlighted(index)
-    if (index !== null) playSound("tick", settings.current.tickVolume)
+    uiSound("hover")
+    window.clearTimeout(dwellTimer.current)
+    dwellTimer.current = window.setTimeout(() => tune(index), settings.current.dwellMs)
   }
 
   const show = () => {
     if (openRef.current) return
     openRef.current = true
     cursor.current = { x: 0, y: 0 }
+    // The wheel opens on whatever is playing, like GTA.
+    highlightRef.current = playingIndex()
+    setHighlighted(highlightRef.current)
     setOpen(true)
+    uiSound("open")
   }
 
   const hide = () => {
+    window.clearTimeout(dwellTimer.current)
     if (settings.current.keepOpen) return
     openRef.current = false
     setOpen(false)
-    highlightRef.current = null
-    setHighlighted(null)
-  }
-
-  const tuneTo = (index: number) => {
-    const station = settings.current.stations[index]
-    if (!station || station.kind === "empty") return
-    const nextId = station.kind === "off" ? null : station.id
-    if (nextId === playingRef.current) return
-    playSound("static", settings.current.staticVolume)
-    playingRef.current = nextId
-    window.setTimeout(() => {
-      setPlayingId(nextId)
-      setTrackIndex(0)
-    }, SWITCH_DELAY_MS)
+    uiSound("close")
   }
 
   const commit = () => {
-    if (highlightRef.current !== null) tuneTo(highlightRef.current)
-    hide()
-  }
-
-  const cancel = () => {
-    highlight(null)
+    tune(highlightRef.current)
     hide()
   }
 
   const step = (direction: 1 | -1) => {
-    const { stations } = settings.current
-    const playingIndex = stations.findIndex((s) => s.id === playingRef.current)
-    const from = highlightRef.current ?? Math.max(0, playingIndex)
-    const next = (from + direction + stations.length) % stations.length
-    const angle = slotAngle(next, stations.length)
+    const count = settings.current.slots.length
+    const next = (highlightRef.current + direction + count) % count
+    const angle = slotAngle(next, count)
     cursor.current = { x: Math.sin(angle) * CURSOR_LIMIT, y: -Math.cos(angle) * CURSOR_LIMIT }
     highlight(next)
   }
 
-  const skip = (direction: 1 | -1) => {
-    if (!playingRef.current) return
-    playSound("tick", settings.current.tickVolume)
-    setTrackIndex((i) => i + direction)
-  }
-
   useEffect(() => {
     let scrollDistance = 0
-    let lastSkip = 0
+    let lastStep = 0
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTextField(e.target)) return
       if (e.code === "KeyQ" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault()
         if (e.repeat) return
-        unlockAudio().catch((error) => console.warn("Audio unavailable:", error))
+        unlockAudio()
         show()
         return
       }
-      if (!openRef.current || settings.current.keepOpen) return
-      // While the wheel is held open it owns the keyboard, so the variant
-      // picker underneath doesn't react to arrows or number keys.
-      e.stopPropagation()
-      if (e.key === "Escape") cancel()
-      else if (e.key === "ArrowRight") step(1)
-      else if (e.key === "ArrowLeft") step(-1)
+      if (!openRef.current) return
+      if (e.key === "Escape") hide()
+      else if (e.key === "ArrowRight" || e.key === "ArrowDown") step(1)
+      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") step(-1)
     }
 
     const onKeyUp = (e: KeyboardEvent) => {
@@ -140,8 +143,9 @@ export function useWheel(options: Options) {
         c.x *= CURSOR_LIMIT / length
         c.y *= CURSOR_LIMIT / length
       }
-      const { deadzone, stations } = settings.current
-      highlight(length < deadzone ? null : slotForVector(c.x, c.y, stations.length))
+      // Inside the dead zone the current pick stays, so a jittery hand on
+      // release doesn't change station.
+      if (length >= settings.current.deadzone) highlight(slotForVector(c.x, c.y, settings.current.slots.length))
     }
 
     const onWheel = (e: WheelEvent) => {
@@ -149,20 +153,20 @@ export function useWheel(options: Options) {
       e.preventDefault()
       scrollDistance += e.deltaY
       const now = performance.now()
-      if (Math.abs(scrollDistance) < 40 || now - lastSkip < 180) return
-      skip(scrollDistance > 0 ? 1 : -1)
+      if (Math.abs(scrollDistance) < SCROLL_STEP || now - lastStep < SCROLL_REPEAT_MS) return
+      step(scrollDistance > 0 ? 1 : -1)
       scrollDistance = 0
-      lastSkip = now
+      lastStep = now
     }
 
     // Only "keep open" mode commits on click; normally releasing Q commits.
     const onClick = (e: MouseEvent) => {
-      if (settings.current.keepOpen && !isHarnessChrome(e.target)) commit()
+      if (settings.current.keepOpen && !isHarnessChrome(e.target)) tune(highlightRef.current)
     }
 
     // Switching windows mid-hold means the keyup never arrives.
     const onBlur = () => {
-      if (openRef.current && !settings.current.keepOpen) cancel()
+      if (openRef.current && !settings.current.keepOpen) hide()
     }
 
     window.addEventListener("keydown", onKeyDown, true)
@@ -183,23 +187,24 @@ export function useWheel(options: Options) {
   }, [])
 
   useEffect(() => {
-    openRef.current = options.keepOpen
-    setOpen(options.keepOpen)
-    if (!options.keepOpen) {
-      highlightRef.current = null
-      setHighlighted(null)
+    if (options.keepOpen) {
+      show()
+    } else if (openRef.current) {
+      openRef.current = false
+      setOpen(false)
     }
   }, [options.keepOpen])
 
-  // Opens the wheel briefly so its entrance can be watched without holding Q.
-  // Stable across renders because show/cancel only touch refs and setters.
+  // Opens the wheel briefly so the entrance can be watched without holding Q.
+  // Stable across renders because show/hide only touch refs and setters.
   const peek = useCallback(() => {
     if (openRef.current) return
+    unlockAudio()
     show()
     window.setTimeout(() => {
-      if (!settings.current.keepOpen) cancel()
+      if (!settings.current.keepOpen) hide()
     }, PEEK_MS)
   }, [])
 
-  return { open, highlighted, playingId, trackIndex, peek }
+  return { open, highlighted, playingId, peek }
 }

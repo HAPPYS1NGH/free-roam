@@ -1,63 +1,67 @@
 import { DialRoot, useDialKit, type TransitionConfig } from "dialkit"
 import "dialkit/styles.css"
 import { AnimatePresence, motion, useReducedMotion } from "motion/react"
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { Desktop } from "./Desktop"
-import { Picker } from "./Picker"
-import { stations } from "./stations"
-import { exitTransition, transitionFor } from "./timing"
+import { loadLibrary, type Library } from "./library"
+import { RadioWheel, radioWheelControls } from "./RadioWheel"
+import { preloadSounds, RETUNE_TAKES, type SoundName } from "./sound"
+import { slotsFor } from "./stations"
+import { transitionFor } from "./timing"
 import { buildTokens, downloadJson } from "./tokens"
 import { useWheel } from "./useWheel"
-import { variants, type Variant } from "./variants"
 
 const SPEEDS: Record<string, number> = { "1x": 1, "0.5x": 0.5, "0.25x": 0.25 }
-const TICK_VOLUME = 0.25
 const NOTICE_MS = 1600
 
-function initialVariant() {
-  const v = Number(new URLSearchParams(location.search).get("v"))
-  return v >= 1 && v <= variants.length ? v - 1 : 0
+export function App() {
+  const [library, setLibrary] = useState<Library | null>(null)
+
+  useEffect(() => {
+    void preloadSounds()
+    loadLibrary().then(setLibrary)
+  }, [])
+
+  if (!library) return <Desktop playlist={null} volume={1} wheelOpen={false} />
+  return <Studio library={library} />
 }
 
-export function App() {
-  const [variantIndex, setVariantIndex] = useState(initialVariant)
-  const [mountKey, setMountKey] = useState(0)
-  const [notice, setNotice] = useState<string | null>(null)
+function Studio({ library }: { library: Library }) {
   const reduced = useReducedMotion() ?? false
+  const slots = useMemo(() => slotsFor(library.playlists), [library])
+  const [notice, setNotice] = useState<string | null>(null)
+  const actions = useRef<(action: string) => void>(() => {})
+  const onAction = (action: string) => actions.current(action)
 
   const harness = useDialKit(
     "Harness",
     {
       keepOpen: false,
       speed: { type: "select", options: ["1x", "0.5x", "0.25x"], default: "1x" },
-      backdropTint: [0.35, 0, 0.8, 0.01],
+      replayOpen: { type: "action", label: "Replay open" },
+      backdropTint: [0.2, 0, 0.8, 0.01],
       deadzone: [24, 4, 80, 1],
+      dwellMs: [300, 0, 1000, 10],
       duckVolume: [0.4, 0, 1, 0.05],
-      staticVolume: [0.5, 0, 1, 0.05],
+      retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
+      retuneVolume: [0.6, 0, 1, 0.05],
+      uiVolume: [0.35, 0, 1, 0.05],
     },
-    { id: "harness", persist: true },
+    { id: "harness-gta", persist: true, onAction },
   )
+  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel", persist: true, onAction })
 
   const wheel = useWheel({
-    stations,
+    slots,
     deadzone: harness.deadzone,
+    dwellMs: harness.dwellMs,
     keepOpen: harness.keepOpen,
-    staticVolume: harness.staticVolume,
-    tickVolume: TICK_VOLUME,
+    sounds: {
+      retuneTake: harness.retuneTake as SoundName,
+      retuneVolume: harness.retuneVolume,
+      uiVolume: harness.uiVolume,
+    },
   })
-
-  const selectVariant = useCallback((index: number) => {
-    setVariantIndex(index)
-    const url = new URL(location.href)
-    url.searchParams.set("v", String(index + 1))
-    history.replaceState(null, "", url)
-  }, [])
-
-  const { peek } = wheel
-  const replay = useCallback(() => {
-    setMountKey((key) => key + 1)
-    peek()
-  }, [peek])
 
   const noticeTimer = useRef(0)
   const showNotice = useCallback((text: string) => {
@@ -67,128 +71,98 @@ export function App() {
   }, [])
   useEffect(() => () => window.clearTimeout(noticeTimer.current), [])
 
-  const variant = variants[variantIndex]
-  const behaviour = {
-    backdropTint: harness.backdropTint,
-    deadzone: harness.deadzone,
-    duckVolume: harness.duckVolume,
-    staticVolume: harness.staticVolume,
-    tickVolume: TICK_VOLUME,
+  actions.current = (action) => {
+    if (action === "replayOpen") return wheel.peek()
+    const tokens = buildTokens("GTA radio wheel", look, {
+      backdropTint: harness.backdropTint,
+      deadzone: harness.deadzone,
+      dwellMs: harness.dwellMs,
+      duckVolume: harness.duckVolume,
+      retuneTake: harness.retuneTake,
+      retuneVolume: harness.retuneVolume,
+      uiVolume: harness.uiVolume,
+    })
+    if (action === "downloadTokens") {
+      downloadJson("tokens.json", tokens)
+      showNotice("Downloaded tokens.json")
+      return
+    }
+    navigator.clipboard.writeText(JSON.stringify(tokens, null, 2)).then(
+      () => showNotice("Tokens copied"),
+      (error: Error) => showNotice(`Copy failed: ${error.message}`),
+    )
   }
+
+  const speed = SPEEDS[harness.speed] ?? 1
+  // The blur and the wheel arrive and leave together, so they share timing.
+  const openTransition = transitionFor(look.open as TransitionConfig, speed, reduced)
+  const closeTransition = transitionFor(look.close as TransitionConfig, speed, reduced)
+  const playing = slots.find((slot) => slot.id === wheel.playingId)
 
   return (
     <>
       <Desktop
-        playingId={wheel.playingId}
-        trackIndex={wheel.trackIndex}
+        playlist={playing?.kind === "playlist" ? playing.playlist : null}
         volume={wheel.open ? harness.duckVolume : 1}
         wheelOpen={wheel.open}
       />
-      <VariantHost
-        key={`${variant.name}-${mountKey}`}
-        variant={variant}
-        wheel={wheel}
-        speed={SPEEDS[harness.speed] ?? 1}
-        reduced={reduced}
-        keepOpen={harness.keepOpen}
-        behaviour={behaviour}
-        onNotice={showNotice}
-      />
-      <Hint keepOpen={harness.keepOpen} notice={notice} />
-      <Picker names={variants.map((v) => v.name)} current={variantIndex} onSelect={selectVariant} onReplay={replay} />
+      <AnimatePresence>
+        {wheel.open && (
+          <motion.div
+            key="backdrop"
+            className="wheel-backdrop"
+            data-keep-open={harness.keepOpen || undefined}
+            style={{ "--tint": harness.backdropTint } as CSSProperties}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: openTransition }}
+            exit={{ opacity: 0, transition: closeTransition }}
+          />
+        )}
+        {wheel.open && (
+          <div key="wheel" className="wheel-layer">
+            <RadioWheel
+              slots={slots}
+              highlighted={wheel.highlighted}
+              look={look}
+              openTransition={openTransition}
+              closeTransition={closeTransition}
+            />
+          </div>
+        )}
+      </AnimatePresence>
+      <Hint keepOpen={harness.keepOpen} notice={notice} library={library} />
       <DialRoot position="top-right" theme="dark" />
     </>
   )
 }
 
-type HostProps = {
-  variant: Variant
-  wheel: ReturnType<typeof useWheel>
-  speed: number
-  reduced: boolean
-  keepOpen: boolean
-  behaviour: { backdropTint: number } & Record<string, number>
-  onNotice: (text: string) => void
-}
-
-// Keyed by variant, so switching swaps the DialKit panel along with the wheel.
-function VariantHost({ variant, wheel, speed, reduced, keepOpen, behaviour, onNotice }: HostProps) {
-  const exportTokens = useRef<(action: string) => void>(() => {})
-  const values = useDialKit(variant.name, variant.controls, {
-    id: variant.name.toLowerCase(),
-    persist: true,
-    onAction: (action) => exportTokens.current(action),
-  })
-
-  exportTokens.current = (action) => {
-    const tokens = buildTokens(variant.name, values, behaviour)
-    if (action === "downloadTokens") {
-      downloadJson("tokens.json", tokens)
-      onNotice("Downloaded tokens.json")
-      return
-    }
-    navigator.clipboard.writeText(JSON.stringify(tokens, null, 2)).then(
-      () => onNotice("Tokens copied"),
-      (error: Error) => onNotice(`Copy failed: ${error.message}`),
+function Hint({ keepOpen, notice, library }: { keepOpen: boolean; notice: string | null; library: Library }) {
+  if (notice) {
+    return (
+      <div className="hint" role="status" aria-live="polite">
+        <strong>{notice}</strong>
+      </div>
     )
   }
-
-  const Wheel = variant.Component
-  // The backdrop moves with the wheel, so it shares the wheel's open spring.
-  const openTransition = transitionFor(values.open as TransitionConfig, speed, reduced)
-
-  return (
-    <AnimatePresence>
-      {wheel.open && (
-        <motion.div
-          key="backdrop"
-          className="wheel-backdrop"
-          data-keep-open={keepOpen || undefined}
-          style={{ "--tint": behaviour.backdropTint } as CSSProperties}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, transition: openTransition }}
-          exit={{ opacity: 0, transition: exitTransition(speed, reduced) }}
-        />
-      )}
-      {wheel.open && (
-        <div key="wheel" className="wheel-layer">
-          <Wheel
-            values={values}
-            stations={stations}
-            highlighted={wheel.highlighted}
-            playingId={wheel.playingId}
-            trackIndex={wheel.trackIndex}
-            speed={speed}
-            reduced={reduced}
-          />
-        </div>
-      )}
-    </AnimatePresence>
-  )
-}
-
-function Hint({ keepOpen, notice }: { keepOpen: boolean; notice: string | null }) {
   return (
     <div className="hint" role="status" aria-live="polite">
-      {notice ? (
-        <strong>{notice}</strong>
-      ) : keepOpen ? (
-        <>
-          <span>
-            <strong>Keep open is on.</strong> Flick, then click to tune in.
-          </span>
-          <span>Scroll skips the track</span>
-        </>
-      ) : (
-        <>
-          <span>
-            Hold <kbd>Q</kbd>, flick toward a station, let go
-          </span>
-          <span>
-            Scroll skips the track · <kbd>Esc</kbd> cancels
-          </span>
-        </>
-      )}
+      <span>
+        {keepOpen ? (
+          <>
+            <strong>Keep open is on.</strong> Move the mouse or scroll, click to tune in.
+          </>
+        ) : (
+          <>
+            Hold <kbd>Q</kbd>, move the mouse or scroll, let go to keep it
+          </>
+        )}
+      </span>
+      <span>Stations tune in live once the pick rests · <kbd>Esc</kbd> closes</span>
+      <span>
+        {library.source === "library"
+          ? `Your library: ${library.playlists.length} playlists`
+          : "Mock playlists. Run npm run library to use yours"}
+      </span>
     </div>
   )
 }

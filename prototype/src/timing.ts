@@ -23,8 +23,3 @@ export function transitionFor(config: TransitionConfig, speed: number, reduced: 
   const { mass, stiffness, damping } = toPhysics(config)
   return { type: "spring", mass, stiffness: stiffness * speed * speed, damping: damping * speed }
 }
-
-// Exits are quicker and quieter than entrances: the user has already moved on.
-export function exitTransition(speed: number, reduced: boolean): Transition {
-  return reduced ? { duration: 0 } : { duration: 0.1 / speed, ease: [0.4, 0, 1, 1] }
-}

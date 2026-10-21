@@ -9,14 +9,17 @@ function isTransition(value: unknown): value is TransitionConfig {
   return value.type === "spring" || value.type === "easing"
 }
 
-// Splits a variant's tuned values into the groups WheelStyle.swift reads.
-export function buildTokens(variant: string, values: Record<string, unknown>, behaviour: Record<string, unknown>) {
+// Splits the tuned values into the groups WheelStyle.swift reads. Sizes are
+// percentages of screen height; easings port to .timingCurve(…, duration:).
+export function buildTokens(name: string, values: Record<string, unknown>, behaviour: Record<string, unknown>) {
   const animations: Record<string, unknown> = {}
-  const geometry: Record<string, number> = {}
+  const sizes: Record<string, number> = {}
   const colors: Record<string, string> = {}
+  const flags: Record<string, boolean> = {}
 
   for (const [key, value] of Object.entries(values)) {
-    if (typeof value === "number") geometry[key] = round(value)
+    if (typeof value === "number") sizes[key] = round(value)
+    else if (typeof value === "boolean") flags[key] = value
     else if (typeof value === "string") colors[key] = value
     else if (isTransition(value) && value.type === "easing") {
       animations[key] = { duration: value.duration, bezier: value.ease }
@@ -26,15 +29,7 @@ export function buildTokens(variant: string, values: Record<string, unknown>, be
     }
   }
 
-  return {
-    app: "Static",
-    variant,
-    exportedAt: new Date().toISOString(),
-    animations,
-    geometry,
-    colors,
-    behaviour,
-  }
+  return { app: "Static", name, exportedAt: new Date().toISOString(), animations, sizes, colors, flags, behaviour }
 }
 
 export function downloadJson(filename: string, data: unknown) {

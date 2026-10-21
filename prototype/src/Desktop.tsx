@@ -1,17 +1,18 @@
 import { memo, type CSSProperties } from "react"
+import { onAir, useNow } from "./broadcast"
 import { RadioIcon, SpeakerIcon } from "./icons"
-import { callSignFor, frequencyFor, hueFor, stations, trackAt } from "./stations"
+import { hueFor, initialsFor, type Playlist } from "./stations"
 
 // A stand-in macOS desktop so the wheel is judged over real-looking clutter.
 
-type Props = { playingId: string | null; trackIndex: number; volume: number; wheelOpen: boolean }
+type Props = { playlist: Playlist | null; volume: number; wheelOpen: boolean }
 
-export function Desktop({ playingId, trackIndex, volume, wheelOpen }: Props) {
+export function Desktop({ playlist, volume, wheelOpen }: Props) {
   return (
     <div className="desktop" aria-hidden="true">
       <MenuBar wheelOpen={wheelOpen} />
       <Editor />
-      <MiniPlayer playingId={playingId} trackIndex={trackIndex} volume={volume} />
+      <MiniPlayer playlist={playlist} volume={volume} />
     </div>
   )
 }
@@ -43,10 +44,11 @@ const code: [string, string][][] = [
   [["k", "import"], ["", " Foundation"]],
   [],
   [["k", "struct"], ["t", " MusicBridge"], ["", " {"]],
-  [["", "  "], ["k", "func"], ["f", " play"], ["", "(playlistID: "], ["t", "String"], ["", ") "], ["k", "async throws"], ["", " {"]],
+  [["", "  "], ["k", "func"], ["f", " tuneIn"], ["", "(playlistID: "], ["t", "String"], ["", ", track: "], ["t", "Int"], ["", ", at: "], ["t", "Double"], ["", ") "], ["k", "async throws"], ["", " {"]],
   [["", "    "], ["k", "let"], ["", " script = "], ["s", '"""']],
   [["s", '    tell application "Music"']],
-  [["s", '      play (first playlist whose persistent ID is "\\(playlistID)")']],
+  [["s", '      play track \\(track) of (first playlist whose persistent ID is "\\(playlistID)")']],
+  [["s", "      set player position to \\(at)"]],
   [["s", "    end tell"]],
   [["s", '    """']],
   [["", "    "], ["k", "try await"], ["f", " run"], ["", "(script)"]],
@@ -83,25 +85,28 @@ const Editor = memo(function Editor() {
   )
 })
 
-function MiniPlayer({ playingId, trackIndex, volume }: Omit<Props, "wheelOpen">) {
-  const station = stations.find((s) => s.id === playingId)
-  const playlist = station?.kind === "playlist" ? station : null
-  const track = playlist ? trackAt(playlist.tracks, trackIndex) : null
+function MiniPlayer({ playlist, volume }: Omit<Props, "wheelOpen">) {
+  const now = useNow()
+  const live = playlist ? onAir(playlist.tracks, now) : null
+  const progress = live ? live.position / live.track.duration : 0
 
   return (
     <div className="mini-player">
       <div className="mini-art" style={{ "--hue": playlist ? hueFor(playlist.name) : 0 } as CSSProperties}>
-        {playlist ? callSignFor(playlist.name) : "—"}
+        {playlist?.covers[0] ? <img src={playlist.covers[0]} alt="" /> : playlist ? initialsFor(playlist.name) : "—"}
       </div>
       <div className="mini-meta">
-        <span className="mini-title">{track?.title ?? "Not playing"}</span>
-        <span className="mini-artist">{track?.artist ?? "Hold Q to pick a station"}</span>
-        <span className="mini-source">{playlist ? `${playlist.name} · ${frequencyFor(playlist.name)} FM` : "Music"}</span>
+        <span className="mini-title">{live?.track.title ?? "Not playing"}</span>
+        <span className="mini-artist">{live?.track.artist ?? "Hold Q to pick a station"}</span>
+        <span className="mini-source">{playlist?.name ?? "Radio off"}</span>
       </div>
-      <div className="mini-volume" style={{ "--volume": volume } as CSSProperties}>
+      <span className="mini-bar mini-progress" style={{ "--fill": progress } as CSSProperties}>
+        <span />
+      </span>
+      <div className="mini-volume">
         <SpeakerIcon />
-        <span className="mini-volume-track">
-          <span className="mini-volume-fill" />
+        <span className="mini-bar mini-volume-bar" style={{ "--fill": volume } as CSSProperties}>
+          <span />
         </span>
       </div>
     </div>

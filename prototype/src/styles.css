@@ -1,6 +1,5 @@
 :root {
-  --font-condensed: "Barlow Condensed", "Arial Narrow", sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   color-scheme: dark;
 }
@@ -178,12 +177,19 @@ body {
   place-items: center;
   width: 56px;
   height: 56px;
+  overflow: hidden;
   border-radius: 8px;
   background: linear-gradient(160deg, oklch(0.7 0.16 var(--hue)), oklch(0.46 0.17 calc(var(--hue) + 30)));
   outline: 1px solid rgb(255 255 255 / 0.1);
   outline-offset: -1px;
   font-size: 14px;
   font-weight: 700;
+}
+
+.mini-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .mini-meta {
@@ -225,20 +231,32 @@ body {
   color: rgb(255 255 255 / 0.5);
 }
 
-.mini-volume-track {
-  flex: 1;
+.mini-bar {
+  display: block;
   height: 4px;
   overflow: hidden;
   border-radius: 2px;
   background: rgb(255 255 255 / 0.15);
 }
 
-.mini-volume-fill {
+.mini-bar > span {
   display: block;
   height: 100%;
   background: rgb(255 255 255 / 0.75);
-  transform: scaleX(var(--volume));
+  transform: scaleX(var(--fill));
   transform-origin: left;
+}
+
+.mini-progress {
+  grid-column: 1 / -1;
+}
+
+.mini-volume-bar {
+  flex: 1;
+}
+
+/* Only the volume dip animates; the progress bar ticks once a second. */
+.mini-volume-bar > span {
   transition: transform 200ms ease-out;
 }
 
@@ -303,7 +321,7 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mini-volume-fill {
+  .mini-volume-bar > span {
     transition: none;
   }
 }

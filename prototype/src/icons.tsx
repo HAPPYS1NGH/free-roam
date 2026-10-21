@@ -16,19 +16,12 @@ function iconProps(size: number): SVGProps<SVGSVGElement> {
   }
 }
 
-export function PowerIcon({ size = 20 }: IconProps) {
+// The "no entry" mark GTA uses for its Radio Off slot.
+export function RadioOffIcon({ size = 24 }: IconProps) {
   return (
     <svg {...iconProps(size)}>
-      <path d="M12 3v8" />
-      <path d="M6.3 6.8a8 8 0 1 0 11.4 0" />
-    </svg>
-  )
-}
-
-export function PlusIcon({ size = 20 }: IconProps) {
-  return (
-    <svg {...iconProps(size)}>
-      <path d="M12 5v14M5 12h14" />
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M6 6l12 12" />
     </svg>
   )
 }
