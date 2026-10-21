@@ -21,7 +21,7 @@ type Options = {
   dwellMs: number
   holdDelayMs: number
   keepOpen: boolean
-  sounds: { pack: SoundPack; retuneTake: SoundName; retuneVolume: number; uiVolume: number }
+  sounds: { pack: SoundPack; retuneTake: SoundName; retuneVolumeDb: number; uiVolumeDb: number; hoverVolumeDb: number }
 }
 
 // Roughly how long Music.app takes to start a playlist after the command.
@@ -56,7 +56,7 @@ export function useWheel(options: Options) {
   const dwellTimer = useRef(0)
   const holdTimer = useRef(0)
 
-  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolume, settings.current.sounds.pack)
+  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolumeDb, settings.current.sounds.pack)
 
   const playingIndex = () => {
     const id = playingRef.current ?? "off"
@@ -69,8 +69,8 @@ export function useWheel(options: Options) {
     if (!slot) return
     const nextId = slot.kind === "off" ? null : slot.id
     if (nextId === playingRef.current) return
-    const { pack, retuneTake, retuneVolume } = settings.current.sounds
-    playSound(retuneTake, retuneVolume, pack)
+    const { pack, retuneTake, retuneVolumeDb } = settings.current.sounds
+    playSound(retuneTake, retuneVolumeDb, pack)
     playingRef.current = nextId
     window.setTimeout(() => setPlayingId(nextId), SWITCH_DELAY_MS)
   }
@@ -82,7 +82,8 @@ export function useWheel(options: Options) {
     if (index === highlightRef.current) return
     highlightRef.current = index
     setHighlighted(index)
-    uiSound("hover")
+    const { pack, hoverVolumeDb } = settings.current.sounds
+    playSound("hover", hoverVolumeDb, pack)
     window.clearTimeout(dwellTimer.current)
     dwellTimer.current = window.setTimeout(() => tune(index), settings.current.dwellMs)
   }

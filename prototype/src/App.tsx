@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { Desktop } from "./Desktop"
 import { loadLibrary, type Library } from "./library"
 import { RadioWheel, radioWheelControls } from "./RadioWheel"
-import { preloadSounds, RETUNE_TAKES, SOUND_PACKS, type SoundName, type SoundPack } from "./sound"
+import { preloadSounds, RETUNE_TAKES, SILENT_DB, SOUND_PACKS, type SoundName, type SoundPack } from "./sound"
 import { slotsFor } from "./stations"
 import { transitionFor } from "./timing"
 import { buildTokens, downloadJson } from "./tokens"
@@ -53,10 +53,11 @@ function Studio({ library, localSounds }: { library: Library; localSounds: numbe
       duckVolume: [0.4, 0, 1, 0.05],
       soundPack: { type: "select", options: [...SOUND_PACKS], default: "Local" },
       retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
-      retuneVolume: [0.6, 0, 1, 0.05],
-      uiVolume: [0.8, 0, 1, 0.05],
+      retuneVolumeDb: [-4.5, SILENT_DB, 0, 0.5],
+      uiVolumeDb: [-2, SILENT_DB, 0, 0.5],
+      hoverVolumeDb: [-2, SILENT_DB, 0, 0.5],
     },
-    { id: "harness-v4", persist: true, onAction },
+    { id: "harness-v5", persist: true, onAction },
   )
   const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v3", persist: true, onAction })
   // Dead zone and blur are %H like the rest of the HUD.
@@ -73,8 +74,9 @@ function Studio({ library, localSounds }: { library: Library; localSounds: numbe
     sounds: {
       pack: harness.soundPack as SoundPack,
       retuneTake: harness.retuneTake as SoundName,
-      retuneVolume: harness.retuneVolume,
-      uiVolume: harness.uiVolume,
+      retuneVolumeDb: harness.retuneVolumeDb,
+      uiVolumeDb: harness.uiVolumeDb,
+      hoverVolumeDb: harness.hoverVolumeDb,
     },
   })
 
@@ -100,8 +102,9 @@ function Studio({ library, localSounds }: { library: Library; localSounds: numbe
       vignette: harness.vignette,
       duckVolume: harness.duckVolume,
       retuneTake: harness.retuneTake,
-      retuneVolume: harness.retuneVolume,
-      uiVolume: harness.uiVolume,
+      retuneVolumeDb: harness.retuneVolumeDb,
+      uiVolumeDb: harness.uiVolumeDb,
+      hoverVolumeDb: harness.hoverVolumeDb,
     })
     if (action === "downloadTokens") {
       downloadJson("tokens.json", tokens)
