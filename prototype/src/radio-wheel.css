@@ -1,7 +1,6 @@
 .radio-wheel {
   position: relative;
   color: white;
-  font-family: var(--font-system);
   font-synthesis: none;
 }
 
@@ -14,7 +13,10 @@
 /* No transitions anywhere below: GTA's highlight jumps instantly, and the
    pick follows the mouse, so any easing would read as lag. */
 .station[data-selected] {
-  outline: var(--ring-width) solid var(--ring);
+  scale: var(--selected-scale);
+  box-shadow:
+    0 0 0 var(--ring-width) var(--ring),
+    0 0 0 calc(var(--ring-width) + 1.5px) rgb(0 0 0 / 0.6);
 }
 
 .station-art {
@@ -24,18 +26,16 @@
   height: 100%;
   overflow: hidden;
   border-radius: 50%;
-  background: rgb(40 40 44);
-  outline: 1px solid rgb(255 255 255 / 0.1);
-  outline-offset: -1px;
+  background: #000;
   opacity: var(--idle-opacity);
-}
-
-.radio-wheel[data-greyscale] .station-art {
-  filter: grayscale(1) brightness(1.1);
+  filter: grayscale(1) brightness(1.15);
 }
 
 .station[data-selected] .station-art {
   opacity: 1;
+}
+
+.radio-wheel[data-colour] .station[data-selected] .station-art {
   filter: none;
 }
 
@@ -51,42 +51,44 @@
   grid-template-rows: 1fr 1fr;
 }
 
-.station-off {
-  background: rgb(60 60 66);
-}
-
-.station[data-selected] .station-off {
-  background: #0b0b0c;
-}
-
 .station-off svg {
-  width: 52%;
-  height: 52%;
+  width: 56%;
+  height: 56%;
 }
 
 .station-fallback {
   background: radial-gradient(circle at 30% 25%, oklch(0.78 0.13 var(--hue)), oklch(0.45 0.16 calc(var(--hue) + 40)) 75%);
+  font-family: var(--font-system);
   font-weight: 700;
-  font-size: 1.6em;
+  font-size: 1.4em;
 }
 
-/* Three lines straight on the blurred screen with no panel behind them,
-   held legible by a soft shadow. */
+/* Station, ARTIST, title straight on the blurred screen, outlined in black
+   like GTA's HUD text. Avenir Next Condensed ships with macOS and is the
+   closest match to the game's condensed face. Stacked shadows make the
+   outline so the Mac app can reproduce it with SwiftUI .shadow modifiers. */
 .wheel-caption {
   position: absolute;
   left: 50%;
-  top: 50%;
-  translate: -50% -50%;
+  translate: -50% 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: calc(var(--caption-size) * 0.3);
+  font-family: "Avenir Next Condensed", "Arial Narrow", var(--font-system);
+  font-weight: 600;
   font-size: var(--caption-size);
-  line-height: 1.2;
+  line-height: var(--caption-pitch);
   text-align: center;
   text-shadow:
-    0 1px 2px rgb(0 0 0 / 0.85),
-    0 0 12px rgb(0 0 0 / 0.45);
+    1.5px 0 0 #000,
+    -1.5px 0 0 #000,
+    0 1.5px 0 #000,
+    0 -1.5px 0 #000,
+    1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000,
+    0 0 6px rgb(0 0 0 / 0.5);
   pointer-events: none;
 }
 
@@ -95,11 +97,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.caption-station,
-.caption-artist {
-  font-weight: 500;
 }
 
 .caption-artist {

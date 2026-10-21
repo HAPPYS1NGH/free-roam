@@ -4,8 +4,8 @@ export type Playlist = { id: string; name: string; tracks: Track[]; covers: stri
 
 export type Slot = { kind: "off"; id: "off" } | { kind: "playlist"; id: string; playlist: Playlist }
 
-// GTA V fits about twenty stations on the ring; past that the logos crowd.
-export const MAX_STATIONS = 19
+// GTA V shows up to 26 slots; past that the logos get too small to read.
+export const MAX_STATIONS = 25
 
 export function slotsFor(playlists: Playlist[]): Slot[] {
   return [

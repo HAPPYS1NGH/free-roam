@@ -260,16 +260,16 @@ body {
   transition: transform 200ms ease-out;
 }
 
-/* Wheel overlay. Blur and tint only: that's what NSVisualEffectView can do,
-   so the Mac app can match it exactly. */
+/* Wheel overlay: blur, desaturate and darken what's behind, as in GTA V
+   Enhanced. The Mac app needs a screen capture to desaturate other apps,
+   which means asking for Screen Recording permission; blur alone doesn't. */
 
 .wheel-backdrop {
   position: fixed;
   inset: 0;
   z-index: 10;
-  background: rgb(0 0 0 / var(--tint));
-  -webkit-backdrop-filter: blur(24px) saturate(1.1);
-  backdrop-filter: blur(24px) saturate(1.1);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--saturation)) brightness(var(--brightness));
+  backdrop-filter: blur(var(--blur)) saturate(var(--saturation)) brightness(var(--brightness));
   cursor: none;
 }
 

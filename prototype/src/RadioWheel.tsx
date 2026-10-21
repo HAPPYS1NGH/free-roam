@@ -8,24 +8,47 @@ import { hueFor, initialsFor, type Slot } from "./stations"
 import { useViewport } from "./useViewport"
 import "./radio-wheel.css"
 
-// Sizes are percentages of screen height, the way GTA scales its HUD.
+// Accent colours measured from GTA V's HUD palette. The defaults below come
+// from in-game captures; sizes are percentages of screen height (%H), the way
+// GTA scales its HUD.
+export const RING_COLOURS: Record<string, string> = {
+  Blue: "#65B4D4",
+  Green: "#ABEDAB",
+  Orange: "#FFA357",
+  Navy: "#2D6EB9",
+}
+
 // The wheel opens dozens of times a day from the keyboard, so it only fades:
 // no scale, no stagger, and the highlight moves instantly.
 export const radioWheelControls = {
-  open: { type: "easing", duration: 0.09, ease: [0.23, 1, 0.32, 1] },
+  open: { type: "easing", duration: 0.08, ease: [0.23, 1, 0.32, 1] },
   close: { type: "easing", duration: 0.07, ease: [0.4, 0, 1, 1] },
-  ringRadius: [38, 25, 48, 0.5],
-  iconSize: [11.5, 6, 16, 0.25],
-  ringColor: "#62C3EE",
-  ringWidth: [3, 1, 6, 0.5],
-  idleOpacity: [0.55, 0.15, 1, 0.01],
-  idleGreyscale: true,
-  captionSize: [2.3, 1.5, 3.5, 0.05],
+  iconSize: [8.3, 5, 14, 0.1],
+  iconPitch: [9.15, 6, 16, 0.05],
+  maxRadius: [30.5, 18, 45, 0.5],
+  raise: [4.3, 0, 10, 0.1],
+  ringPreset: { type: "select", options: [...Object.keys(RING_COLOURS), "Custom"], default: "Blue" },
+  ringColor: "#65B4D4",
+  ringWidth: [0.55, 0.2, 1.5, 0.05],
+  selectedScale: [1.03, 1, 1.2, 0.01],
+  idleOpacity: [0.35, 0.1, 1, 0.01],
+  selectedInColour: true,
+  captionSize: [2.6, 1.5, 4, 0.05],
+  captionPitch: [3.4, 2, 5, 0.05],
+  captionRaise: [5, 0, 10, 0.1],
   copyTokens: { type: "action", label: "Copy tokens" },
   downloadTokens: { type: "action", label: "Download tokens.json" },
 } satisfies DialConfig
 
 export type RadioWheelLook = ResolvedValues<typeof radioWheelControls>
+
+// GTA spaces logos a fixed distance apart, so the ring grows with the station
+// count until it hits a maximum, and logos shrink only once it's full.
+export function ringGeometry(look: RadioWheelLook, count: number, unit: number) {
+  const radius = Math.min((count * look.iconPitch) / (2 * Math.PI), look.maxRadius) * unit
+  const icon = Math.min(look.iconSize * unit, (0.95 * 2 * Math.PI * radius) / count)
+  return { radius, icon }
+}
 
 type Props = {
   slots: Slot[]
@@ -77,24 +100,29 @@ export function RadioWheel({ slots, highlighted, look, openTransition, closeTran
   const { height } = useViewport()
   const now = useNow()
   const unit = height / 100
-  const radius = look.ringRadius * unit
-  const icon = look.iconSize * unit
-  const size = (radius + icon / 2 + look.ringWidth) * 2
+  const { radius, icon } = ringGeometry(look, slots.length, unit)
+  const ringWidth = look.ringWidth * unit
+  const size = (radius + (icon * look.selectedScale) / 2 + ringWidth + 2) * 2
   const centre = size / 2
+  const pitch = look.captionPitch * unit
   const caption = captionFor(slots[highlighted], now)
+  const ring = RING_COLOURS[look.ringPreset] ?? look.ringColor
 
   return (
     <motion.div
       className="radio-wheel"
-      data-greyscale={look.idleGreyscale || undefined}
+      data-colour={look.selectedInColour || undefined}
       style={
         {
           width: size,
           height: size,
-          "--ring": look.ringColor,
-          "--ring-width": `${look.ringWidth}px`,
+          translate: `0 ${-look.raise * unit}px`,
+          "--ring": ring,
+          "--ring-width": `${ringWidth}px`,
           "--idle-opacity": look.idleOpacity,
+          "--selected-scale": look.selectedScale,
           "--caption-size": `${Math.max(13, look.captionSize * unit)}px`,
+          "--caption-pitch": `${pitch}px`,
         } as CSSProperties
       }
       initial={{ opacity: 0 }}
@@ -115,16 +143,18 @@ export function RadioWheel({ slots, highlighted, look, openTransition, closeTran
           </div>
         )
       })}
+      {/* The first line sits above the ring's centre and the rest hang below it,
+          as in GTA, so a one-line caption ("Radio Off") stays in the same place. */}
       <div
         className="wheel-caption"
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        style={{ maxWidth: radius * 2 - icon * 1.4 }}
+        style={{ top: centre - look.captionRaise * unit - pitch / 2, maxWidth: radius * 2 }}
       >
-        <span className="caption-station">{caption.station}</span>
+        <span>{caption.station}</span>
         {caption.artist && <span className="caption-artist">{caption.artist}</span>}
-        {caption.title && <span className="caption-title">{caption.title}</span>}
+        {caption.title && <span>{caption.title}</span>}
       </div>
     </motion.div>
   )

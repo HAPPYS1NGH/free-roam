@@ -7,6 +7,7 @@ type Options = {
   slots: Slot[]
   deadzone: number
   dwellMs: number
+  holdDelayMs: number
   keepOpen: boolean
   sounds: { retuneTake: SoundName; retuneVolume: number; uiVolume: number }
 }
@@ -46,6 +47,7 @@ export function useWheel(options: Options) {
   const playingRef = useRef<string | null>(firstStation)
   const cursor = useRef({ x: 0, y: 0 })
   const dwellTimer = useRef(0)
+  const holdTimer = useRef(0)
 
   const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolume)
 
@@ -102,6 +104,15 @@ export function useWheel(options: Options) {
     hide()
   }
 
+  // A quick tap of Q skips to the next station without showing the wheel,
+  // like GTA. Radio Off is skipped so tapping never silences the music.
+  const tapNext = () => {
+    const { slots } = settings.current
+    let next = (playingIndex() + 1) % slots.length
+    if (slots[next].kind === "off") next = (next + 1) % slots.length
+    tune(next)
+  }
+
   const step = (direction: 1 | -1) => {
     const count = settings.current.slots.length
     const next = (highlightRef.current + direction + count) % count
@@ -118,9 +129,13 @@ export function useWheel(options: Options) {
       if (isTextField(e.target)) return
       if (e.code === "KeyQ" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault()
-        if (e.repeat) return
+        if (e.repeat || openRef.current) return
         unlockAudio()
-        show()
+        // Holding opens the wheel; releasing before the delay counts as a tap.
+        holdTimer.current = window.setTimeout(() => {
+          holdTimer.current = 0
+          show()
+        }, settings.current.holdDelayMs)
         return
       }
       if (!openRef.current) return
@@ -130,7 +145,14 @@ export function useWheel(options: Options) {
     }
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code === "KeyQ" && openRef.current) commit()
+      if (e.code !== "KeyQ") return
+      if (holdTimer.current) {
+        window.clearTimeout(holdTimer.current)
+        holdTimer.current = 0
+        tapNext()
+      } else if (openRef.current) {
+        commit()
+      }
     }
 
     const onMouseMove = (e: MouseEvent) => {
@@ -166,6 +188,8 @@ export function useWheel(options: Options) {
 
     // Switching windows mid-hold means the keyup never arrives.
     const onBlur = () => {
+      window.clearTimeout(holdTimer.current)
+      holdTimer.current = 0
       if (openRef.current && !settings.current.keepOpen) hide()
     }
 

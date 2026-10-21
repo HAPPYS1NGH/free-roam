@@ -9,6 +9,7 @@ import { preloadSounds, RETUNE_TAKES, type SoundName } from "./sound"
 import { slotsFor } from "./stations"
 import { transitionFor } from "./timing"
 import { buildTokens, downloadJson } from "./tokens"
+import { useViewport } from "./useViewport"
 import { useWheel } from "./useWheel"
 
 const SPEEDS: Record<string, number> = { "1x": 1, "0.5x": 0.5, "0.25x": 0.25 }
@@ -39,22 +40,28 @@ function Studio({ library }: { library: Library }) {
       keepOpen: false,
       speed: { type: "select", options: ["1x", "0.5x", "0.25x"], default: "1x" },
       replayOpen: { type: "action", label: "Replay open" },
-      backdropTint: [0.2, 0, 0.8, 0.01],
-      deadzone: [24, 4, 80, 1],
-      dwellMs: [300, 0, 1000, 10],
+      holdDelayMs: [150, 0, 400, 10],
+      deadzone: [1.5, 0.5, 6, 0.1],
+      dwellMs: [1000, 0, 2000, 50],
+      backdropBlur: [2.5, 0, 5, 0.1],
+      backdropSaturation: [0.3, 0, 1, 0.05],
+      backdropBrightness: [0.85, 0.4, 1, 0.01],
       duckVolume: [0.4, 0, 1, 0.05],
       retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
       retuneVolume: [0.6, 0, 1, 0.05],
       uiVolume: [0.6, 0, 1, 0.05],
     },
-    { id: "harness-gta", persist: true, onAction },
+    { id: "harness-v3", persist: true, onAction },
   )
-  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel", persist: true, onAction })
+  const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v2", persist: true, onAction })
+  // Dead zone and blur are %H like the rest of the HUD.
+  const unit = useViewport().height / 100
 
   const wheel = useWheel({
     slots,
-    deadzone: harness.deadzone,
+    deadzone: harness.deadzone * unit,
     dwellMs: harness.dwellMs,
+    holdDelayMs: harness.holdDelayMs,
     keepOpen: harness.keepOpen,
     sounds: {
       retuneTake: harness.retuneTake as SoundName,
@@ -74,9 +81,12 @@ function Studio({ library }: { library: Library }) {
   actions.current = (action) => {
     if (action === "replayOpen") return wheel.peek()
     const tokens = buildTokens("GTA radio wheel", look, {
-      backdropTint: harness.backdropTint,
+      holdDelayMs: harness.holdDelayMs,
       deadzone: harness.deadzone,
       dwellMs: harness.dwellMs,
+      backdropBlur: harness.backdropBlur,
+      backdropSaturation: harness.backdropSaturation,
+      backdropBrightness: harness.backdropBrightness,
       duckVolume: harness.duckVolume,
       retuneTake: harness.retuneTake,
       retuneVolume: harness.retuneVolume,
@@ -112,7 +122,13 @@ function Studio({ library }: { library: Library }) {
             key="backdrop"
             className="wheel-backdrop"
             data-keep-open={harness.keepOpen || undefined}
-            style={{ "--tint": harness.backdropTint } as CSSProperties}
+            style={
+              {
+                "--blur": `${harness.backdropBlur * unit}px`,
+                "--saturation": harness.backdropSaturation,
+                "--brightness": harness.backdropBrightness,
+              } as CSSProperties
+            }
             initial={{ opacity: 0 }}
             animate={{ opacity: 1, transition: openTransition }}
             exit={{ opacity: 0, transition: closeTransition }}
@@ -153,11 +169,11 @@ function Hint({ keepOpen, notice, library }: { keepOpen: boolean; notice: string
           </>
         ) : (
           <>
-            Hold <kbd>Q</kbd>, move the mouse or scroll, let go to keep it
+            Hold <kbd>Q</kbd>, move the mouse or scroll, let go to keep it. Tap <kbd>Q</kbd> for the next station
           </>
         )}
       </span>
-      <span>Stations tune in live once the pick rests · <kbd>Esc</kbd> closes</span>
+      <span>Rest on a station for a second to tune in live · <kbd>Esc</kbd> closes</span>
       <span>
         {library.source === "library"
           ? `Your library: ${library.playlists.length} playlists`
