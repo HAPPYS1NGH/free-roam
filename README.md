@@ -28,6 +28,8 @@ Open the URL it prints. Hold <kbd>Q</kbd>, move the mouse or scroll to pick a st
 
 `npm run library` writes to `prototype/public/library/`, which is gitignored, so your library stays on your Mac.
 
+To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` into `prototype/public/sounds/local/`, which is also gitignored. The panel's Sound Pack switch flips between them and the built-in ones, and any sound missing from the local folder falls back to the built-in one.
+
 ## Requirements
 
 - macOS 14 or later
