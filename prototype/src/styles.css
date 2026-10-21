@@ -1,4 +1,7 @@
 :root {
+  /* Sofia Sans Extra Condensed is registered and loaded in index.html. The
+     fallbacks are narrow faces most Macs and PCs already have. */
+  --font-caption: "Sofia Sans Extra Condensed", "Avenir Next Condensed", "Arial Narrow", var(--font-system);
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --font-system: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
   color-scheme: dark;
@@ -21,6 +24,7 @@ body {
   color: white;
   font-family: var(--font-system);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Desktop */

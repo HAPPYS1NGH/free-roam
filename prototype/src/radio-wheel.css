@@ -66,10 +66,10 @@
   font-size: 1.4em;
 }
 
-/* Station, ARTIST, title straight on the blurred screen, outlined in black
-   like GTA's HUD text. Avenir Next Condensed ships with macOS and is the
-   closest match to the game's condensed face. Stacked shadows make the
-   outline so the Mac app can reproduce it with SwiftUI .shadow modifiers. */
+/* Station, ARTIST, title straight on the screen: white with a thin dark edge,
+   like GTA's HUD text. Three stacked 1.5px blurs add up to a crisp hairline
+   and the soft one keeps the text readable on white windows. Plain stacked
+   shadows, so the Mac app can rebuild them with SwiftUI .shadow modifiers. */
 .wheel-caption {
   position: absolute;
   left: 50%;
@@ -77,31 +77,30 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  font-family: "Avenir Next Condensed", "Arial Narrow", var(--font-system);
+  font-family: var(--font-caption);
   font-weight: 600;
   font-size: var(--caption-size);
   line-height: var(--caption-pitch);
   text-align: center;
   text-shadow:
-    1.5px 0 0 #000,
-    -1.5px 0 0 #000,
-    0 1.5px 0 #000,
-    0 -1.5px 0 #000,
-    1px 1px 0 #000,
-    -1px 1px 0 #000,
-    1px -1px 0 #000,
-    -1px -1px 0 #000,
-    0 0 6px rgb(0 0 0 / 0.5);
+    0 0 1.5px #000,
+    0 0 1.5px #000,
+    0 0 1.5px #000,
+    0 0 4px rgb(0 0 0 / 0.45);
   pointer-events: none;
 }
 
+/* The inline padding keeps overflow: hidden from clipping the edge off the
+   first and last letters. */
 .wheel-caption span {
   max-width: 100%;
+  padding-inline: 4px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Condensed capitals crowd each other; a little tracking keeps them apart. */
 .caption-artist {
   text-transform: uppercase;
   letter-spacing: 0.02em;
