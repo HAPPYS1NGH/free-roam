@@ -15,7 +15,7 @@ struct StaticApp: App {
 
     var body: some Scene {
         MenuBarExtra("Static", systemImage: "radio") {
-            StatusMenu(model: appDelegate.menu)
+            StatusMenu(model: appDelegate.menu, stations: appDelegate.stations)
         }
     }
 }
@@ -23,10 +23,12 @@ struct StaticApp: App {
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let menu = StatusMenuModel()
+    let stations = StationList()
     private var wheel: RadioWheelModel?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         CaptionFont.register()
+        stations.reload()
         let style: WheelStyle
         do {
             style = try WheelStyle.bundled()
@@ -35,10 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         log.notice("Loaded tokens.json: hold ⌥Q for \(Int(style.behaviour.holdDelayMs)) ms to open the wheel")
-        let wheel = RadioWheelModel(style: style, stations: { [menu] in menu.playlists })
-        menu.onPlaylistsLoaded = { [weak wheel] in wheel?.loadDetails(for: $0) }
-        // In case the playlists loaded first.
-        wheel.loadDetails(for: menu.playlists)
+        let wheel = RadioWheelModel(style: style, stations: stations)
+        stations.onLoaded = { [weak wheel] in wheel?.loadDetails(for: $0) }
+        // Your saved stations, before Music's playlists have loaded.
+        wheel.loadDetails(for: stations.onWheel)
         wheel.start()
         self.wheel = wheel
     }

@@ -5,33 +5,9 @@ private let log = Logger(subsystem: "com.happys1ngh.static", category: "menu")
 
 @MainActor @Observable
 final class StatusMenuModel {
-    private(set) var playlists: [Playlist] = []
     private(set) var musicPermission = MusicBridge.permission()
     private(set) var screenRecordingAllowed = ScreenCapture.isAllowed
     private(set) var message: String?
-    /// Called with every list that loads.
-    @ObservationIgnored var onPlaylistsLoaded: ([Playlist]) -> Void = { _ in }
-
-    init() {
-        // Listing playlists would launch Music, so wait until it's open or
-        // asked for. The check waits for launch to finish, because the list of
-        // running apps can be empty before then.
-        Task {
-            if MusicBridge.isRunning { await loadPlaylists() }
-        }
-    }
-
-    func loadPlaylists() async {
-        do {
-            playlists = try await MusicBridge.playlists()
-            message = nil
-            log.notice("Loaded \(self.playlists.count) playlists")
-            onPlaylistsLoaded(playlists)
-        } catch {
-            show(error, while: "loading playlists")
-        }
-        musicPermission = MusicBridge.permission()
-    }
 
     func play(_ playlist: Playlist) async {
         do {
@@ -62,14 +38,15 @@ final class StatusMenuModel {
 
 struct StatusMenu: View {
     let model: StatusMenuModel
+    let stations: StationList
 
     var body: some View {
         Menu("Play Playlist") {
-            ForEach(model.playlists) { playlist in
+            ForEach(stations.library ?? []) { playlist in
                 Button(playlist.name) { Task { await model.play(playlist) } }
             }
-            if !model.playlists.isEmpty { Divider() }
-            Button("Reload Playlists") { Task { await model.loadPlaylists() } }
+            if stations.library?.isEmpty == false { Divider() }
+            Button("Reload Playlists") { stations.reload() }
         }
         Button("Capture Screen") { Task { await model.captureScreen() } }
 

@@ -18,7 +18,7 @@ final class RadioWheelModel {
     }
 
     /// Stations on the ring, not counting Radio Off.
-    static let maxStations = 25
+    nonisolated static let maxStations = 25
     /// About 4 s of retries while a track loads.
     private static let seekAttempts = 30
 
@@ -37,7 +37,7 @@ final class RadioWheelModel {
     let details = StationDetails()
     var slotCount: Int { stations.count + 1 }
 
-    @ObservationIgnored private let availableStations: () -> [Playlist]
+    @ObservationIgnored private let stationList: StationList
     @ObservationIgnored private let hotkey = Hotkey(keyCode: kVK_ANSI_Q, modifiers: .option)
     // The wheel is only open while ⌥ is held, so Escape arrives as ⌥Esc. It's
     // registered only while the wheel is open.
@@ -67,9 +67,9 @@ final class RadioWheelModel {
     /// Tunes whose commands haven't reached Music yet.
     @ObservationIgnored private var tunesInFlight = 0
 
-    init(style: WheelStyle, stations: @escaping () -> [Playlist]) {
+    init(style: WheelStyle, stations: StationList) {
         self.style = style
-        availableStations = stations
+        stationList = stations
         volumeDip = VolumeDip(
             fraction: style.behaviour.duckVolume,
             lowerSeconds: style.animations.filterIn.duration,
@@ -109,6 +109,8 @@ final class RadioWheelModel {
     private func press() {
         guard !isOpen, holdTimer == nil else { return }
         readPlaying()
+        // Picks up playlists added or deleted in Music before the wheel opens.
+        stationList.reload()
         // Both a hold and a tap end in a sound.
         sounds.prepare()
         captureStill()
@@ -144,7 +146,7 @@ final class RadioWheelModel {
 
     private func open() {
         guard let screen = NSScreen.withMouse else { return }
-        stations = Array(availableStations().prefix(Self.maxStations))
+        stations = Array(stationList.onWheel.prefix(Self.maxStations))
         highlighted = tunedSlot
         picked = false
         let unit = screen.frame.height / 100
@@ -272,14 +274,14 @@ final class RadioWheelModel {
             }
             guard let self, !Task.isCancelled, id != tunedID else { return }
             tunedID = id
-            let name = id.flatMap { id in availableStations().first { $0.id == id }?.name } ?? id ?? "nothing"
+            let name = id.flatMap { id in stationList.onWheel.first { $0.id == id }?.name } ?? id ?? "nothing"
             log.notice("Music is playing \(name, privacy: .public)")
             if isOpen, !picked { highlighted = tunedSlot }
         }
     }
 
     private func tapNext() {
-        stations = Array(availableStations().prefix(Self.maxStations))
+        stations = Array(stationList.onWheel.prefix(Self.maxStations))
         Task { [weak self] in
             // The tap is relative to what's playing, which this press asked for.
             await self?.playingRead?.value
