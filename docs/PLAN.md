@@ -104,7 +104,7 @@ static/
 Build order. The riskiest parts come first, and the app works end to end before it looks right:
 
 - [x] First build: a menu bar app that lists your playlists, plays one and captures the screen, built and signed by `scripts/bundle.sh`
-- [ ] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests. `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
+- [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests. `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
 - [ ] Hotkey and overlay: hold ⌥Q to open and tap for the next station, a panel on the screen with the mouse that covers full-screen apps and every Space, and mouse and scroll input while it's held. Plain circles for now. Time a screen capture on open: if it takes much longer than the 150ms filter fade, the backdrop needs a stream that keeps running
 - [ ] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
 - [ ] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font

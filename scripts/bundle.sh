@@ -17,9 +17,13 @@ swift build --product Static
 BIN_DIR="$(swift build --show-bin-path)"
 
 rm -rf "$APP"
-mkdir -p "$APP/Contents/MacOS"
+mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/Static" "$APP/Contents/MacOS/Static"
 cp Sources/Static/Info.plist "$APP/Contents/Info.plist"
+
+# Resources go in Contents/Resources and are read through Bundle.main. SwiftPM
+# resource bundles expect to sit next to Contents, where codesign rejects them.
+cp prototype/tokens.json "$APP/Contents/Resources/tokens.json"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"
 
 # Ad-hoc signatures change with every build, and macOS drops Screen Recording
