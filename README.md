@@ -32,7 +32,7 @@ To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` 
 
 ## Build the Mac app
 
-The Mac app is early: so far it's a menu bar app that lists your playlists, plays one and captures the screen. You need Xcode 16 or later.
+The Mac app is early. It's a menu bar app that lists and plays your playlists, and holding ⌥Q opens a wheel of placeholder circles that doesn't switch playlists yet. You need Xcode 16 or later.
 
 ```sh
 scripts/make-signing-cert.sh   # once per Mac

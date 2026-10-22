@@ -76,3 +76,30 @@ Rejected:
 
 - Ad-hoc signing during development: Screen Recording had to be granted again after every build.
 - Trusting the certificate for code signing: codesign works with an untrusted certificate, and macOS only compares its hash.
+
+## 2026-10-22: The hotkey and wheel input need no extra permissions
+
+Measured on macOS 27.0.1 with the Phase 2 step 2 build, where holding ⌥Q opens a wheel of plain circles. `--probe` showed Accessibility and Input Monitoring switched off throughout, and the logs counted what each input route delivered.
+
+- ⌥Q is a Carbon hotkey (`RegisterEventHotKey`). It needs no permission and never sees plain Q, and ⌥Q no longer types "œ" in the app you're in. Tapping, holding, ⌥Esc to close, full-screen apps, other Spaces and a second display all worked by hand.
+- When ⌥ comes up before Q, Carbon still sends Q's key-up, about 0.4 s later when Q comes up. The wheel doesn't wait for it. While ⌥Q is down the hotkey checks the modifiers every 16 ms, and letting go of ⌥ ends the hold, as with ⌘Tab. That also means a key-up that never arrives can't leave the wheel open.
+- The overlay is a borderless, non-activating `NSPanel` at the status bar level that joins every Space and full-screen app. The app you were in stays active while the wheel is open.
+- Mouse moves:
+  - Moves go to the active app wherever the pointer is, and `NSEvent`'s global monitor gets a copy of each. In all but two holds that route carried more movement than the panel's own, including when the pointer crossed to the second display.
+  - Static's panel also receives some of the same moves while Static is in the background: from a quarter to nearly all of the distance, depending on the hold. Adding both routes made the pick up to twice as fast. The wheel now reads only the active app's copy, or Static's own events when Static is the active app. That last case can't happen yet, because Static has no window to activate, so check it once Settings exists.
+  - A listen-only `CGEventTap` for mouse events was created without an error but delivered nothing with Input Monitoring off.
+- Scrolls go only to the window under the pointer, which is the panel: 130 and 161 events reached Static and none reached other apps. The panel reads them and stops them there, so the app underneath doesn't scroll.
+- `tokens.json` loads from `Contents/Resources` through `Bundle.main` in the signed app.
+- A screen capture on open, at full pixel resolution and leaving out Static's own windows (`SCShareableContent`, then `SCScreenshotManager`):
+  - the first capture after launch took 145 ms
+  - after that, 3024×1964 on the built-in display took 41–100 ms, mostly 50–70 ms: 13–33 ms to list the screen's content and 23–87 ms for the image
+  - 5120×2880 on the external display took 39 ms
+  - no screen-recording indicator appeared in the menu bar
+- So the backdrop can capture once per open and doesn't need a stream that keeps running. To have the image before the 150 ms fade starts, the backdrop step can start the capture when ⌥Q goes down, 150 ms before the wheel opens, and capture once at launch so the slow first capture doesn't land on the first open.
+
+Rejected:
+
+- A capture stream that keeps running: one capture takes well under the fade, and a stream would record the screen for as long as Static runs instead of only when the wheel opens.
+- Adding the global monitor's moves to the panel's own: the same movement counted twice.
+- A listen-only event tap: it gets nothing without Input Monitoring.
+- An `NSTrackingArea` with `.activeAlways` on the panel: it only added more duplicate moves.

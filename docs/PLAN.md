@@ -107,11 +107,11 @@ Build order. The riskiest parts come first, and the app works end to end before 
 
 - [x] First build: a menu bar app that lists your playlists, plays one and captures the screen, built and signed by `scripts/bundle.sh`
 - [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests. `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
-- [ ] Hotkey and overlay: hold ⌥Q to open and tap for the next station, a panel on the screen with the mouse that covers full-screen apps and every Space, and mouse and scroll input while it's held. Plain circles for now. Time a screen capture on open: if it takes much longer than the 150ms filter fade, the backdrop needs a stream that keeps running
+- [x] Hotkey and overlay: hold ⌥Q to open and tap for the next station, a panel on the screen with the mouse that covers full-screen apps and every Space, and mouse and scroll input while it's held. Plain circles for now. Time a screen capture on open: if it takes much longer than the 150ms filter fade, the backdrop needs a stream that keeps running
 - [ ] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
 - [ ] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font
-- [ ] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. The menu explains the stale Screen Recording switch
-- [ ] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go
+- [ ] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
+- [ ] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
 - [ ] Edge cases (Music not running, duplicate names, several displays, no subscription) and the recording for X post #2
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
