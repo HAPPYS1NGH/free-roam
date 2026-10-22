@@ -32,7 +32,7 @@ To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` 
 
 ## Build the Mac app
 
-The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, with your playlists' album art, over a desaturated and vignetted screen. Flick or scroll to a station and let go, and Music tunes in mid-song. A quick tap skips to the next station. Settings isn't done yet. You need Xcode 16 or later.
+The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, with your playlists' album art, over a desaturated and vignetted screen. Flick or scroll to a station and let go, and Music tunes in mid-song. A quick tap skips to the next station. Settings… in the menu bar menu picks which playlists are on the wheel and in what order. You need Xcode 16 or later.
 
 ```sh
 scripts/make-signing-cert.sh   # once per Mac
@@ -42,7 +42,7 @@ swift test
 
 If `prototype/public/sounds/local/` has sounds in it, `bundle.sh` uses them instead of the synthesised ones with the same name, as the prototype's Local pack does. That's only for builds on your own Mac.
 
-macOS asks once to let Static control Music and once for Screen Recording, which desaturating the screen needs. Without Screen Recording the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
+macOS asks once to let Static control Music. Screen Recording, which desaturating the screen needs, is optional: Static asks for it only when you choose Allow Screen Recording… in the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
 
 ## Requirements
 

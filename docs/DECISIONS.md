@@ -156,3 +156,22 @@ Built in Phase 2 step 5, from `.wheel-backdrop` in `prototype/src/styles.css`. P
 - The still, the 7% wash and the vignette fade as one layer, like CSS opacity on `.wheel-backdrop`: in over 150 ms and out over 450 ms with `cubic-bezier(0.4, 0, 0.6, 1)`, apart from the wheel's 140 and 100 ms. Input stops the moment the wheel closes, and the panel leaves the screen once the backdrop has faded out. The wheel goes back to its smaller opening size after its own 100 ms, so opening it again during the backdrop's fade still grows it in.
 - When Screen Recording is off, the menu adds that if System Settings already shows Static switched on, it needs switching off and on again. That's the stale switch from the signing entry above.
 - Screen Recording stays optional. Tried by hand with and without it, the difference is significant: without it, the wash and vignette sit over the live screen at full colour and look clearly weaker. That's still an acceptable fallback for anyone who'd rather not grant the access.
+
+## 2026-10-23: Settings and the stations on the wheel
+
+Built in Phase 2 step 6. It still needs checking by hand, including whether the wheel follows the mouse while the Settings window is active.
+
+- Settings is one list of Music's playlists in the wheel's order. Ticking a playlist puts it on the wheel, dragging moves it, and every change saves at once. Stations run clockwise from Radio Off in list order. The wheel holds 25 stations, so a 26th can't be ticked.
+- Until you change anything in Settings, the wheel follows Music's library order and takes the first 25 playlists, as the prototype does. After that, Static saves every playlist's persistent ID and name in `UserDefaults`, with whether it's on. The names let the wheel show its stations before Music has started.
+- A playlist made after that joins the end of the wheel if it has fewer than 25 stations, and stays off otherwise. One you switched off stays off, because it's still in the saved list and only IDs Static hasn't seen count as new. A new playlist that found the wheel full stays off when a station leaves later.
+- A playlist deleted in Music drops off the wheel and out of the saved list the next time Music's playlists load: at launch if Music is running, on every ⌥Q press while it's running, so the wheel that opens 150 ms later matches Music, and whenever Settings opens.
+- Opening Settings while Music is closed launches it without bringing it to the front, because only Music can list the playlists. The wheel itself still doesn't launch Music just to open.
+- The menu is Settings…, Quit, and an Allow item for each permission Static is missing, checked again whenever the menu opens. Play Playlist and Capture Screen are gone.
+- Capture Screen was the only thing that made macOS ask for Screen Recording. Static now asks only from Allow Screen Recording…, never at launch, because the backdrop works without it. The item calls `CGRequestScreenCaptureAccess`, which adds Static to the list in System Settings and shows macOS's prompt the first time, then opens that list.
+
+Rejected:
+
+- New playlists staying off until you tick them: none would reach the wheel without a trip to Settings.
+- Two lists, one for the wheel and one for the rest: a single list shows the wheel's order and what's off in one place.
+- Showing only the saved stations, with an Open Music button, when Settings opens while Music is closed.
+- Asking for Screen Recording at launch: it stays optional.

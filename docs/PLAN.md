@@ -35,6 +35,7 @@ Checked on this Mac or known limits of macOS:
 ⌥Q pressed (works in any app)
   Hotkey.onPress
     MusicBridge.playingPlaylistID()      the station the wheel opens on
+    StationList.reload()                 Music's playlists, for any added or deleted
     BackdropStill.make()                 captures and filters the screen with the mouse
   still held after 150 ms
     OverlayPanel.show()                  transparent window over the screen
@@ -108,7 +109,8 @@ static/
 │   │   ├── VolumeDip.swift      # Music quieter while the wheel is open
 │   │   └── NowPlaying.swift     # track-change notifications
 │   ├── Settings/
-│   │   └── StationsSettingsView.swift
+│   │   ├── StationList.swift    # the stations on the wheel, saved by persistent ID
+│   │   └── StationsSettingsView.swift # tick and drag playlists onto the wheel
 │   └── Resources/               # the caption font and its OFL licence
 ├── Tests/StaticTests/
 └── scripts/
@@ -124,11 +126,11 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
 - [x] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font. The pointer hides while the wheel is open
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
-- [ ] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
+- [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
 - [ ] Edge cases (Music not running, duplicate names, several displays, no subscription) and the recording for X post #2
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
-- Menu bar menu: Settings… and Quit, plus "Allow Static to control Music" if permission was denied. That item opens System Settings → Automation.
+- Menu bar menu: Settings… and Quit, plus "Allow Static to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing. Static asks for Screen Recording only from that item, never at launch.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
   - play track N of a playlist (by persistent ID) and set `player position`, for mid-song tune-in
@@ -138,7 +140,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
   - check whether Music is running
 - Playlists are always addressed by persistent ID and names are escaped, so a playlist called `"; do shell script …` can't inject AppleScript.
 - Volume dip: ramp to 40% when the wheel opens. Restore it when the wheel closes and when the app quits.
-- Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. The first run uses your playlists in library order.
+- Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. Until you change anything, the wheel follows library order. After that, new playlists join the end while the wheel has room, and ones you switched off stay off. Opening Settings launches Music in the background if it's closed.
 - Backdrop: desaturate other apps through a screen capture, as decided in [DECISIONS.md](DECISIONS.md). That needs Screen Recording permission. If it's denied, show the vignette and tint only, which need none.
 - Edge cases:
   - Music isn't running: don't launch it just to show the wheel; launch it when a station is picked.
