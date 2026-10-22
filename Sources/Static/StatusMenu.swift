@@ -81,6 +81,9 @@ struct StatusMenu: View {
         Text("Screen Recording: \(model.screenRecordingAllowed ? "allowed" : "not allowed")")
         if !model.screenRecordingAllowed {
             Button("Allow Screen Recording…") { openPrivacySettings("Privacy_ScreenCapture") }
+            // macOS keeps showing the switch on for an earlier build it no
+            // longer recognises, so a switch that's on can still mean no.
+            Text("Already on in System Settings? Switch it off and on again.")
         }
         if let message = model.message {
             Text(message)
