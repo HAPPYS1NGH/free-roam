@@ -164,8 +164,9 @@ Built in Phase 2 step 6. It still needs checking by hand, including whether the 
 - Settings is one list of Music's playlists in the wheel's order. Ticking a playlist puts it on the wheel, dragging moves it, and every change saves at once. Stations run clockwise from Radio Off in list order. The wheel holds 25 stations, so a 26th can't be ticked.
 - Until you change anything in Settings, the wheel follows Music's library order and takes the first 25 playlists, as the prototype does. After that, Static saves every playlist's persistent ID and name in `UserDefaults`, with whether it's on. The names let the wheel show its stations before Music has started.
 - A playlist made after that joins the end of the wheel if it has fewer than 25 stations, and stays off otherwise. One you switched off stays off, because it's still in the saved list and only IDs Static hasn't seen count as new. A new playlist that found the wheel full stays off when a station leaves later.
-- A playlist deleted in Music drops off the wheel and out of the saved list the next time Music's playlists load: at launch if Music is running, on every ⌥Q press while it's running, so the wheel that opens 150 ms later matches Music, and whenever Settings opens.
-- Opening Settings while Music is closed launches it without bringing it to the front, because only Music can list the playlists. The wheel itself still doesn't launch Music just to open.
+- A playlist missing from Music's list drops off the wheel and out of Settings, but stays in the saved list with its place and whether it's on. A list can come back short while iCloud Music Library syncs or another library is open, and those playlists would otherwise return as new: on, at the end. A playlist made again gets a new persistent ID, so a deleted one just stays hidden. An empty list changes nothing.
+- Static reads the playlists at launch if Music is running, whenever Settings opens, and after the wheel closes, once every tune has reached Music. Scripts run one at a time, so a read on press would hold up a tap's tune and the open's volume dip. A change in Music reaches the wheel from the open after the next one. The read checks again that Music is running when its turn comes, because `tell application` would launch it.
+- Opening Settings while Music is closed launches Music hidden, because only Music can list the playlists. Tuning launches it hidden too, so its window no longer opens. The wheel itself still doesn't launch Music just to open.
 - The menu is Settings…, Quit, and an Allow item for each permission Static is missing, checked again whenever the menu opens. Play Playlist and Capture Screen are gone.
 - Capture Screen was the only thing that made macOS ask for Screen Recording. Static now asks only from Allow Screen Recording…, never at launch, because the backdrop works without it. The item calls `CGRequestScreenCaptureAccess`, which adds Static to the list in System Settings and shows macOS's prompt the first time, then opens that list.
 
@@ -175,3 +176,5 @@ Rejected:
 - Two lists, one for the wheel and one for the rest: a single list shows the wheel's order and what's off in one place.
 - Showing only the saved stations, with an Open Music button, when Settings opens while Music is closed.
 - Asking for Screen Recording at launch: it stays optional.
+- Dropping playlists missing from a list out of the saved choice: a short list turned them into new playlists when they came back.
+- Reading the playlists on every ⌥Q press: the read went ahead of a tap's tune.

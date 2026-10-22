@@ -35,7 +35,6 @@ Checked on this Mac or known limits of macOS:
 ⌥Q pressed (works in any app)
   Hotkey.onPress
     MusicBridge.playingPlaylistID()      the station the wheel opens on
-    StationList.reload()                 Music's playlists, for any added or deleted
     BackdropStill.make()                 captures and filters the screen with the mouse
   still held after 150 ms
     OverlayPanel.show()                  transparent window over the screen
@@ -53,6 +52,7 @@ Checked on this Mac or known limits of macOS:
       play retune.wav
       Broadcast.onAir → MusicBridge.play(track N), then seek(to: on-air position)
     VolumeDip.restore()
+    StationList.reload()                 once any tune has reached Music, for playlists added or deleted
 Music.app changes track
   com.apple.Music.playerInfo → NowPlaying updates the centre label
 ```
@@ -140,7 +140,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
   - check whether Music is running
 - Playlists are always addressed by persistent ID and names are escaped, so a playlist called `"; do shell script …` can't inject AppleScript.
 - Volume dip: ramp to 40% when the wheel opens. Restore it when the wheel closes and when the app quits.
-- Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. Until you change anything, the wheel follows library order. After that, new playlists join the end while the wheel has room, and ones you switched off stay off. Opening Settings launches Music in the background if it's closed.
+- Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. Until you change anything, the wheel follows library order. After that, new playlists join the end while the wheel has room, and ones you switched off stay off. Opening Settings launches Music hidden if it's closed.
 - Backdrop: desaturate other apps through a screen capture, as decided in [DECISIONS.md](DECISIONS.md). That needs Screen Recording permission. If it's denied, show the vignette and tint only, which need none.
 - Edge cases:
   - Music isn't running: don't launch it just to show the wheel; launch it when a station is picked.
