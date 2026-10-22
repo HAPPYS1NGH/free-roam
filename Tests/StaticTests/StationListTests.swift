@@ -59,6 +59,34 @@ struct StationListTests {
         #expect(StationList(defaults: defaults).onWheel == [renamed, playlist(2)])
     }
 
+    @Test func aPlaylistMissingFromAListKeepsItsPlaceAndWhetherItsOn() {
+        let stations = StationList(defaults: defaults)
+        stations.update(library: library(4))
+        stations.setOn(false, id: playlist(2).id)
+        stations.move(fromOffsets: [3], toOffset: 0)
+
+        // A short list, as while iCloud Music Library syncs.
+        stations.update(library: [playlist(1), playlist(3)])
+        #expect(stations.onWheel == [playlist(1), playlist(3)])
+        #expect(stations.entries.map(\.id) == [playlist(1).id, playlist(3).id])
+        stations.move(fromOffsets: [1], toOffset: 0)
+
+        stations.update(library: library(4))
+        #expect(stations.onWheel == [playlist(4), playlist(3), playlist(1)])
+        #expect(stations.entries.map(\.id) == [4, 3, 2, 1].map { playlist($0).id })
+        #expect(stations.entries[2].isOn == false)
+    }
+
+    @Test func anEmptyListChangesNothing() {
+        let stations = StationList(defaults: defaults)
+        stations.update(library: library(3))
+        stations.setOn(false, id: playlist(1).id)
+
+        stations.update(library: [])
+        #expect(stations.onWheel == [playlist(2), playlist(3)])
+        #expect(StationList(defaults: defaults).onWheel == [playlist(2), playlist(3)])
+    }
+
     @Test func newPlaylistsJoinTheEndButOnesYouSwitchedOffStayOff() {
         let stations = StationList(defaults: defaults)
         stations.update(library: library(3))

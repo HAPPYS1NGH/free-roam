@@ -16,6 +16,12 @@ final class StationList {
         /// The name Music last listed it with.
         var name: String
         var isOn: Bool
+        /// Not in Music's latest list, so it's off the wheel and out of
+        /// Settings. It keeps its place and whether it's on, because a list
+        /// can come back short while iCloud Music Library syncs or another
+        /// library is open. A playlist made again gets a new ID, so one that
+        /// was really deleted just stays hidden.
+        var isMissing = false
     }
 
     /// Music's playlists in library order. Nil until they've loaded.
@@ -42,13 +48,18 @@ final class StationList {
     /// The stations on the wheel, in order.
     var onWheel: [Playlist] {
         let entries = choice ?? library.map(Self.libraryOrder) ?? []
-        return entries.filter(\.isOn).map { Playlist(id: $0.id, name: $0.name) }
+        return entries.filter { $0.isOn && !$0.isMissing }.map { Playlist(id: $0.id, name: $0.name) }
     }
 
     /// Every playlist in Music, in the order Settings lists them: the wheel's
     /// order, with the ones that are off where you left them. Empty until
     /// Music's playlists have loaded.
     var entries: [Entry] {
+        allEntries.filter { !$0.isMissing }
+    }
+
+    /// The entries with the missing ones, which Settings doesn't show.
+    private var allEntries: [Entry] {
         guard let library else { return [] }
         return choice ?? Self.libraryOrder(library)
     }
@@ -68,31 +79,37 @@ final class StationList {
     /// Puts a playlist on the wheel or takes it off. The wheel holds 25
     /// stations, so a 26th stays off.
     func setOn(_ isOn: Bool, id: String) {
-        var entries = self.entries
-        guard let index = entries.firstIndex(where: { $0.id == id }), entries[index].isOn != isOn else { return }
-        guard !isOn || entries.count(where: \.isOn) < RadioWheelModel.maxStations else { return }
-        entries[index].isOn = isOn
-        save(entries)
-        log.notice("Switched \(entries[index].name, privacy: .public) \(isOn ? "on" : "off")")
+        var all = allEntries
+        guard let index = all.firstIndex(where: { $0.id == id && !$0.isMissing }), all[index].isOn != isOn else { return }
+        guard !isOn || onWheel.count < RadioWheelModel.maxStations else { return }
+        all[index].isOn = isOn
+        save(all)
+        log.notice("Switched \(all[index].name, privacy: .public) \(isOn ? "on" : "off")")
     }
 
+    /// Moves playlists as Settings shows them. Missing ones keep their places.
     func move(fromOffsets source: IndexSet, toOffset destination: Int) {
-        var entries = self.entries
-        entries.move(fromOffsets: source, toOffset: destination)
-        guard entries != self.entries else { return }
-        save(entries)
-        log.notice("The wheel's order is now \(entries.filter(\.isOn).map(\.name).joined(separator: ", "), privacy: .public)")
+        let all = allEntries
+        var shown = entries
+        shown.move(fromOffsets: source, toOffset: destination)
+        var next = shown.makeIterator()
+        let moved = all.map { $0.isMissing ? $0 : next.next() ?? $0 }
+        guard moved != all else { return }
+        save(moved)
+        log.notice("The wheel's order is now \(self.onWheel.map(\.name).joined(separator: ", "), privacy: .public)")
     }
 
     /// Takes a fresh list from Music. Once you've made a choice, playlists
-    /// that are gone drop out of it, renames are picked up, and new playlists
-    /// join the end of the wheel while it has room.
+    /// missing from the list are hidden, renames are picked up, and new
+    /// playlists join the end of the wheel while it has room.
     func update(library playlists: [Playlist]) {
         if library != playlists {
             log.notice("Music has \(playlists.count) playlists")
             library = playlists
         }
-        if let choice {
+        // An empty list is far more likely a library that hasn't loaded than
+        // every playlist deleted, and taking it would hide every station.
+        if let choice, !playlists.isEmpty {
             let merged = Self.merge(choice, with: playlists)
             if merged != choice {
                 logChanges(from: choice, to: merged)
@@ -111,12 +128,14 @@ final class StationList {
 
     nonisolated static func merge(_ choice: [Entry], with library: [Playlist]) -> [Entry] {
         let names = Dictionary(library.map { ($0.id, $0.name) }, uniquingKeysWith: { first, _ in first })
-        var merged = choice.compactMap { entry -> Entry? in
-            guard let name = names[entry.id] else { return nil }
-            return Entry(id: entry.id, name: name, isOn: entry.isOn)
+        var merged = choice.map { entry in
+            var entry = entry
+            entry.isMissing = names[entry.id] == nil
+            entry.name = names[entry.id] ?? entry.name
+            return entry
         }
         let known = Set(choice.map(\.id))
-        var stations = merged.count(where: \.isOn)
+        var stations = merged.count { $0.isOn && !$0.isMissing }
         for playlist in library where !known.contains(playlist.id) {
             let isOn = stations < RadioWheelModel.maxStations
             if isOn { stations += 1 }
@@ -144,16 +163,20 @@ final class StationList {
     }
 
     private func logChanges(from choice: [Entry], to merged: [Entry]) {
-        let before = Set(choice.map(\.id))
-        let after = Set(merged.map(\.id))
-        for entry in choice where !after.contains(entry.id) {
-            log.notice("\(entry.name, privacy: .public) is gone from Music, so it's off the wheel")
-        }
-        for entry in merged where !before.contains(entry.id) {
-            log.notice("""
-                \(entry.name, privacy: .public) is new, \
-                \(entry.isOn ? "so it joins the end of the wheel" : "but the wheel is full, so it's off")
-                """)
+        let before = Dictionary(choice.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        for entry in merged {
+            guard let old = before[entry.id] else {
+                log.notice("""
+                    \(entry.name, privacy: .public) is new, \
+                    \(entry.isOn ? "so it joins the end of the wheel" : "but the wheel is full, so it's off")
+                    """)
+                continue
+            }
+            if entry.isMissing, !old.isMissing {
+                log.notice("\(entry.name, privacy: .public) is missing from Music, so it's hidden")
+            } else if !entry.isMissing, old.isMissing {
+                log.notice("\(entry.name, privacy: .public) is back in Music, in its old place")
+            }
         }
     }
 
