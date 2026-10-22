@@ -121,3 +121,23 @@ Rejected:
 - A volume ramp in 16 ms steps: Music kept only some of them, sometimes not the last, and the next dip saved the wrong volume to come back to. Music's volume crept from 97 to 76.
 - Setting the volume again after a ramp whenever it read back wrong: it hid the cause.
 - Timing the gap from when a change was sent: behind a tune's commands, a change reached Music late, the next one followed it by less than 100 ms and was dropped, and the volume crept from 75 to 40.
+
+## 2026-10-22: The real wheel
+
+Measured on macOS 27.0.1 with the Phase 2 step 4 build, by hand and from Static's logs.
+
+- Music returns a playlist's titles, artists, albums and lengths in about 40 ms, and one track's artwork in 30–50 ms as `tdta` data, which decodes to a 600 or 1200 px JPEG. Static loads both in the background once the playlists have loaded: 12 stations' tracks took 490 ms and their 42 covers 1.4 s. Scripts still run one at a time, so a tune queued behind the loader waits for one script at most. Opening the wheel also loads any station that failed or is new.
+- Each logo is drawn once into a 320 px image: four covers make the 2×2 mosaic, fewer show the first cover alone, and a playlist with no artwork shows its initials in white. Tuning still reads only the durations, about 10 ms, so it plays the playlist as it is now even if the caption's copy is older.
+- SwiftUI applies `.opacity` to each layer separately, so the black disc showed through an idle logo's art. `compositingGroup()` fades the disc as one layer, like CSS opacity. SwiftUI's shadow radius is about half a CSS blur, so the caption's 1.5 px and 4 px blurs are radii 0.75 and 2.
+- The caption font is the static Sofia Sans Extra Condensed SemiBold TTF from `lettersoup/Sofia-Sans` at commit `9a1f0ba`, registered for the process with Core Text at launch.
+- Input stops the moment the wheel closes, so clicks and scrolls reach the app underneath during the 100 ms fade, and the panel leaves the screen after it. Reduce Motion opens and closes the wheel at once, as in the prototype.
+- `CGDisplayHideCursor` and `CGAssociateMouseAndMouseCursorPosition(false)` are documented for the frontmost app, but both work for Static in the background. While the wheel is open the pointer is hidden and stays where it was, and mouse moves still arrive with their deltas, so picking works as before. It also stops the pointer from wandering onto another display.
+- The prototype's Sound Pack switch defaults to Local, so the wheel was tuned with the sounds in the gitignored `prototype/public/sounds/local/`. The first build played the synthesised ones, and next to the prototype they sounded wrong. `bundle.sh` now copies each local sound over the synthesised one with the same name. That's for builds on your own Mac: a release may only contain synthesised sounds, so v1 needs synthesised takes close to the local pack. Most local sounds are 48 kHz, so sounds are resampled to 44.1 kHz on load.
+- The sounds play through a small mixer on the audio thread (an `AVAudioSourceNode`), so a sound can fade out at an exact sample like a Web Audio gain ramp. A new retune fades the last one out over 12 ms, and hover ticks get quieter, darker and shorter the faster you sweep, as in the prototype. The audio engine starts on ⌥Q and stops 10 s after the last sound, so it doesn't hold the audio device.
+- Tunes land 175–360 ms after letting go, and once took 1.8 s, straight after Radio Off. With the local retune, the start of the song wasn't noticeable by hand.
+- The volume fix from step 3 held: over 7 opens, every dip went to 30, 0.4 × 75, and every restore came back to 75.
+
+Rejected:
+
+- `AVAudioPlayerNode` for the sounds: it can only cut a sound off, and a retune cut partway through clicks.
+- Restarting the retune every 150 ms until the seek lands, to cover the start of the song. It suited the synthesised retune, which is loud for its first 150 ms, but the local retune is a 53 ms hit, and restarting it stuttered. The prototype plays it once.

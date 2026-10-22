@@ -37,14 +37,15 @@ Checked on this Mac or known limits of macOS:
     MusicBridge.playingPlaylistID()      the station the wheel opens on
   still held after 150 ms
     OverlayPanel.show()                  transparent window over the screen
-      RadioWheelView appears, screen filter fades in
+      pointer hidden and held still, open sound
+      RadioWheelView fades in, screen filter fades in
     VolumeDip.lower()                    Music to 40% of its volume
   while held
-    mouse movement since open → angle → highlighted slot
+    mouse movement since open → angle → highlighted slot, a hover tick per station
     resting on a station for 1 s tunes in
 ⌥Q or ⌥ released (a quicker tap tunes the next station)
   Hotkey.onRelease
-    OverlayPanel.hide()
+    OverlayPanel.stopInput()             pointer back, wheel fades out, close sound
     if the pick moved
       play retune.wav
       Broadcast.onAir → MusicBridge.play(track N), then seek(to: on-air position)
@@ -91,15 +92,19 @@ static/
 │   │   ├── ScrollStepper.swift  # scroll distance → one station per event
 │   │   ├── Broadcast.swift      # which track is "on air", and how far in
 │   │   ├── RadioWheelModel.swift # hold, tap, pick and tune
-│   │   └── RadioWheelView.swift
+│   │   ├── RadioWheelView.swift  # discs, logos, caption, open and close
+│   │   ├── StationDetails.swift  # each station's tracks and logo, loaded in the background
+│   │   ├── WheelSounds.swift     # open, close, hover and retune
+│   │   └── VoiceMixer.swift      # mixes the sounds on the audio thread
 │   ├── Backdrop/
 │   │   └── ScreenCapture.swift  # Screen Recording permission and capture
 │   ├── Music/
 │   │   ├── MusicBridge.swift    # AppleScript commands, off the main thread
+│   │   ├── VolumeDip.swift      # Music quieter while the wheel is open
 │   │   └── NowPlaying.swift     # track-change notifications
 │   ├── Settings/
 │   │   └── StationsSettingsView.swift
-│   └── Resources/           # the .wav files from prototype/public/sounds
+│   └── Resources/               # the caption font and its OFL licence
 ├── Tests/StaticTests/
 └── scripts/
     ├── bundle.sh                # builds and signs Static.app
@@ -112,7 +117,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests. `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
 - [x] Hotkey and overlay: hold ⌥Q to open and tap for the next station, a panel on the screen with the mouse that covers full-screen apps and every Space, and mouse and scroll input while it's held. Plain circles for now. Time a screen capture on open: if it takes much longer than the 150ms filter fade, the backdrop needs a stream that keeps running
 - [x] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
-- [ ] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font
+- [x] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font. The pointer hides while the wheel is open
 - [ ] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
 - [ ] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
 - [ ] Edge cases (Music not running, duplicate names, several displays, no subscription) and the recording for X post #2
@@ -151,7 +156,8 @@ v1 ships the radio wheel only; see [DECISIONS.md](DECISIONS.md). The earlier des
 
 ## Phase 4: Release v1.0
 
-- `scripts/bundle.sh --release`: universal build, ad-hoc signed, packed into a DMG with `hdiutil`.
+- `scripts/bundle.sh --release`: universal build, ad-hoc signed, packed into a DMG with `hdiutil`. It must skip `prototype/public/sounds/local/`, which development builds use when it's there.
+- Synthesised sounds that match the local pack, since only synthesised sounds can ship.
 - GitHub Release with the DMG and a checksum.
 - README with:
   - a GIF of it working
