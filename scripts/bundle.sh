@@ -24,6 +24,11 @@ cp Sources/Static/Info.plist "$APP/Contents/Info.plist"
 # Resources go in Contents/Resources and are read through Bundle.main. SwiftPM
 # resource bundles expect to sit next to Contents, where codesign rejects them.
 cp prototype/tokens.json "$APP/Contents/Resources/tokens.json"
+# Only the synthesised sounds the wheel plays, never prototype/public/sounds/local.
+RETUNE_TAKE="$(plutil -extract behaviour.retuneTake raw -o - prototype/tokens.json)"
+for sound in open close hover "$RETUNE_TAKE"; do
+  cp "prototype/public/sounds/$sound.wav" "$APP/Contents/Resources/"
+done
 # The caption font and its licence (SIL OFL), which has to travel with it.
 cp Sources/Static/Resources/SofiaSansExtraCondensed-SemiBold.ttf Sources/Static/Resources/OFL.txt "$APP/Contents/Resources/"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"

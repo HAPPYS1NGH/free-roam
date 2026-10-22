@@ -37,6 +37,7 @@ final class RadioWheelModel {
     @ObservationIgnored private let escape = Hotkey(keyCode: kVK_Escape, modifiers: .option)
     @ObservationIgnored private lazy var panel = makePanel()
     @ObservationIgnored private let volumeDip: VolumeDip
+    @ObservationIgnored private let sounds: WheelSounds
     @ObservationIgnored private var holdTimer: Task<Void, Never>?
     @ObservationIgnored private var dwellTimer: Task<Void, Never>?
     @ObservationIgnored private var isOpen = false
@@ -61,6 +62,7 @@ final class RadioWheelModel {
             lowerSeconds: style.animations.filterIn.duration,
             restoreSeconds: style.animations.filterOut.duration
         )
+        sounds = WheelSounds(behaviour: style.behaviour)
         cursor = PickCursor(pickRadius: style.behaviour.pickRadius, deadZone: 0)
         scroller = ScrollStepper(step: style.behaviour.scrollStep)
     }
@@ -93,6 +95,8 @@ final class RadioWheelModel {
     private func press() {
         guard !isOpen, holdTimer == nil else { return }
         readPlaying()
+        // Both a hold and a tap end in a sound.
+        sounds.prepare()
         let delay = style.behaviour.holdDelayMs
         holdTimer = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(delay))
@@ -135,6 +139,7 @@ final class RadioWheelModel {
         details.load(stations)
         panel.show(on: screen)
         withAnimation(animation(style.animations.open)) { presence = .shown }
+        sounds.play(.open)
         volumeDip.lower()
         do {
             try escape.register()
@@ -153,6 +158,7 @@ final class RadioWheelModel {
         isOpen = false
         escape.unregister()
         panel.stopInput()
+        sounds.play(.close)
         volumeDip.restore()
         withAnimation(animation(style.animations.close)) {
             presence = .closing
@@ -191,6 +197,7 @@ final class RadioWheelModel {
         guard slot != highlighted else { return }
         highlighted = slot
         picked = true
+        sounds.play(.hover)
         dwellTimer?.cancel()
         let delay = style.behaviour.dwellMs
         dwellTimer = Task { [weak self] in
@@ -254,6 +261,7 @@ final class RadioWheelModel {
         guard id != tunedID else { return }
         playingRead?.cancel()
         tunedID = id
+        sounds.play(.retune)
         log.notice("Tuned to \(self.stationName(slot), privacy: .public), \(reason, privacy: .public)")
         tunesInFlight += 1
         Task { [weak self] in
@@ -279,6 +287,11 @@ final class RadioWheelModel {
                 return
             }
             try await MusicBridge.play(playlistID: id, track: onAir.index + 1)
+            // Music plays the start of the song until the seek lands, which
+            // takes 250–350 ms after letting go and once took 1.8 s. The
+            // static covers it for as long as it takes.
+            let cover = sounds.holdRetune()
+            defer { cover.cancel() }
             try await seek(id, to: onAir, of: durations)
         } catch {
             log.error("Couldn't tune Music: \(String(describing: error), privacy: .public)")
