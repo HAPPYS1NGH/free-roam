@@ -27,6 +27,20 @@ struct WheelGeometryTests {
         }
     }
 
+    @Test func aTapMovesToTheNextStation() {
+        #expect(WheelGeometry.nextStation(after: 0, count: 5) == 1)
+        #expect(WheelGeometry.nextStation(after: 2, count: 5) == 3)
+    }
+
+    @Test func aTapWrapsPastRadioOff() {
+        #expect(WheelGeometry.nextStation(after: 4, count: 5) == 1)
+        #expect(WheelGeometry.nextStation(after: 1, count: 2) == 1)
+    }
+
+    @Test func aTapWithNoStationsGoesNowhere() {
+        #expect(WheelGeometry.nextStation(after: 0, count: 1) == nil)
+    }
+
     @Test func ringAtNaturalSpacingUsesTheTokenSizes() throws {
         // 16 stations at 9.15%H apart need a 23.3%H radius, inside the limits.
         let ring = WheelGeometry.ring(try TokensFixture.style().sizes, count: 16, screenHeight: 1000)

@@ -28,6 +28,15 @@ enum WheelGeometry {
         return Int((wrapped / (turn / Double(count))).rounded()) % count
     }
 
+    /// Where a quick tap of the hotkey moves: the next station clockwise,
+    /// skipping Radio Off so a tap never silences the music. Nil when the ring
+    /// has no stations.
+    static func nextStation(after slot: Int, count: Int) -> Int? {
+        guard count > 1 else { return nil }
+        let next = (slot + 1) % count
+        return next == 0 ? 1 : next
+    }
+
     /// GTA spaces logos a fixed distance apart, so the ring grows with the
     /// station count between `minRadius` and `maxRadius`. Logos keep GTA's
     /// logo-to-gap ratio, so they grow (up to `maxIconSize`) when a short list

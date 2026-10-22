@@ -76,7 +76,7 @@ The goal is to settle how the wheel looks and moves, down to the exact numbers, 
 static/
 ├── Package.swift
 ├── Sources/Static/
-│   ├── StaticApp.swift          # entry point, menu bar icon
+│   ├── StaticApp.swift          # entry point, menu bar icon, app delegate
 │   ├── StatusMenu.swift         # the menu bar menu
 │   ├── PermissionProbe.swift    # debug builds: `--probe` prints what macOS allows
 │   ├── Info.plist               # copied into Static.app by scripts/bundle.sh
@@ -85,7 +85,9 @@ static/
 │   ├── Wheel/
 │   │   ├── WheelStyle.swift     # numbers from prototype/tokens.json
 │   │   ├── WheelGeometry.swift  # ring layout, flick angle → slot
+│   │   ├── ScrollStepper.swift  # scroll distance → one station per event
 │   │   ├── Broadcast.swift      # which track is "on air", and how far in
+│   │   ├── RadioWheelModel.swift # hold, tap, pick and tune
 │   │   └── RadioWheelView.swift
 │   ├── Backdrop/
 │   │   └── ScreenCapture.swift  # Screen Recording permission and capture

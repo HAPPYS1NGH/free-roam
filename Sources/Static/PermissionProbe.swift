@@ -1,4 +1,5 @@
 #if DEBUG
+import ApplicationServices
 import Foundation
 
 /// Prints what macOS currently lets Static do, without prompting, and quits:
@@ -12,6 +13,10 @@ enum PermissionProbe {
     static func printAndExit() -> Never {
         print("music: \(MusicBridge.permission().label)")
         print("screen recording: \(ScreenCapture.isAllowed ? "allowed" : "not allowed")")
+        // Static shouldn't need either: the hotkey and wheel input are meant
+        // to work without them.
+        print("accessibility: \(AXIsProcessTrusted() ? "allowed" : "not allowed")")
+        print("input monitoring: \(CGPreflightListenEventAccess() ? "allowed" : "not allowed")")
         exit(0)
     }
 }
