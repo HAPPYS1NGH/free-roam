@@ -19,7 +19,7 @@ enum ScreenCapture {
     /// menu, never at launch, because the backdrop works without it.
     static func requestAccess() {
         let allowed = CGRequestScreenCaptureAccess()
-        log.notice("Asked for Screen Recording: \(allowed ? "allowed" : "not allowed yet")")
+        log.notice("Asked for Screen Recording: \(allowed ? "allowed" : "not allowed yet", privacy: .public)")
     }
 
     /// Captures a display at full pixel resolution, in the display's colour

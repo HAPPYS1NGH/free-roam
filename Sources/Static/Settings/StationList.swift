@@ -86,7 +86,7 @@ final class StationList {
         all[index].isOn = isOn
         save(all)
         onChange(onWheel)
-        log.notice("Switched \(all[index].name, privacy: .public) \(isOn ? "on" : "off")")
+        log.notice("Switched \(all[index].name, privacy: .public) \(isOn ? "on" : "off", privacy: .public)")
     }
 
     /// Moves playlists as Settings shows them. Missing ones keep their places.
@@ -172,7 +172,7 @@ final class StationList {
             guard let old = before[entry.id] else {
                 log.notice("""
                     \(entry.name, privacy: .public) is new, \
-                    \(entry.isOn ? "so it joins the end of the wheel" : "but the wheel is full, so it's off")
+                    \(entry.isOn ? "so it joins the end of the wheel" : "but the wheel is full, so it's off", privacy: .public)
                     """)
                 continue
             }
