@@ -30,6 +30,12 @@ struct MusicBridgeTests {
         await #expect(throws: MusicBridgeError.self) {
             try await MusicBridge.trackDurations(playlistID: "\"; beep")
         }
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.tracks(playlistID: "\"; beep")
+        }
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.artwork(playlistID: "\"; beep", track: 1)
+        }
     }
 
     @Test func parsesPlaylistsAndDropsUnexpectedIDs() {
@@ -63,6 +69,37 @@ struct MusicBridgeTests {
 
     @Test func parsesAnEmptyPlaylist() {
         #expect(MusicBridge.parseDurations(.list()).isEmpty)
+    }
+
+    @Test func parsesTracksAndBlanksMissingValues() {
+        let missing = NSAppleEventDescriptor(typeCode: OSType(cMissingValue))
+        let durations = NSAppleEventDescriptor.list()
+        durations.insert(NSAppleEventDescriptor(double: 241.5), at: 1)
+        durations.insert(missing, at: 2)
+        let result = NSAppleEventDescriptor.list()
+        result.insert(list(["Nights", "Untitled"]), at: 1)
+        let artists = list(["Frank Ocean"])
+        artists.insert(missing, at: 2)
+        result.insert(artists, at: 2)
+        result.insert(list(["Blonde", ""]), at: 3)
+        result.insert(durations, at: 4)
+
+        #expect(MusicBridge.parseTracks(result) == [
+            Track(title: "Nights", artist: "Frank Ocean", album: "Blonde", duration: 241.5),
+            Track(title: "Untitled", artist: "", album: "", duration: 0),
+        ])
+    }
+
+    @Test func parsesTracksOnlyAsFarAsEveryListGoes() {
+        let durations = NSAppleEventDescriptor.list()
+        durations.insert(NSAppleEventDescriptor(double: 200), at: 1)
+        let result = NSAppleEventDescriptor.list()
+        result.insert(list(["One", "Two"]), at: 1)
+        result.insert(list(["A", "B"]), at: 2)
+        result.insert(list(["X", "Y"]), at: 3)
+        result.insert(durations, at: 4)
+
+        #expect(MusicBridge.parseTracks(result) == [Track(title: "One", artist: "A", album: "X", duration: 200)])
     }
 
     private func list(_ strings: [String]) -> NSAppleEventDescriptor {

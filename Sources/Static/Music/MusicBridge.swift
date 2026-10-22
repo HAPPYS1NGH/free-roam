@@ -1,10 +1,19 @@
 import AppKit
+import Carbon.OpenScripting
 import CoreServices
 
 struct Playlist: Identifiable, Hashable, Sendable {
     /// Music's persistent ID: 16 hex digits that survive renames and relaunches.
     let id: String
     let name: String
+}
+
+struct Track: Hashable, Sendable {
+    let title: String
+    let artist: String
+    let album: String
+    /// Seconds. Tracks with no length, such as missing files, count as 0.
+    let duration: TimeInterval
 }
 
 enum MusicPermission: Equatable, Sendable {
@@ -112,6 +121,35 @@ enum MusicBridge {
                 return duration of every track of (first user playlist whose persistent ID is "\(playlistID)")
             end tell
             """, parse: parseDurations)
+    }
+
+    /// Every track of a playlist, in playlist order, for the caption and the
+    /// albums its logo comes from.
+    static func tracks(playlistID: String) async throws -> [Track] {
+        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        return try await run("""
+            tell application id "com.apple.Music"
+                set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
+                set trackTitles to name of every track of thePlaylist
+                set trackArtists to artist of every track of thePlaylist
+                set trackAlbums to album of every track of thePlaylist
+                set trackDurations to duration of every track of thePlaylist
+                return {trackTitles, trackArtists, trackAlbums, trackDurations}
+            end tell
+            """, parse: parseTracks)
+    }
+
+    /// The image data of a track's first artwork, usually a 600–1200 px JPEG,
+    /// or nil when it has none. Playlists themselves report no artwork.
+    static func artwork(playlistID: String, track: Int) async throws -> Data? {
+        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        return try await run("""
+            tell application id "com.apple.Music"
+                set theTrack to track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
+                if (count of artworks of theTrack) is 0 then return missing value
+                return raw data of artwork 1 of theTrack
+            end tell
+            """) { isMissingValue($0) ? nil : $0.data }
     }
 
     /// Plays track `track` (1-based) of a playlist from the start.
@@ -223,13 +261,32 @@ enum MusicBridge {
         }
     }
 
+    /// Reads the `{titles, artists, albums, durations}` lists returned by `tracks(playlistID:)`.
+    static func parseTracks(_ result: NSAppleEventDescriptor) -> [Track] {
+        let titles = strings(in: result.atIndex(1))
+        let artists = strings(in: result.atIndex(2))
+        let albums = strings(in: result.atIndex(3))
+        let durations = result.atIndex(4).map(parseDurations) ?? []
+        let count = min(titles.count, artists.count, albums.count, durations.count)
+        return (0..<count).map { index in
+            Track(title: titles[index], artist: artists[index], album: albums[index], duration: durations[index])
+        }
+    }
+
+    private static func isMissingValue(_ descriptor: NSAppleEventDescriptor) -> Bool {
+        descriptor.descriptorType == typeType && descriptor.typeCodeValue == OSType(cMissingValue)
+    }
+
     private static func volumeScript(_ volume: Int) -> String {
         #"tell application id "com.apple.Music" to set sound volume to \#(min(max(volume, 0), 100))"#
     }
 
     private static func strings(in list: NSAppleEventDescriptor?) -> [String] {
         guard let list else { return [] }
-        return (0..<list.numberOfItems).map { list.atIndex($0 + 1)?.stringValue ?? "" }
+        return (0..<list.numberOfItems).map { index in
+            guard let item = list.atIndex(index + 1), !isMissingValue(item) else { return "" }
+            return item.stringValue ?? ""
+        }
     }
 
     private static func run<Value: Sendable>(
