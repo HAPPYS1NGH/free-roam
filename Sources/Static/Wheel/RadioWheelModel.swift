@@ -19,6 +19,7 @@ final class RadioWheelModel {
     /// Slot 0 is Radio Off, so station `i` is in slot `i + 1`.
     private(set) var stations: [Playlist] = []
     private(set) var highlighted = 0
+    let details = StationDetails()
     var slotCount: Int { stations.count + 1 }
 
     @ObservationIgnored private let availableStations: () -> [Playlist]
@@ -66,6 +67,12 @@ final class RadioWheelModel {
         } catch {
             log.error("Couldn't register ⌥Q: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// Loads the tracks and logos of stations that haven't loaded yet, in the
+    /// background, so they're ready by the time the wheel opens.
+    func loadDetails(for playlists: [Playlist]) {
+        details.load(Array(playlists.prefix(Self.maxStations)))
     }
 
     /// For quitting, which can happen while the volume is still dipped.
@@ -116,6 +123,8 @@ final class RadioWheelModel {
         cursor = PickCursor(pickRadius: style.behaviour.pickRadius, deadZone: style.behaviour.deadzone * unit)
         scroller = ScrollStepper(step: style.behaviour.scrollStep)
         isOpen = true
+        // Anything that failed to load or is new since gets another go.
+        details.load(stations)
         panel.show(on: screen)
         volumeDip.lower()
         do {

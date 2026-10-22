@@ -9,6 +9,8 @@ final class StatusMenuModel {
     private(set) var musicPermission = MusicBridge.permission()
     private(set) var screenRecordingAllowed = ScreenCapture.isAllowed
     private(set) var message: String?
+    /// Called with every list that loads.
+    @ObservationIgnored var onPlaylistsLoaded: ([Playlist]) -> Void = { _ in }
 
     init() {
         // Listing playlists would launch Music, so wait until it's open or
@@ -24,6 +26,7 @@ final class StatusMenuModel {
             playlists = try await MusicBridge.playlists()
             message = nil
             log.notice("Loaded \(self.playlists.count) playlists")
+            onPlaylistsLoaded(playlists)
         } catch {
             show(error, while: "loading playlists")
         }

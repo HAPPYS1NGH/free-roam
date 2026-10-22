@@ -24,6 +24,8 @@ cp Sources/Static/Info.plist "$APP/Contents/Info.plist"
 # Resources go in Contents/Resources and are read through Bundle.main. SwiftPM
 # resource bundles expect to sit next to Contents, where codesign rejects them.
 cp prototype/tokens.json "$APP/Contents/Resources/tokens.json"
+# The caption font and its licence (SIL OFL), which has to travel with it.
+cp Sources/Static/Resources/SofiaSansExtraCondensed-SemiBold.ttf Sources/Static/Resources/OFL.txt "$APP/Contents/Resources/"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"
 
 # Ad-hoc signatures change with every build, and macOS drops Screen Recording
