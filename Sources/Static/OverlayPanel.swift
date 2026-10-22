@@ -45,13 +45,20 @@ final class OverlayPanel: NSPanel {
 
     func show(on screen: NSScreen) {
         setFrame(screen.frame, display: false)
+        ignoresMouseEvents = false
         orderFrontRegardless()
+        // Draws the hidden wheel once before it animates in. Otherwise the
+        // first open after launch would appear without its fade.
+        displayIfNeeded()
         startMonitoring()
     }
 
-    func hide() {
+    /// Stops reading and taking input straight away, so clicks and scrolls
+    /// reach the app underneath while the wheel fades out. `orderOut` takes
+    /// the panel off the screen once it has.
+    func stopInput() {
         stopMonitoring()
-        orderOut(nil)
+        ignoresMouseEvents = true
     }
 
     private func startMonitoring() {

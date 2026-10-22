@@ -1,6 +1,7 @@
 import AppKit
 import Carbon.HIToolbox
 import OSLog
+import SwiftUI
 
 private let log = Logger(subsystem: "com.happys1ngh.static", category: "wheel")
 
@@ -10,6 +11,12 @@ private let log = Logger(subsystem: "com.happys1ngh.static", category: "wheel")
 /// the wheel. Ported from `prototype/src/useWheel.ts`.
 @MainActor @Observable
 final class RadioWheelModel {
+    /// Opening fades in from a slightly smaller wheel and closing only fades
+    /// out, because letting go commits the pick.
+    enum Presence {
+        case hidden, shown, closing
+    }
+
     /// Stations on the ring, not counting Radio Off.
     static let maxStations = 25
     /// About 4 s of retries while a track loads.
@@ -19,6 +26,7 @@ final class RadioWheelModel {
     /// Slot 0 is Radio Off, so station `i` is in slot `i + 1`.
     private(set) var stations: [Playlist] = []
     private(set) var highlighted = 0
+    private(set) var presence = Presence.hidden
     let details = StationDetails()
     var slotCount: Int { stations.count + 1 }
 
@@ -126,6 +134,7 @@ final class RadioWheelModel {
         // Anything that failed to load or is new since gets another go.
         details.load(stations)
         panel.show(on: screen)
+        withAnimation(animation(style.animations.open)) { presence = .shown }
         volumeDip.lower()
         do {
             try escape.register()
@@ -143,8 +152,23 @@ final class RadioWheelModel {
         dwellTimer?.cancel()
         isOpen = false
         escape.unregister()
-        panel.hide()
+        panel.stopInput()
         volumeDip.restore()
+        withAnimation(animation(style.animations.close)) {
+            presence = .closing
+        } completion: { [weak self] in
+            // Opened again while it was fading out.
+            guard let self, !isOpen else { return }
+            presence = .hidden
+            panel.orderOut(nil)
+        }
+    }
+
+    /// Nil with Reduce Motion on, which opens and closes the wheel at once.
+    private func animation(_ easing: WheelStyle.Easing) -> Animation? {
+        let curve = easing.bezier
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion, curve.count == 4 else { return nil }
+        return .timingCurve(curve[0], curve[1], curve[2], curve[3], duration: easing.duration)
     }
 
     private func moveMouse(dx: Double, dy: Double) {

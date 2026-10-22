@@ -55,6 +55,11 @@ struct RadioWheelView: View {
                     )
                 }
             }
+            .opacity(model.presence == .shown ? 1 : 0)
+            .scaleEffect(
+                model.presence == .hidden ? sizes.openScale : 1,
+                anchor: UnitPoint(x: centre.x / proxy.size.width, y: centre.y / proxy.size.height)
+            )
         }
         .ignoresSafeArea()
     }
