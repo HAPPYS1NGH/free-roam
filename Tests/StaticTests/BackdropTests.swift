@@ -83,6 +83,49 @@ struct VignetteTests {
     }
 }
 
+struct StillHandoffTests {
+    static func still() throws -> CGImage {
+        try #require(Pixels.image([0, 0, 0, 255], width: 1))
+    }
+
+    /// Letting go, then pressing again while the backdrop fades out: the new
+    /// capture lands before the fade ends, and the fade's end clears only
+    /// what it was showing.
+    @Test func aCaptureDuringTheFadeOutWaitsForItsOpen() throws {
+        let (first, second) = (try Self.still(), try Self.still())
+        var stills = StillHandoff()
+        stills.land(first, whileOpen: false)
+        stills.open()
+        stills.land(second, whileOpen: false)
+        #expect(stills.shown === first)
+        stills.fadedOut()
+        #expect(stills.shown == nil)
+        stills.open()
+        #expect(stills.shown === second)
+    }
+
+    /// A slow capture for another display mustn't show the last screen's
+    /// still in the meantime.
+    @Test func openingBeforeTheCaptureLandsShowsNothingUntilItDoes() throws {
+        let (first, second) = (try Self.still(), try Self.still())
+        var stills = StillHandoff()
+        stills.land(first, whileOpen: false)
+        stills.open()
+        stills.open()
+        #expect(stills.shown == nil)
+        stills.land(second, whileOpen: true)
+        #expect(stills.shown === second)
+    }
+
+    @Test func aTapLeavesNothingForTheNextOpen() throws {
+        var stills = StillHandoff()
+        stills.land(try Self.still(), whileOpen: false)
+        stills.discardWaiting()
+        stills.open()
+        #expect(stills.shown == nil)
+    }
+}
+
 enum Pixels {
     static let sRGB = CGColorSpace(name: CGColorSpace.sRGB)!
 

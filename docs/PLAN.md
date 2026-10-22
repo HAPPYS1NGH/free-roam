@@ -101,6 +101,7 @@ static/
 │   ├── Backdrop/
 │   │   ├── ScreenCapture.swift  # Screen Recording permission and capture
 │   │   ├── BackdropStill.swift  # the capture on press, desaturated with Core Image
+│   │   ├── StillHandoff.swift   # keeps each press's still for its own open
 │   │   └── BackdropView.swift   # the still, wash and vignette behind the wheel
 │   ├── Music/
 │   │   ├── MusicBridge.swift    # AppleScript commands, off the main thread

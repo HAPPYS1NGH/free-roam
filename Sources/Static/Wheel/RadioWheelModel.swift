@@ -32,7 +32,8 @@ final class RadioWheelModel {
     private(set) var backdropShown = false
     /// The filtered screen under the wheel. Nil without Screen Recording
     /// permission, and until the capture lands or if it failed.
-    private(set) var still: CGImage?
+    var still: CGImage? { stills.shown }
+    private var stills = StillHandoff()
     let details = StationDetails()
     var slotCount: Int { stations.count + 1 }
 
@@ -157,8 +158,9 @@ final class RadioWheelModel {
         if screen.displayID != captureDisplay {
             capture?.cancel()
             capture = nil
-            still = nil
+            stills.discardWaiting()
         }
+        stills.open()
         panel.show(on: screen)
         withAnimation(animation(style.animations.open)) { presence = .shown }
         withAnimation(animation(style.animations.filterIn)) { backdropShown = true }
@@ -195,7 +197,7 @@ final class RadioWheelModel {
             // Opened again while it was fading out.
             guard let self, opens == closingOpen else { return }
             presence = .hidden
-            still = nil
+            stills.fadedOut()
             panel.orderOut(nil)
         }
     }
@@ -387,7 +389,9 @@ final class RadioWheelModel {
                 log.notice("The backdrop's still was ready \((clock.now - pressed) / .milliseconds(1), format: .fixed(precision: 0)) ms after ⌥Q went down")
             }
             // Late for the wheel, so it fades in like the rest of the backdrop.
-            withAnimation(isOpen ? animation(style.animations.filterIn) : nil) { still = image }
+            withAnimation(isOpen ? animation(style.animations.filterIn) : nil) {
+                stills.land(image, whileOpen: isOpen)
+            }
         }
     }
 
@@ -395,8 +399,7 @@ final class RadioWheelModel {
     private func discardStill() {
         capture?.cancel()
         capture = nil
-        // Otherwise the last close is still fading out, and clears it at the end.
-        if presence == .hidden { still = nil }
+        stills.discardWaiting()
     }
 
     /// The first capture after launch took 145 ms, and the first filter
