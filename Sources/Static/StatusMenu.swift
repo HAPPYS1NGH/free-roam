@@ -39,6 +39,7 @@ final class StatusMenuModel {
 struct StatusMenu: View {
     let model: StatusMenuModel
     let stations: StationList
+    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Menu("Play Playlist") {
@@ -67,6 +68,13 @@ struct StatusMenu: View {
         }
 
         Divider()
+        Button("Settings…") {
+            openSettings()
+            // Static has no Dock icon and isn't the active app, so the window
+            // would otherwise open behind the app you're in.
+            NSApp.activate()
+        }
+        .keyboardShortcut(",")
         Button("Quit Static") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
     }

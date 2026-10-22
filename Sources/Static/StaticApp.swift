@@ -17,6 +17,9 @@ struct StaticApp: App {
         MenuBarExtra("Static", systemImage: "radio") {
             StatusMenu(model: appDelegate.menu, stations: appDelegate.stations)
         }
+        Settings {
+            StationsSettingsView(stations: appDelegate.stations)
+        }
     }
 }
 
