@@ -55,7 +55,7 @@ Music.app changes track
 - [x] Project folder, git, `.gitignore`, plan
 - [x] MIT `LICENSE`, README stub
 - [x] Create public repo `HAPPYS1NGH/static` and push
-- [ ] You: install Xcode from the App Store (needed before Phase 2)
+- [x] You: install Xcode from the App Store (needed before Phase 2)
 
 ## Phase 1: HTML prototype (`prototype/`)
 
@@ -66,7 +66,7 @@ The goal is to settle how the wheel looks and moves, down to the exact numbers, 
 - [x] Live tuning after a 1 second rest, a quick tap of Q for the next station, scrolling to step, and a broadcast clock so stations start mid-song
 - [x] Synthesised sounds: open, close, hover tick and three retune takes (`npm run sounds`)
 - [x] Tuning panel with an export to `tokens.json`
-- [ ] Pick a retune take and tune the numbers by eye
+- [x] Pick a retune take (`retune`) and export `prototype/tokens.json` from the tuned defaults
 
 **Done when:** you like the feel, `tokens.json` is committed and there's a screen recording for X post #1.
 
@@ -80,7 +80,7 @@ static/
 │   ├── Hotkey.swift             # global press and release (Carbon, no permission)
 │   ├── OverlayPanel.swift       # borderless panel, all Spaces, over full-screen apps
 │   ├── Wheel/
-│   │   ├── WheelStyle.swift     # numbers from tokens.json
+│   │   ├── WheelStyle.swift     # numbers from prototype/tokens.json
 │   │   ├── WheelGeometry.swift  # ring layout, flick angle → slot
 │   │   └── Broadcast.swift      # which track is "on air", and how far in
 │   │   └── RadioWheelView.swift

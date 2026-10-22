@@ -54,3 +54,8 @@ Rejected:
 
 - **Tint only**: the vignette and wash without desaturation. It needs no permission, but colourful windows keep their full colour and compete with the wheel.
 - **Grey veil**: a flat cool grey at 30% opacity between the wash and the vignette, to fake desaturation without permission. A grey overlay mutes colour but also flattens contrast, so the screen looked foggy rather than drained.
+
+## 2026-10-22: Tokens and retune take
+
+- `prototype/tokens.json` is exported from the prototype's defaults, which hold every number above. Phase 2's `WheelStyle.swift` reads it. Re-export it from the Radio wheel panel after changing any slider.
+- The retune sound is `retune`, the muffled car-radio "kssh". `retune-b` and `retune-c` stay in the prototype for comparison.
