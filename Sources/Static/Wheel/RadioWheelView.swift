@@ -14,18 +14,48 @@ struct RadioWheelView: View {
     let model: RadioWheelModel
 
     var body: some View {
+        RadioWheelContent(
+            style: model.style,
+            stations: model.stations,
+            highlighted: model.highlighted,
+            presence: model.presence,
+            logos: model.details.logos,
+            tracks: model.details.tracks
+        )
+    }
+
+    /// For stations with no artwork: "Gym Bangers" is GB, "☕ Sunday Coffee"
+    /// is SC and "Hype" is H.
+    nonisolated static func initials(of name: String) -> String {
+        let letters = name.split(whereSeparator: \.isWhitespace).compactMap { word in
+            word.first { $0.isLetter || $0.isNumber }
+        }
+        return String(letters.prefix(2)).uppercased()
+    }
+}
+
+/// What `RadioWheelView` draws, from plain values, so tests can render it.
+struct RadioWheelContent: View {
+    let style: WheelStyle
+    /// Slot 0 is Radio Off, so station `i` is in slot `i + 1`.
+    let stations: [Playlist]
+    let highlighted: Int
+    let presence: RadioWheelModel.Presence
+    let logos: [String: CGImage]
+    let tracks: [String: [Track]]
+
+    var body: some View {
         GeometryReader { proxy in
-            let style = model.style
             let sizes = style.sizes
             let unit = proxy.size.height / 100
-            let count = model.slotCount
+            let count = stations.count + 1
             let ring = WheelGeometry.ring(sizes, count: count, screenHeight: proxy.size.height)
             let centre = CGPoint(x: proxy.size.width / 2, y: proxy.size.height / 2 - (sizes.raise * unit).rounded())
             let ringWidth = (sizes.ringWidth * unit).rounded()
             ZStack {
                 ForEach(0..<count, id: \.self) { slot in
                     let angle = WheelGeometry.slotAngle(slot, count: count)
-                    let selected = slot == model.highlighted
+                    let selected = slot == highlighted
                     let size = selected ? ring.selectedIcon : ring.icon
                     StationDisc(
                         art: art(for: slot),
@@ -53,9 +83,9 @@ struct RadioWheelView: View {
                     )
                 }
             }
-            .opacity(model.presence == .shown ? 1 : 0)
+            .opacity(presence == .shown ? 1 : 0)
             .scaleEffect(
-                model.presence == .hidden ? sizes.openScale : 1,
+                presence == .hidden ? sizes.openScale : 1,
                 anchor: UnitPoint(x: centre.x / proxy.size.width, y: centre.y / proxy.size.height)
             )
         }
@@ -64,23 +94,14 @@ struct RadioWheelView: View {
 
     private func art(for slot: Int) -> StationDisc.Art {
         guard slot > 0 else { return .radioOff }
-        let station = model.stations[slot - 1]
-        if let logo = model.details.logos[station.id] { return .logo(logo) }
-        return .initials(Self.initials(of: station.name))
+        let station = stations[slot - 1]
+        if let logo = logos[station.id] { return .logo(logo) }
+        return .initials(RadioWheelView.initials(of: station.name))
     }
 
     private func caption(at date: Date) -> CaptionLines {
-        let station = model.highlighted == 0 ? nil : model.stations[model.highlighted - 1]
-        return CaptionLines(station: station, tracks: station.flatMap { model.details.tracks[$0.id] }, at: date)
-    }
-
-    /// For stations with no artwork: "Gym Bangers" is GB, "☕ Sunday Coffee"
-    /// is SC and "Hype" is H.
-    nonisolated static func initials(of name: String) -> String {
-        let letters = name.split(whereSeparator: \.isWhitespace).compactMap { word in
-            word.first { $0.isLetter || $0.isNumber }
-        }
-        return String(letters.prefix(2)).uppercased()
+        let station = highlighted == 0 ? nil : stations[highlighted - 1]
+        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, at: date)
     }
 }
 
@@ -225,25 +246,31 @@ private struct CaptionView: View {
         let layout = WheelGeometry.captionLines(
             heights: shown.map(\.height), ring: ring, sizes: sizes, screenHeight: screenHeight
         )
-        ForEach(shown.indices, id: \.self) { index in
-            let (text, size, _, isArtist) = shown[index]
-            let fontSize = max(13, size * unit)
-            // Condensed capitals crowd each other, so the artist gets a
-            // little tracking.
-            Text(isArtist ? text.uppercased() : text)
-                .font(.custom(CaptionFont.name, fixedSize: fontSize))
-                .tracking(isArtist ? fontSize * 0.02 : 0)
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .shadow(color: .black, radius: 0.75)
-                .shadow(color: .black, radius: 0.75)
-                .shadow(color: .black, radius: 0.75)
-                .shadow(color: .black.opacity(0.45), radius: 2)
-                // Long lines stop short of the logos instead of running under them.
-                .padding(.horizontal, 4)
-                .frame(maxWidth: layout[index].maxWidth)
-                .position(x: centre.x, y: centre.y + layout[index].y)
+        // One ZStack, so every line is positioned in the whole wheel. Left
+        // loose in the TimelineView, the lines were stacked like a VStack,
+        // each in a third of the screen, which put the artist at the bottom
+        // of the ring and the title off-screen.
+        ZStack {
+            ForEach(shown.indices, id: \.self) { index in
+                let (text, size, _, isArtist) = shown[index]
+                let fontSize = max(13, size * unit)
+                // Condensed capitals crowd each other, so the artist gets a
+                // little tracking.
+                Text(isArtist ? text.uppercased() : text)
+                    .font(.custom(CaptionFont.name, fixedSize: fontSize))
+                    .tracking(isArtist ? fontSize * 0.02 : 0)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .shadow(color: .black, radius: 0.75)
+                    .shadow(color: .black, radius: 0.75)
+                    .shadow(color: .black, radius: 0.75)
+                    .shadow(color: .black.opacity(0.45), radius: 2)
+                    // Long lines stop short of the logos instead of running under them.
+                    .padding(.horizontal, 4)
+                    .frame(maxWidth: layout[index].maxWidth)
+                    .position(x: centre.x, y: centre.y + layout[index].y)
+            }
         }
     }
 }
