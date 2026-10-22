@@ -95,10 +95,32 @@ final class VolumeDip {
                 level = next
             }
             if progress >= 1 {
-                log.notice("Music's volume is \(target)")
+                await hold(target)
                 return
             }
             try? await Task.sleep(for: .milliseconds(16))
         }
+    }
+
+    /// Music sometimes ends a ramp at one of the steps before the last, so a
+    /// restore to 97 read back as 81, and the next dip took 81 as the volume
+    /// before. Checking soon after the ramp and again a second later, when a
+    /// track tuned during the ramp has started, sets it again if it slipped.
+    private func hold(_ target: Int) async {
+        for delay in [250, 1000] {
+            try? await Task.sleep(for: .milliseconds(delay))
+            guard !Task.isCancelled, MusicBridge.isRunning else { return }
+            do {
+                let volume = try await MusicBridge.volume()
+                guard volume != target else { continue }
+                log.notice("Music's volume slipped to \(volume), so setting \(target) again")
+                try await MusicBridge.setVolume(target)
+                level = target
+            } catch {
+                log.error("Couldn't check Music's volume: \(String(describing: error), privacy: .public)")
+                return
+            }
+        }
+        log.notice("Music's volume is \(target)")
     }
 }
