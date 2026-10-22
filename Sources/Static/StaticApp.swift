@@ -38,4 +38,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wheel.start()
         self.wheel = wheel
     }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        wheel?.restoreVolumeNow()
+    }
 }

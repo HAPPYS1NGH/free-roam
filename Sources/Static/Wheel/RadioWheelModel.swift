@@ -25,6 +25,7 @@ final class RadioWheelModel {
     // registered only while the wheel is open.
     @ObservationIgnored private let escape = Hotkey(keyCode: kVK_Escape, modifiers: .option)
     @ObservationIgnored private lazy var panel = makePanel()
+    @ObservationIgnored private let volumeDip: VolumeDip
     @ObservationIgnored private var holdTimer: Task<Void, Never>?
     @ObservationIgnored private var dwellTimer: Task<Void, Never>?
     @ObservationIgnored private var isOpen = false
@@ -44,6 +45,11 @@ final class RadioWheelModel {
     init(style: WheelStyle, stations: @escaping () -> [Playlist]) {
         self.style = style
         availableStations = stations
+        volumeDip = VolumeDip(
+            fraction: style.behaviour.duckVolume,
+            lowerSeconds: style.animations.filterIn.duration,
+            restoreSeconds: style.animations.filterOut.duration
+        )
         cursor = PickCursor(pickRadius: style.behaviour.pickRadius, deadZone: 0)
         scroller = ScrollStepper(step: style.behaviour.scrollStep)
     }
@@ -58,6 +64,11 @@ final class RadioWheelModel {
         } catch {
             log.error("Couldn't register ⌥Q: \(error.localizedDescription, privacy: .public)")
         }
+    }
+
+    /// For quitting, which can happen while the volume is still dipped.
+    func restoreVolumeNow() {
+        volumeDip.restoreNow()
     }
 
     // MARK: Hotkey
@@ -104,6 +115,7 @@ final class RadioWheelModel {
         scroller = ScrollStepper(step: style.behaviour.scrollStep)
         isOpen = true
         panel.show(on: screen)
+        volumeDip.lower()
         do {
             try escape.register()
         } catch {
@@ -121,6 +133,7 @@ final class RadioWheelModel {
         isOpen = false
         escape.unregister()
         panel.hide()
+        volumeDip.restore()
     }
 
     private func moveMouse(dx: Double, dy: Double) {
