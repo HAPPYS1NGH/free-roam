@@ -37,6 +37,7 @@ enum MusicPermission: Equatable, Sendable {
 enum MusicBridgeError: LocalizedError {
     case notPermitted
     case notInstalled
+    case notRunning
     case invalidPersistentID(String)
     case script(code: Int, message: String)
 
@@ -50,6 +51,7 @@ enum MusicBridgeError: LocalizedError {
         switch self {
         case .notPermitted: "Static isn't allowed to control Music."
         case .notInstalled: "Music isn't installed."
+        case .notRunning: "Music isn't running."
         case .invalidPersistentID(let id): "Not a Music persistent ID: \(id)"
         case .script(let code, let message): "Music error \(code): \(message)"
         }
@@ -91,6 +93,8 @@ enum MusicBridge {
     }
 
     /// User playlists in library order, without folders or Music's own lists.
+    /// Throws `notRunning` rather than launching Music, even if it quit while
+    /// the script waited its turn.
     static func playlists() async throws -> [Playlist] {
         // Variable names have to avoid Music's own terms: `names` is one of
         // its constants, so `set names to …` fails with "Access not allowed".
@@ -100,7 +104,7 @@ enum MusicBridge {
                 set playlistNames to name of every user playlist whose special kind is none
                 return {playlistIDs, playlistNames}
             end tell
-            """, parse: parsePlaylists)
+            """, onlyIfRunning: true, parse: parsePlaylists)
     }
 
     /// Each track's length in seconds, in playlist order. Tracks with no
@@ -281,13 +285,19 @@ enum MusicBridge {
         }
     }
 
+    /// `onlyIfRunning` checks Music is running when the script's turn comes,
+    /// because `tell application` would launch it.
     private static func run<Value: Sendable>(
         _ source: String,
+        onlyIfRunning: Bool = false,
         parse: @escaping @Sendable (NSAppleEventDescriptor) -> Value
     ) async throws -> Value {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                continuation.resume(with: Result { try parse(execute(source)) })
+                continuation.resume(with: Result {
+                    if onlyIfRunning, !isRunning { throw MusicBridgeError.notRunning }
+                    return try parse(execute(source))
+                })
             }
         }
     }
