@@ -4,22 +4,22 @@ import OSLog
 private let log = Logger(subsystem: "com.happys1ngh.static", category: "sound")
 
 /// The wheel's sounds, from the .wav files scripts/bundle.sh copies out of
-/// `prototype/public/sounds`. Ported from `prototype/src/sound.ts`.
+/// `prototype/public/sounds`: your local pack where it has a sound, as in the
+/// prototype, and the synthesised one otherwise. Ported from
+/// `prototype/src/sound.ts`.
 @MainActor
 final class WheelSounds {
     enum Name: String, CaseIterable {
         case open, close, hover, retune
     }
 
-    /// The prototype's synthesised sounds are all 44.1 kHz mono.
+    /// Sounds at other rates, such as 48 kHz local ones, are converted on load.
     private static let sampleRate = 44_100.0
     /// Volumes are in dB, and at this level a sound is off.
     private static let silentDb = -60.0
     /// A new retune fades out the last one over this long. A ramp, not a cut,
     /// so it doesn't click.
     private static let retuneFade = 0.012
-    /// The retune's static is loud for its first 150 ms and then dies away.
-    private static let retuneBody = Duration.milliseconds(150)
     /// A running engine keeps the audio device busy, so it stops this long
     /// after the last sound and starts again on the next press.
     private static let idleTime = Duration.seconds(10)
@@ -29,9 +29,7 @@ final class WheelSounds {
     private let samples: [Name: [Float]]
     private let levels: [Name: Float]
     private var hover = HoverTicker()
-    private var lastRetune: ContinuousClock.Instant?
     private var idleStop: Task<Void, Never>?
-    private let clock = ContinuousClock()
 
     init(behaviour: WheelStyle.Behaviour) {
         let files: [Name: String] = [.open: "open", .close: "close", .hover: "hover", .retune: behaviour.retuneTake]
@@ -90,26 +88,10 @@ final class WheelSounds {
         ))
     }
 
-    /// Keeps the static going until the task is cancelled, by starting the
-    /// retune again whenever its loud part ends. Each one fades out the last,
-    /// so it sounds like one long burst, and the last one dies away as usual.
-    func holdRetune() -> Task<Void, Never> {
-        Task {
-            while !Task.isCancelled {
-                if let lastRetune, clock.now < lastRetune + Self.retuneBody {
-                    try? await Task.sleep(until: lastRetune + Self.retuneBody, clock: clock)
-                    continue
-                }
-                playRetune()
-            }
-        }
-    }
-
     private func playRetune() {
         guard let source = samples[.retune], let level = levels[.retune] else { return }
         mixer.fadeOutRetunes(over: Int(Self.retuneFade * Self.sampleRate))
         start(VoiceMixer.Voice(samples: source, gain: level, isRetune: true))
-        lastRetune = clock.now
     }
 
     private func start(_ name: Name) {
@@ -129,21 +111,44 @@ final class WheelSounds {
         }
         do {
             let file = try AVAudioFile(forReading: url, commonFormat: .pcmFormatFloat32, interleaved: false)
-            let format = file.processingFormat
-            guard format.sampleRate == sampleRate, format.channelCount == 1 else {
-                log.error("Sound \(name, privacy: .public).wav isn't 44.1 kHz mono")
+            guard let read = AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)) else {
                 return nil
             }
-            guard let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(file.length)) else {
-                return nil
-            }
-            try file.read(into: buffer)
+            try file.read(into: read)
+            let buffer = try convert(read)
             guard let channel = buffer.floatChannelData?[0] else { return nil }
             return Array(UnsafeBufferPointer(start: channel, count: Int(buffer.frameLength)))
         } catch {
             log.error("Couldn't read \(name, privacy: .public).wav: \(String(describing: error), privacy: .public)")
             return nil
         }
+    }
+
+    /// Resamples to the mixer's 44.1 kHz and mixes down to mono.
+    private static func convert(_ input: AVAudioPCMBuffer) throws -> AVAudioPCMBuffer {
+        let format = AVAudioFormat(standardFormatWithSampleRate: sampleRate, channels: 1)!
+        guard input.format != format else { return input }
+        guard let converter = AVAudioConverter(from: input.format, to: format) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        converter.downmix = true
+        let frames = AVAudioFrameCount((Double(input.frameLength) * sampleRate / input.format.sampleRate).rounded(.up))
+        guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames) else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        var consumed = false
+        var conversionError: NSError?
+        let status = converter.convert(to: output, error: &conversionError) { _, inputStatus in
+            if consumed {
+                inputStatus.pointee = .endOfStream
+                return nil
+            }
+            consumed = true
+            inputStatus.pointee = .haveData
+            return input
+        }
+        if status == .error { throw conversionError ?? CocoaError(.fileReadCorruptFile) }
+        return output
     }
 }
 

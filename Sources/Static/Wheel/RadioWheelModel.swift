@@ -287,11 +287,6 @@ final class RadioWheelModel {
                 return
             }
             try await MusicBridge.play(playlistID: id, track: onAir.index + 1)
-            // Music plays the start of the song until the seek lands, which
-            // takes 250–350 ms after letting go and once took 1.8 s. The
-            // static covers it for as long as it takes.
-            let cover = sounds.holdRetune()
-            defer { cover.cancel() }
             try await seek(id, to: onAir, of: durations)
         } catch {
             log.error("Couldn't tune Music: \(String(describing: error), privacy: .public)")
