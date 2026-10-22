@@ -90,7 +90,7 @@ function Studio({ library, localSounds }: { library: Library; localSounds: numbe
 
   actions.current = (action) => {
     if (action === "replayOpen") return wheel.peek()
-    const tokens = buildTokens("GTA radio wheel", look, {
+    const tokens = buildTokens("Radio wheel", look, {
       holdDelayMs: harness.holdDelayMs,
       deadzone: harness.deadzone,
       pickRadius: harness.pickRadius,
