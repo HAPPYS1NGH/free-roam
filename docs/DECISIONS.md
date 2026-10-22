@@ -103,3 +103,21 @@ Rejected:
 - Adding the global monitor's moves to the panel's own: the same movement counted twice.
 - A listen-only event tap: it gets nothing without Input Monitoring.
 - An `NSTrackingArea` with `.activeAlways` on the panel: it only added more duplicate moves.
+
+## 2026-10-22: Tuning in and the volume dip
+
+Measured on macOS 27.0.1 with the Phase 2 step 3 build, from Static's logs over three hand tests and from scripting Music directly while it was paused.
+
+- Tuning plays track N of the station's playlist (`play track N of user playlist …`), then sets `player position` to the on-air position. Music plays on through that playlist afterwards: on every ⌥Q press after a tune, Music's `current playlist` was the station Static had tuned.
+- Until a streamed track has loaded, Music ignores a new player position or refuses it with "Can't set player position" (-10006). In the first test, 7 of 9 tunes started within 12 seconds of the top of the song. Static now sets the position every 100 ms, moving the target on with the clock, until Music reports it. Every tune since has landed, most on the second try and the slowest on the seventh, so you can hear the start of the song for a moment before the jump. The retune sound in step 4 should cover it.
+- Each ⌥Q press asks Music which playlist is playing, so the wheel opens on that station even after it was changed in Music. When Music plays something that isn't on the ring, the wheel opens on Radio Off, and letting go without moving changes nothing.
+- While Music isn't running, Static sends it nothing, because any script would launch it. Picking a station launches it through `NSWorkspace` with `activates = false`. Music is listed as running before it takes scripts: the first script failed after 9 s with "Connection is invalid" (-609), so launching now waits until Music answers. Not checked by hand yet: whether Music's window stays behind the app you're in.
+- Music drops a `sound volume` change that comes within about 100 ms of the last change it took. Measured while paused: a second change 90 ms after the first was dropped and one 100 ms after stuck, a dropped change doesn't restart the wait, and ten changes in a row kept only the first. Reading the volume is accurate straight away.
+- So Static changes the volume at most every 150 ms, timed from Music's answer to the last change, and a new ramp waits for the one it cancels. Each step goes where the ramp should be by the next one: the 150 ms dip is a single change and the 450 ms restore is three, 150 ms apart. On quit the restore waits 150 ms after any script already queued.
+
+Rejected:
+
+- Setting the position in the same script as `play`: it only stuck when the track had already loaded.
+- A volume ramp in 16 ms steps: Music kept only some of them, sometimes not the last, and the next dip saved the wrong volume to come back to. Music's volume crept from 97 to 76.
+- Setting the volume again after a ramp whenever it read back wrong: it hid the cause.
+- Timing the gap from when a change was sent: behind a tune's commands, a change reached Music late, the next one followed it by less than 100 ms and was dropped, and the volume crept from 75 to 40.
