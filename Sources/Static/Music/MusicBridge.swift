@@ -103,15 +103,6 @@ enum MusicBridge {
             """, parse: parsePlaylists)
     }
 
-    static func play(playlistID: String) async throws {
-        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
-        try await run("""
-            tell application id "com.apple.Music"
-                play (first user playlist whose persistent ID is "\(playlistID)")
-            end tell
-            """) { _ in }
-    }
-
     /// Each track's length in seconds, in playlist order. Tracks with no
     /// length, such as missing files, count as 0.
     static func trackDurations(playlistID: String) async throws -> [TimeInterval] {

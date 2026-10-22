@@ -22,9 +22,6 @@ struct MusicBridgeTests {
 
     @Test func refusesToScriptAnInvalidID() async {
         await #expect(throws: MusicBridgeError.self) {
-            try await MusicBridge.play(playlistID: "\"; beep")
-        }
-        await #expect(throws: MusicBridgeError.self) {
             try await MusicBridge.play(playlistID: "\"; beep", track: 1)
         }
         await #expect(throws: MusicBridgeError.self) {

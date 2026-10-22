@@ -14,10 +14,12 @@ enum ScreenCapture {
     /// Never prompts.
     static var isAllowed: Bool { CGPreflightScreenCaptureAccess() }
 
-    /// Captures the main display once. The first call makes macOS ask for
-    /// Screen Recording permission; until it's granted, this throws.
-    static func captureMainDisplay() async throws -> CGImage {
-        try await capture(displayID: CGMainDisplayID())
+    /// Adds Static to the Screen Recording list in System Settings. macOS
+    /// shows its own prompt only the first time. Static only asks from the
+    /// menu, never at launch, because the backdrop works without it.
+    static func requestAccess() {
+        let allowed = CGRequestScreenCaptureAccess()
+        log.notice("Asked for Screen Recording: \(allowed ? "allowed" : "not allowed yet")")
     }
 
     /// Captures a display at full pixel resolution, in the display's colour
