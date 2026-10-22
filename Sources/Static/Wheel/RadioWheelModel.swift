@@ -187,16 +187,21 @@ final class RadioWheelModel {
         panel.stopInput()
         sounds.play(.close)
         volumeDip.restore()
-        withAnimation(animation(style.animations.close)) { presence = .closing }
+        // Each completion does nothing if the wheel opened again meanwhile.
+        let closingOpen = opens
+        withAnimation(animation(style.animations.close)) {
+            presence = .closing
+        } completion: { [weak self] in
+            // Ready to grow in again, even while the backdrop is still fading.
+            guard let self, opens == closingOpen else { return }
+            presence = .hidden
+        }
         // The panel leaves once the backdrop, which fades out slower than the
         // wheel, has gone too.
-        let closingOpen = opens
         withAnimation(animation(style.animations.filterOut)) {
             backdropShown = false
         } completion: { [weak self] in
-            // Opened again while it was fading out.
             guard let self, opens == closingOpen else { return }
-            presence = .hidden
             stills.fadedOut()
             panel.orderOut(nil)
         }
