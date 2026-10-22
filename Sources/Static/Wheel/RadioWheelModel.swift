@@ -27,6 +27,12 @@ final class RadioWheelModel {
     private(set) var stations: [Playlist] = []
     private(set) var highlighted = 0
     private(set) var presence = Presence.hidden
+    /// The backdrop fades on its own, slower timing, so colour drains back
+    /// into the screen after the wheel has gone.
+    private(set) var backdropShown = false
+    /// The filtered screen under the wheel. Nil without Screen Recording
+    /// permission, and until the capture lands or if it failed.
+    private(set) var still: CGImage?
     let details = StationDetails()
     var slotCount: Int { stations.count + 1 }
 
@@ -41,6 +47,12 @@ final class RadioWheelModel {
     @ObservationIgnored private var holdTimer: Task<Void, Never>?
     @ObservationIgnored private var dwellTimer: Task<Void, Never>?
     @ObservationIgnored private var isOpen = false
+    /// Counts opens, so a fade-out that ends after the wheel opened again
+    /// leaves the panel up.
+    @ObservationIgnored private var opens = 0
+    @ObservationIgnored private var capture: Task<Void, Never>?
+    /// The display the latest press captured.
+    @ObservationIgnored private var captureDisplay: CGDirectDisplayID?
     /// Whether the highlight has moved since the wheel opened. Letting go
     /// without picking leaves Music alone, even when what it's playing isn't
     /// on the ring and the wheel opened on Radio Off.
@@ -77,6 +89,7 @@ final class RadioWheelModel {
         } catch {
             log.error("Couldn't register ⌥Q: \(error.localizedDescription, privacy: .public)")
         }
+        warmUpCapture()
     }
 
     /// Loads the tracks and logos of stations that haven't loaded yet, in the
@@ -97,6 +110,7 @@ final class RadioWheelModel {
         readPlaying()
         // Both a hold and a tap end in a sound.
         sounds.prepare()
+        captureStill()
         let delay = style.behaviour.holdDelayMs
         holdTimer = Task { [weak self] in
             try? await Task.sleep(for: .milliseconds(delay))
@@ -111,6 +125,7 @@ final class RadioWheelModel {
         if let holdTimer {
             holdTimer.cancel()
             self.holdTimer = nil
+            discardStill()
             tapNext()
         } else if isOpen {
             if picked { tune(highlighted, because: "released") }
@@ -135,10 +150,18 @@ final class RadioWheelModel {
         cursor = PickCursor(pickRadius: style.behaviour.pickRadius, deadZone: style.behaviour.deadzone * unit)
         scroller = ScrollStepper(step: style.behaviour.scrollStep)
         isOpen = true
+        opens += 1
         // Anything that failed to load or is new since gets another go.
         details.load(stations)
+        // The mouse crossed to another display since the press.
+        if screen.displayID != captureDisplay {
+            capture?.cancel()
+            capture = nil
+            still = nil
+        }
         panel.show(on: screen)
         withAnimation(animation(style.animations.open)) { presence = .shown }
+        withAnimation(animation(style.animations.filterIn)) { backdropShown = true }
         sounds.play(.open)
         volumeDip.lower()
         do {
@@ -150,22 +173,29 @@ final class RadioWheelModel {
             Opened on a \(Int(screen.frame.width))×\(Int(screen.frame.height)) screen \
             with \(self.stations.count) stations, on \(self.stationName(self.highlighted), privacy: .public)
             """)
-        if let displayID = screen.displayID { timeCapture(of: displayID) }
     }
 
     private func close() {
         dwellTimer?.cancel()
+        // Too late to show, if it hasn't landed yet.
+        capture?.cancel()
+        capture = nil
         isOpen = false
         escape.unregister()
         panel.stopInput()
         sounds.play(.close)
         volumeDip.restore()
-        withAnimation(animation(style.animations.close)) {
-            presence = .closing
+        withAnimation(animation(style.animations.close)) { presence = .closing }
+        // The panel leaves once the backdrop, which fades out slower than the
+        // wheel, has gone too.
+        let closingOpen = opens
+        withAnimation(animation(style.animations.filterOut)) {
+            backdropShown = false
         } completion: { [weak self] in
             // Opened again while it was fading out.
-            guard let self, !isOpen else { return }
+            guard let self, opens == closingOpen else { return }
             presence = .hidden
+            still = nil
             panel.orderOut(nil)
         }
     }
@@ -327,26 +357,76 @@ final class RadioWheelModel {
         slot == 0 ? "Radio Off" : "slot \(slot), \(stations[slot - 1].name)"
     }
 
+    // MARK: Backdrop
+
+    /// Captures the screen with the mouse as ⌥Q goes down. It takes about
+    /// 50 ms, so the still is ready before the wheel opens 150 ms later.
+    /// Without Screen Recording permission the backdrop is the wash and
+    /// vignette alone, which need none.
+    private func captureStill() {
+        capture?.cancel()
+        capture = nil
+        captureDisplay = nil
+        guard ScreenCapture.isAllowed, let displayID = NSScreen.withMouse?.displayID else { return }
+        captureDisplay = displayID
+        // The panel is still on the screen while the last close fades out.
+        let panelWindow = panel.windowNumber > 0 ? CGWindowID(panel.windowNumber) : nil
+        let behaviour = style.behaviour
+        let clock = ContinuousClock()
+        let pressed = clock.now
+        capture = Task { [weak self] in
+            let image = await BackdropStill.make(
+                displayID: displayID,
+                excluding: panelWindow,
+                saturation: behaviour.backdropSaturation,
+                brightness: behaviour.backdropBrightness
+            )
+            guard let self, !Task.isCancelled else { return }
+            capture = nil
+            if image != nil {
+                log.notice("The backdrop's still was ready \((clock.now - pressed) / .milliseconds(1), format: .fixed(precision: 0)) ms after ⌥Q went down")
+            }
+            // Late for the wheel, so it fades in like the rest of the backdrop.
+            withAnimation(isOpen ? animation(style.animations.filterIn) : nil) { still = image }
+        }
+    }
+
+    /// A tap never opens the wheel, so its still goes unused.
+    private func discardStill() {
+        capture?.cancel()
+        capture = nil
+        // Otherwise the last close is still fading out, and clears it at the end.
+        if presence == .hidden { still = nil }
+    }
+
+    /// The first capture after launch took 145 ms, and the first filter
+    /// sets up Core Image, so both run once now instead of on the first press.
+    private func warmUpCapture() {
+        guard ScreenCapture.isAllowed else { return }
+        let behaviour = style.behaviour
+        Task {
+            let clock = ContinuousClock()
+            let started = clock.now
+            let still = await BackdropStill.make(
+                displayID: CGMainDisplayID(),
+                excluding: nil,
+                saturation: behaviour.backdropSaturation,
+                brightness: behaviour.backdropBrightness
+            )
+            guard still != nil else { return }
+            log.notice("Warmed up the backdrop at launch in \((clock.now - started) / .milliseconds(1), format: .fixed(precision: 0)) ms")
+        }
+    }
+
     // MARK: Setup
 
     private func makePanel() -> OverlayPanel {
-        let panel = OverlayPanel(content: RadioWheelView(model: self))
+        let panel = OverlayPanel(content: ZStack {
+            BackdropView(model: self)
+            RadioWheelView(model: self)
+        })
         panel.onMouseMove = { [weak self] dx, dy in self?.moveMouse(dx: dx, dy: dy) }
         panel.onScroll = { [weak self] delta, time in self?.scroll(by: delta, at: time) }
         return panel
-    }
-
-    /// Captures the screen the wheel opened on, which logs how long it took.
-    /// If that's much longer than the filter's 150 ms fade-in, the backdrop
-    /// needs a stream that keeps running instead of a capture on open.
-    private func timeCapture(of displayID: CGDirectDisplayID) {
-        guard ScreenCapture.isAllowed else { return }
-        Task {
-            do {
-                _ = try await ScreenCapture.capture(displayID: displayID)
-            } catch {
-                log.error("Capture on open failed: \(String(describing: error), privacy: .public)")
-            }
-        }
     }
 }

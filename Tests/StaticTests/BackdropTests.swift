@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import SwiftUI
 import Testing
 @testable import Static
 
@@ -38,6 +39,47 @@ struct BackdropStillTests {
 
     private static func isClose(_ matrix: [[Double]], _ expected: [[Double]]) -> Bool {
         zip(matrix.joined(), expected.joined()).allSatisfy { abs($0 - $1) < 1e-12 }
+    }
+}
+
+@MainActor
+struct VignetteTests {
+    /// `radial-gradient(ellipse farthest-corner, …)` from `.wheel-backdrop` in
+    /// the prototype's styles.css, as (position, opacity).
+    static let cssStops: [(Double, Double)] = [(0.46, 0), (0.6, 0.12), (0.74, 0.29), (0.88, 0.54), (1, 0.7)]
+
+    /// CSS's farthest-corner ellipse keeps the box's proportions and passes
+    /// through its corners, so its radii are √2 times half the box.
+    static func cssOpacity(x: Double, y: Double, width: Double, height: Double) -> Double {
+        let dx = (x - width / 2) / (2.0.squareRoot() * width / 2)
+        let dy = (y - height / 2) / (2.0.squareRoot() * height / 2)
+        let position = (dx * dx + dy * dy).squareRoot()
+        guard let end = cssStops.firstIndex(where: { $0.0 >= position }) else { return cssStops.last!.1 }
+        guard end > 0 else { return cssStops[0].1 }
+        let (from, to) = (cssStops[end - 1], cssStops[end])
+        return from.1 + (to.1 - from.1) * (position - from.0) / (to.0 - from.0)
+    }
+
+    @Test func matchesTheCSSGradientOnAWideScreen() throws {
+        let (width, height) = (400, 200)
+        let renderer = ImageRenderer(content: Vignette(strength: 1).frame(width: Double(width), height: Double(height)))
+        renderer.scale = 1
+        let pixels = Pixels.rgba(try #require(renderer.cgImage))
+        // Corners, the middle of two edges, the centre, halfway to a corner
+        // and a point between the stops.
+        let points = [(0, 0), (399, 199), (0, 100), (200, 0), (200, 100), (100, 50), (40, 30)]
+        for (x, y) in points {
+            let opacity = Double(pixels[(y * width + x) * 4 + 3]) / 255
+            let expected = Self.cssOpacity(x: Double(x) + 0.5, y: Double(y) + 0.5, width: Double(width), height: Double(height))
+            #expect(abs(opacity - expected) < 0.015, "at (\(x), \(y)): \(opacity), CSS \(expected)")
+        }
+    }
+
+    @Test func strengthScalesTheDarkening() throws {
+        let renderer = ImageRenderer(content: Vignette(strength: 0.5).frame(width: 400, height: 200))
+        renderer.scale = 1
+        let corner = Double(Pixels.rgba(try #require(renderer.cgImage))[3]) / 255
+        #expect(abs(corner - 0.35) < 0.015)
     }
 }
 
