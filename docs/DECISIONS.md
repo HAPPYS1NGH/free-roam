@@ -181,4 +181,12 @@ Rejected:
 
 ## 2026-10-23: The station name is the caption's largest line
 
-- The station line is 3.4%H and the artist and title stay 2.6%H. With all three the same size, the artist's capitals read larger than the station name. The station line keeps the others' leading and stays centred 5%H above the ring's centre, so Radio Off doesn't move, and the artist and title hang below it. It's a new token, `sizes.stationSize`, which the Mac app doesn't read yet: `CaptionView` still spaces the lines `index × captionPitch` apart.
+- The station line is 3.4%H and the artist and title stay 2.6%H. With all three the same size, the artist's capitals read larger than the station name. The station line keeps the others' leading and stays centred 5%H above the ring's centre, so Radio Off doesn't move, and the artist and title hang below it. It's a new token, `sizes.stationSize`, which the Mac app reads too.
+
+## 2026-10-23: Each caption line fits inside the ring
+
+- Once the ring grows with the station count, the old width cap, 90% of the ring's inner circle, grew with it: from about 30%H to 48%H at 24 stations. Long credits filled the circle and ended 2–3%H (30–33 px) from the discs. None crossed a disc, but the caption looked as if it ran under the ring.
+- Each line now has its own maximum width. Take a circle 4.5%H inside the selected disc's ring; the width is that circle's chord at whichever of the line's top and bottom edges is farther from the centre. A line's corners come nearest the discs, so the whole line stays inside that circle, whichever disc is selected. Long lines still end in an ellipsis on one line. The maths is `captionWidth` from the prototype's Grow ring and Shrink discs layouts. The Mac app keeps today's ring.
+- The 4.5%H margin keeps the ends of long lines 5.5–6%H from the idle discs, about twice the old gap. The prototype's margin, one caption line (3.4%H), left about 4.5%H, which still looked close in rough renders of the wheel. It's a constant, `WheelGeometry.captionMargin`, not a token, because the prototype doesn't export it.
+- The cost is at 12 stations, where the inner circle is smallest. Lines can be 19–23%H wide, down from 30%H, so long station names cut off sooner. At 24 stations they get 41–43%H.
+- The prototype's other token change since the backdrop, `backdropBlur` renamed to `backdropBlurPx` and still 0, doesn't change the app, which has no blur. Idle discs stay at 0.4.
