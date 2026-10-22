@@ -59,3 +59,20 @@ Rejected:
 
 - `prototype/tokens.json` is exported from the prototype's defaults, which hold every number above. Phase 2's `WheelStyle.swift` reads it. Re-export it from the Radio wheel panel after changing any slider.
 - The retune sound is `retune`, the muffled car-radio "kssh". `retune-b` and `retune-c` stay in the prototype for comparison.
+
+## 2026-10-22: Development builds are signed with a self-signed certificate
+
+Measured on macOS 27.0.1 with the first Phase 2 build, a menu bar app that plays a playlist and captures the screen. Every result comes from the `--probe` flag; the Music results and the certificate builds were also confirmed by playing a playlist and capturing the screen.
+
+- An ad-hoc signature identifies one exact binary: its designated requirement is `cdhash H"…"`. Any change to the code or `Info.plist` makes a new app as far as macOS is concerned.
+- Screen Recording doesn't survive that. Granted to one ad-hoc build, it was gone in the next. System Settings still shows Static switched on, so you have to switch it off and on again, and that's confusing.
+- Music permission did survive. A rebuilt ad-hoc build, and later the switch to the certificate, both played playlists without a prompt.
+- `scripts/make-signing-cert.sh` creates a self-signed "Static Development" certificate in the login keychain, and `scripts/bundle.sh` signs with it when it's there. The designated requirement becomes `identifier "com.happys1ngh.static" and certificate leaf = H"…"`, which stays the same from build to build. Both permissions survived a rebuild with code changes.
+- The certificate doesn't have to be trusted in Keychain Access, so setting it up needs no admin password. codesign does need the keychain, so `bundle.sh` fails with `errSecInternalComponent` in an SSH session or a sandboxed agent shell.
+- Without the certificate, `bundle.sh` signs ad hoc and prints a warning.
+- Open for Phase 4: release builds are ad-hoc too, so after every update users would have to grant Screen Recording again and run into the same stale switch. Signing releases with a certificate we keep would avoid that.
+
+Rejected:
+
+- Ad-hoc signing during development: Screen Recording had to be granted again after every build.
+- Trusting the certificate for code signing: codesign works with an untrusted certificate, and macOS only compares its hash.

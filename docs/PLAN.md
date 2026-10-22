@@ -27,7 +27,7 @@ Checked on this Mac or known limits of macOS:
 - Static can't desaturate other apps' windows without Screen Recording permission. The vignette and cool tint are plain overlays and need no permission; only the desaturation needs a screen capture.
 - Apple Music doesn't expose energy or tempo, so weapon stats come from your library: plays, length, track count and last played.
 - The app is unsigned, so each user clicks "Open Anyway" once in System Settings and approves "Static wants to control Music" once.
-- Ad-hoc signed builds may lose the Music permission on every rebuild. If that gets annoying during development, we create a free self-signed certificate on this Mac and sign with it.
+- Ad-hoc signed builds lose Screen Recording permission on every rebuild, though Music permission survives. Development builds are signed with a self-signed certificate so both stick; see [DECISIONS.md](DECISIONS.md).
 
 ## How it works
 
@@ -77,13 +77,18 @@ static/
 ├── Package.swift
 ├── Sources/Static/
 │   ├── StaticApp.swift          # entry point, menu bar icon
+│   ├── StatusMenu.swift         # the menu bar menu
+│   ├── PermissionProbe.swift    # debug builds: `--probe` prints what macOS allows
+│   ├── Info.plist               # copied into Static.app by scripts/bundle.sh
 │   ├── Hotkey.swift             # global press and release (Carbon, no permission)
 │   ├── OverlayPanel.swift       # borderless panel, all Spaces, over full-screen apps
 │   ├── Wheel/
 │   │   ├── WheelStyle.swift     # numbers from prototype/tokens.json
 │   │   ├── WheelGeometry.swift  # ring layout, flick angle → slot
-│   │   └── Broadcast.swift      # which track is "on air", and how far in
+│   │   ├── Broadcast.swift      # which track is "on air", and how far in
 │   │   └── RadioWheelView.swift
+│   ├── Backdrop/
+│   │   └── ScreenCapture.swift  # Screen Recording permission and capture
 │   ├── Music/
 │   │   ├── MusicBridge.swift    # AppleScript commands, off the main thread
 │   │   └── NowPlaying.swift     # track-change notifications
@@ -91,8 +96,12 @@ static/
 │   │   └── StationsSettingsView.swift
 │   └── Resources/           # the .wav files from prototype/public/sounds
 ├── Tests/StaticTests/
-└── scripts/bundle.sh            # builds Static.app with Info.plist and resources
+└── scripts/
+    ├── bundle.sh                # builds and signs Static.app
+    └── make-signing-cert.sh     # self-signed certificate for development, once per Mac
 ```
+
+- [x] First build: a menu bar app that lists your playlists, plays one and captures the screen, built and signed by `scripts/bundle.sh`
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
 - Menu bar menu: Settings… and Quit, plus "Allow Static to control Music" if permission was denied. That item opens System Settings → Automation.

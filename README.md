@@ -30,6 +30,18 @@ Open the URL it prints. Hold <kbd>Q</kbd>, move the mouse or scroll to pick a st
 
 To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` into `prototype/public/sounds/local/`, which is also gitignored. The panel's Sound Pack switch flips between them and the built-in ones, and any sound missing from the local folder falls back to the built-in one.
 
+## Build the Mac app
+
+The Mac app is early: so far it's a menu bar app that lists your playlists, plays one and captures the screen. You need Xcode 16 or later.
+
+```sh
+scripts/make-signing-cert.sh   # once per Mac
+scripts/bundle.sh --run        # builds dist/Static.app and opens it
+swift test
+```
+
+macOS asks once to let Static control Music and once for Screen Recording. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
+
 ## Requirements
 
 - macOS 14 or later
