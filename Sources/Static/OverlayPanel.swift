@@ -1,5 +1,8 @@
 import AppKit
+import OSLog
 import SwiftUI
+
+private let log = Logger(subsystem: "com.happys1ngh.static", category: "panel")
 
 /// A see-through panel over the whole screen with the mouse, on every Space
 /// and over full-screen apps. It never activates Static or takes the keyboard,
@@ -20,6 +23,7 @@ final class OverlayPanel: NSPanel {
     private static let lineHeight = 16.0
 
     private var monitors: [Any] = []
+    private var isHoldingPointer = false
 
     init(content: some View) {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
@@ -51,6 +55,7 @@ final class OverlayPanel: NSPanel {
         // first open after launch would appear without its fade.
         displayIfNeeded()
         startMonitoring()
+        holdPointer()
     }
 
     /// Stops reading and taking input straight away, so clicks and scrolls
@@ -59,6 +64,28 @@ final class OverlayPanel: NSPanel {
     func stopInput() {
         stopMonitoring()
         ignoresMouseEvents = true
+        releasePointer()
+    }
+
+    /// GTA hides the pointer while the wheel is open, and the pick comes from
+    /// mouse movement rather than where the pointer is. So the pointer is
+    /// hidden and held still, which also keeps it over the panel instead of
+    /// wandering onto another display. Mouse moves still arrive with their
+    /// deltas. Apple documents both calls for the frontmost app, which Static
+    /// isn't, so their results are logged.
+    private func holdPointer() {
+        guard !isHoldingPointer else { return }
+        isHoldingPointer = true
+        let hidden = CGDisplayHideCursor(CGMainDisplayID())
+        let held = CGAssociateMouseAndMouseCursorPosition(0)
+        log.notice("Hid the pointer (\(hidden.rawValue)) and held it still (\(held.rawValue))")
+    }
+
+    private func releasePointer() {
+        guard isHoldingPointer else { return }
+        isHoldingPointer = false
+        CGAssociateMouseAndMouseCursorPosition(1)
+        CGDisplayShowCursor(CGMainDisplayID())
     }
 
     private func startMonitoring() {
