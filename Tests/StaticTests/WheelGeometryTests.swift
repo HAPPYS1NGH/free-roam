@@ -67,16 +67,18 @@ struct WheelGeometryTests {
         return [sizes.stationSize / sizes.captionSize * pitch, pitch, pitch]
     }
 
-    @Test func theStationLineStaysPutAndTheRestHangBelowIt() throws {
+    /// Line centres, %H from the ring's centre, measured from the prototype's
+    /// caption spans in Chrome: station, artist just above the centre, title.
+    @Test func captionLinesSitWhereThePrototypePutsThem() throws {
         let sizes = try TokensFixture.style().sizes
         let ring = WheelGeometry.ring(sizes, count: 25, screenHeight: 1000)
-        let heights = captionHeights(sizes, unit: 10)
-        let lines = WheelGeometry.captionLines(heights: heights, ring: ring, sizes: sizes, screenHeight: 1000)
-        let radioOff = WheelGeometry.captionLines(heights: [heights[0]], ring: ring, sizes: sizes, screenHeight: 1000)
-        #expect(abs(lines[0].y + 50) < 1e-9)
-        #expect(abs(radioOff[0].y + 50) < 1e-9)
-        #expect(abs(lines[1].y - lines[0].y - (heights[0] + heights[1]) / 2) < 1e-9)
-        #expect(abs(lines[2].y - lines[1].y - heights[1]) < 1e-9)
+        let lines = WheelGeometry.captionLines(
+            heights: captionHeights(sizes, unit: 10), ring: ring, sizes: sizes, screenHeight: 1000
+        )
+        let centres = lines.map { $0.y / 10 }
+        for (centre, measured) in zip(centres, [-5.0, -1.078, 2.322]) {
+            #expect(abs(centre - measured) < 0.01)
+        }
     }
 
     /// Each line at its widest keeps the margin from every disc, wherever the
@@ -92,7 +94,8 @@ struct WheelGeometryTests {
         let ring = WheelGeometry.ring(sizes, count: count, screenHeight: screenHeight)
         let heights = captionHeights(sizes, unit: unit)
         let lines = WheelGeometry.captionLines(heights: heights, ring: ring, sizes: sizes, screenHeight: screenHeight)
-        let reach = ring.selectedIcon / 2 + (sizes.ringWidth * unit).rounded() + WheelGeometry.captionMargin * unit
+        // The prototype's margin: one caption line inside the selected disc's ring.
+        let reach = ring.selectedIcon / 2 + (sizes.ringWidth * unit).rounded() + sizes.captionPitch * unit
         for (line, height) in zip(lines, heights) {
             let gaps = (0..<count).map { slot in
                 let angle = WheelGeometry.slotAngle(slot, count: count)

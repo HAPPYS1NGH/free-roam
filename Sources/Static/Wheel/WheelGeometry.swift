@@ -56,28 +56,24 @@ enum WheelGeometry {
         (value / 2).rounded() * 2
     }
 
-    /// How far, in %H, every caption line stays inside the selected disc's
-    /// ring. Credits that ended 2–3%H from the idle discs read as running
-    /// under them; this keeps them 5.5–6%H away.
-    static let captionMargin = 4.5
-
     struct CaptionLine: Equatable {
         /// The line's centre below the ring's centre, negative above it.
         let y: Double
         let maxWidth: Double
     }
 
-    /// Stacks the caption's lines, given their heights from the top. The first
-    /// is centred `captionRaise` above the ring's centre, so a one-line
-    /// caption ("Radio Off") stays put, and the rest hang below it. Each line
-    /// is as wide as the circle `captionMargin` inside the selected disc's
-    /// ring allows at whichever of its top and bottom is farther from the
-    /// centre, so its corners, the parts nearest the discs, stay inside that
-    /// circle. From `captionWidth` in `RadioWheel.tsx`.
+    /// Stacks the caption's lines, given their heights from the top, as the
+    /// prototype's `RadioWheel.tsx` does. The first is centred `captionRaise`
+    /// above the ring's centre, so a one-line caption ("Radio Off") stays put,
+    /// and the rest hang below it, which puts the artist just above the
+    /// centre. Each line is as wide as it can be at whichever of its top and
+    /// bottom is farther from the centre, its corners being the parts nearest
+    /// the discs, and stay inside a circle one caption line (`captionPitch`)
+    /// inside the selected disc's ring (`captionWidth` in the prototype).
     static func captionLines(heights: [Double], ring: Ring, sizes: WheelStyle.Sizes, screenHeight: Double) -> [CaptionLine] {
         let unit = screenHeight / 100
         let ringWidth = (sizes.ringWidth * unit).rounded()
-        let clear = ring.radius - ring.selectedIcon / 2 - ringWidth - captionMargin * unit
+        let clear = ring.radius - ring.selectedIcon / 2 - ringWidth - sizes.captionPitch * unit
         var top = -sizes.captionRaise * unit - (heights.first ?? 0) / 2
         var lines: [CaptionLine] = []
         for height in heights {
