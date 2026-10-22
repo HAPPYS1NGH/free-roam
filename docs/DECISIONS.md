@@ -142,3 +142,15 @@ Rejected:
 
 - `AVAudioPlayerNode` for the sounds: it can only cut a sound off, and a retune cut partway through clicks.
 - Restarting the retune every 150 ms until the seek lands, to cover the start of the song. It suited the synthesised retune, which is loud for its first 150 ms, but the local retune is a 53 ms hit, and restarting it stuttered. The prototype plays it once.
+
+## 2026-10-22: The backdrop
+
+Built in Phase 2 step 5, from `.wheel-backdrop` in `prototype/src/styles.css`. The capture timings and the look next to the prototype still need checking by hand.
+
+- The screen with the mouse is captured and filtered when ⌥Q goes down, so the still is ready before the wheel opens 150 ms later. A tap throws it away. One capture and filter at launch keep the slow first capture (145 ms) and Core Image's setup off the first press. A still that lands after the wheel has opened fades in over 150 ms. If the mouse crossed to another display since the press, the wheel opens with the wash and vignette only.
+- The capture leaves out only the wheel's panel, which is still on screen while a close fades out. Anything else of Static's on screen, such as the Settings window to come, stays in the still.
+- The filter is one `CIColorMatrix`: the Filter Effects spec's matrix for CSS `saturate()`, times `brightness()`, which multiplies each channel. `CIColorControls` adds its brightness instead. Browsers clamp after each filter, but with a saturation from 0 to 1, the prototype's range, no channel leaves 0–1 before the brightness, so one matrix gives the same result.
+- Browsers apply CSS filters to sRGB-encoded values. Core Image works in linear light by default, where the same matrix turned pure red into 202 instead of 150, and green into (171, 241, 171) instead of (104, 224, 104). So the working colour space is extended sRGB, which also keeps a wide-gamut display's colours. The still goes back into the capture's colour space, and ScreenCaptureKit captures in the display's.
+- The vignette is an `EllipticalGradient`. SwiftUI measures its radii as fractions of the view's size and stretches the circle to the view's shape, so 0.5 reaches the middle of each edge (checked by rendering one). CSS's farthest-corner ellipse has the same shape and passes through the corners, so CSS's 100% is an end fraction of √2/2, about 0.707, not √2. The stops keep their CSS positions, and a test compares the rendered vignette with the CSS gradient.
+- The still, the 7% wash and the vignette fade as one layer, like CSS opacity on `.wheel-backdrop`: in over 150 ms and out over 450 ms with `cubic-bezier(0.4, 0, 0.6, 1)`, apart from the wheel's 140 and 100 ms. Input stops the moment the wheel closes, and the panel leaves the screen once the backdrop has faded out.
+- When Screen Recording is off, the menu adds that if System Settings already shows Static switched on, it needs switching off and on again. That's the stale switch from the signing entry above.
