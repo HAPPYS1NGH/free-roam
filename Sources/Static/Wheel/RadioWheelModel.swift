@@ -109,8 +109,6 @@ final class RadioWheelModel {
     private func press() {
         guard !isOpen, holdTimer == nil else { return }
         readPlaying()
-        // Picks up playlists added or deleted in Music before the wheel opens.
-        stationList.reload()
         // Both a hold and a tap end in a sound.
         sounds.prepare()
         captureStill()
@@ -189,6 +187,7 @@ final class RadioWheelModel {
         panel.stopInput()
         sounds.play(.close)
         volumeDip.restore()
+        refreshStations()
         // Each completion does nothing if the wheel opened again meanwhile.
         let closingOpen = opens
         withAnimation(animation(style.animations.close)) {
@@ -288,6 +287,7 @@ final class RadioWheelModel {
             guard let self else { return }
             guard let next = WheelGeometry.nextStation(after: tunedSlot, count: slotCount) else {
                 log.notice("Tapped ⌥Q with no stations to skip to")
+                refreshStations()
                 return
             }
             tune(next, because: "tapped")
@@ -306,7 +306,16 @@ final class RadioWheelModel {
         Task { [weak self] in
             await self?.playOnAir(id)
             self?.tunesInFlight -= 1
+            self?.refreshStations()
         }
+    }
+
+    /// Picks up playlists added or deleted in Music for the next open. Scripts
+    /// run one at a time, so this waits until the wheel has closed and every
+    /// tune has reached Music, and the read never holds up a tune or an open.
+    private func refreshStations() {
+        guard !isOpen, holdTimer == nil, tunesInFlight == 0 else { return }
+        stationList.reload()
     }
 
     /// Plays the station's on-air track from partway in, or pauses for Radio

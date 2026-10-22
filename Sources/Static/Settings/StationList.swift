@@ -103,10 +103,7 @@ final class StationList {
     /// missing from the list are hidden, renames are picked up, and new
     /// playlists join the end of the wheel while it has room.
     func update(library playlists: [Playlist]) {
-        if library != playlists {
-            log.notice("Music has \(playlists.count) playlists")
-            library = playlists
-        }
+        if library != playlists { library = playlists }
         // An empty list is far more likely a library that hasn't loaded than
         // every playlist deleted, and taking it would hide every station.
         if let choice, !playlists.isEmpty {
@@ -153,7 +150,11 @@ final class StationList {
                     try await MusicBridge.launch()
                     log.notice("Launched Music to list its playlists")
                 }
-                update(library: try await MusicBridge.playlists())
+                let clock = ContinuousClock()
+                let started = clock.now
+                let playlists = try await MusicBridge.playlists()
+                log.notice("Read \(playlists.count) playlists in \((clock.now - started) / .milliseconds(1), format: .fixed(precision: 0)) ms")
+                update(library: playlists)
                 loadError = nil
             } catch {
                 loadError = error.localizedDescription
