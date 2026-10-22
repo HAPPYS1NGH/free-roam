@@ -173,9 +173,14 @@ enum MusicBridge {
     }
 
     /// Blocks until Music has the new volume, for when Static is about to quit
-    /// and can't wait for an answer.
-    static func setVolumeNow(_ volume: Int) throws {
-        _ = try queue.sync { try execute(volumeScript(volume)) }
+    /// and can't wait for an answer. It waits `delay` after the scripts already
+    /// queued, because Music drops a volume change that comes too soon after
+    /// the last one.
+    static func setVolumeNow(_ volume: Int, after delay: Duration) throws {
+        _ = try queue.sync {
+            Thread.sleep(forTimeInterval: delay / .seconds(1))
+            return try execute(volumeScript(volume))
+        }
     }
 
     /// Opens Music without bringing it to the front, so the app you're in

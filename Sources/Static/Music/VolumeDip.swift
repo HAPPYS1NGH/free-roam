@@ -22,6 +22,8 @@ final class VolumeDip {
     /// The volume Static last set.
     private var level = 0
     private var lastChange: ContinuousClock.Instant?
+    /// Each ramp waits for the one it replaces, whose last change may still be
+    /// on its way to Music, so the gap between changes holds across ramps too.
     private var ramp: Task<Void, Never>?
     private let clock = ContinuousClock()
 
@@ -32,14 +34,17 @@ final class VolumeDip {
     }
 
     func lower() {
-        ramp?.cancel()
-        // Opened again while the volume was still coming back up.
-        if let before {
-            ramp = Task { await rampVolume(to: lowered(before), over: lowerSeconds) }
-            return
-        }
-        guard MusicBridge.isRunning else { return }
+        let previous = ramp
+        previous?.cancel()
         ramp = Task {
+            await previous?.value
+            guard !Task.isCancelled else { return }
+            // Opened again while the volume was still coming back up.
+            if let before {
+                await rampVolume(to: lowered(before), over: lowerSeconds)
+                return
+            }
+            guard MusicBridge.isRunning else { return }
             let volume: Int
             do {
                 volume = try await MusicBridge.volume()
@@ -56,9 +61,11 @@ final class VolumeDip {
     }
 
     func restore() {
-        ramp?.cancel()
-        guard let before else { return }
+        let previous = ramp
+        previous?.cancel()
         ramp = Task {
+            await previous?.value
+            guard !Task.isCancelled, let before else { return }
             await rampVolume(to: before, over: restoreSeconds)
             guard !Task.isCancelled else { return }
             self.before = nil
@@ -70,13 +77,8 @@ final class VolumeDip {
     func restoreNow() {
         ramp?.cancel()
         guard let before, MusicBridge.isRunning else { return }
-        // Waits at most 150 ms, so Music doesn't drop the change.
-        if let lastChange {
-            let wait = lastChange + Self.changeGap - clock.now
-            if wait > .zero { Thread.sleep(forTimeInterval: wait / .seconds(1)) }
-        }
         do {
-            try MusicBridge.setVolumeNow(before)
+            try MusicBridge.setVolumeNow(before, after: Self.changeGap)
             self.before = nil
             log.notice("Restored Music's volume to \(before) on quit")
         } catch {
@@ -105,13 +107,16 @@ final class VolumeDip {
             let progress = seconds > 0 ? min((clock.now - started + Self.changeGap) / .seconds(seconds), 1) : 1
             let next = start + Int((Double(target - start) * progress).rounded())
             if next != level {
-                lastChange = clock.now
                 do {
                     try await MusicBridge.setVolume(next)
                 } catch {
                     log.error("Couldn't set Music's volume: \(String(describing: error), privacy: .public)")
                     return
                 }
+                // Timed from when Music has answered, not from when the change
+                // was sent. Behind a tune's commands, a change reached Music
+                // late, and the next one sent 150 ms after it was dropped.
+                lastChange = clock.now
                 level = next
             }
             if progress >= 1 {
