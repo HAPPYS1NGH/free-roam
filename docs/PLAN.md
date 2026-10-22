@@ -12,6 +12,7 @@ Hold a key, a wheel like GTA's radio wheel appears, flick the mouse, and Apple M
 | Radio wheel | A faithful copy of GTA V's: one station per playlist (up to 25) plus Radio Off. Hold ⌥Q to open, tap for the next station. Numbers in [DECISIONS.md](DECISIONS.md) |
 | Weapon wheel | Later, after v1 |
 | Wheel position | Centred, 4.3% of screen height above the middle as in GTA. The direction you move the mouse picks the station |
+| Backdrop | Desaturated through a screen capture, which needs Screen Recording permission. Without it, vignette and tint only |
 | Distribution | Open source, unsigned, DMG on GitHub Releases |
 | Repo | Public from day one |
 | Target | macOS 14+, Apple Silicon and Intel |
@@ -105,7 +106,7 @@ static/
 - Playlists are always addressed by persistent ID and names are escaped, so a playlist called `"; do shell script …` can't inject AppleScript.
 - Volume dip: ramp to 40% when the wheel opens. Restore it when the wheel closes and when the app quits.
 - Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. The first run uses your playlists in library order.
-- Backdrop: the vignette and tint work without extra permissions; desaturating other apps like GTA needs a screen capture and Screen Recording permission. Decide which before building.
+- Backdrop: desaturate other apps through a screen capture, as decided in [DECISIONS.md](DECISIONS.md). That needs Screen Recording permission. If it's denied, show the vignette and tint only, which need none.
 - Edge cases:
   - Music isn't running: don't launch it just to show the wheel; launch it when a station is picked.
   - A playlist was deleted: it drops off the ring.

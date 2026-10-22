@@ -42,3 +42,15 @@ Rejected:
 - Dropping hover ticks under 35ms apart: a sweep's rhythm stuttered, and the stations those ticks belonged to went silent.
 - The local hover at retune's level: a bright 53ms hiss, 10 dB louder than the open/close click, on every station passed.
 - Linear 0–1 volume sliders: the usable quiet range was a sliver at the bottom of the slider.
+
+## 2026-10-22: The Mac app desaturates the screen
+
+Decided by comparing three backdrops under the open wheel in the prototype, over the dark desktop and over a light window full of album art.
+
+- The Mac app keeps the prototype's backdrop: saturation 0.45, brightness 1.04, the 7% blue wash and the vignette. Only a live screen capture can desaturate other apps' windows, so Static asks for Screen Recording permission.
+- If permission is denied, the wheel still opens with the vignette and wash only. Both are plain overlays and need no permission.
+
+Rejected:
+
+- **Tint only**: the vignette and wash without desaturation. It needs no permission, but colourful windows keep their full colour and compete with the wheel.
+- **Grey veil**: a flat cool grey at 30% opacity between the wash and the vignette, to fake desaturation without permission. A grey overlay mutes colour but also flattens contrast, so the screen looked foggy rather than drained.
