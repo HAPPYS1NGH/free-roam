@@ -41,7 +41,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         log.notice("Loaded tokens.json: hold ⌥Q for \(Int(style.behaviour.holdDelayMs)) ms to open the wheel")
         let wheel = RadioWheelModel(style: style, stations: stations)
-        stations.onLoaded = { [weak wheel] in wheel?.loadDetails(for: $0) }
+        stations.onChange = { [weak wheel] in wheel?.loadDetails(for: $0) }
         // Your saved stations, before Music's playlists have loaded.
         wheel.loadDetails(for: stations.onWheel)
         wheel.start()

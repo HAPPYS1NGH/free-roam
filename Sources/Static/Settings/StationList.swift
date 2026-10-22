@@ -32,8 +32,9 @@ final class StationList {
     /// new playlist can be told apart from one you don't want. Nil until you
     /// first change something in Settings.
     private(set) var choice: [Entry]?
-    /// Called with the wheel's stations whenever Music's playlists load.
-    @ObservationIgnored var onLoaded: ([Playlist]) -> Void = { _ in }
+    /// Called with the wheel's stations whenever Music's playlists load or
+    /// you change them in Settings, so new stations' tracks and logos load.
+    @ObservationIgnored var onChange: ([Playlist]) -> Void = { _ in }
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var loading: Task<Void, Never>?
@@ -84,6 +85,7 @@ final class StationList {
         guard !isOn || onWheel.count < RadioWheelModel.maxStations else { return }
         all[index].isOn = isOn
         save(all)
+        onChange(onWheel)
         log.notice("Switched \(all[index].name, privacy: .public) \(isOn ? "on" : "off")")
     }
 
@@ -96,6 +98,7 @@ final class StationList {
         let moved = all.map { $0.isMissing ? $0 : next.next() ?? $0 }
         guard moved != all else { return }
         save(moved)
+        onChange(onWheel)
         log.notice("The wheel's order is now \(self.onWheel.map(\.name).joined(separator: ", "), privacy: .public)")
     }
 
@@ -113,7 +116,7 @@ final class StationList {
                 save(merged)
             }
         }
-        onLoaded(onWheel)
+        onChange(onWheel)
     }
 
     /// The first 25 playlists are on, as on the first run.
