@@ -109,6 +109,12 @@
   text-overflow: ellipsis;
 }
 
+/* The station is the caption's largest line, above the artist and title. */
+.caption-station {
+  font-size: var(--station-size);
+  line-height: var(--station-pitch);
+}
+
 /* Condensed capitals crowd each other; a little tracking keeps them apart. */
 .caption-artist {
   text-transform: uppercase;

@@ -29,7 +29,7 @@ Open the URL it prints. Hold <kbd>Q</kbd>, move the mouse or scroll to pick a st
 
 `npm run library` writes to `prototype/public/library/`, which is gitignored, so your library stays on your Mac. `npm run wallpaper` copies your desktop picture to `prototype/public/wallpaper/`, also gitignored. If macOS won't let it ask System Events, pass the picture's path: `npm run wallpaper -- /path/to/picture.jpg`.
 
-The Legibility panel at the top tries ways to keep the idle discs visible over a busy wallpaper: a backdrop blur, the idle discs' opacity, presets for both, and a 12, 24 or 25 station ring. The hint in the bottom left shows the current values, and Copy values copies them.
+The Legibility panel at the top is for keeping the idle discs visible over a busy wallpaper: a backdrop blur, the idle discs' opacity, presets for both, and a 12, 24 or 25 station ring. Its Layout switch tries two ways to keep a crowded ring clear of the caption, and Station Size sets the caption's top line. The hint in the bottom left shows the current values, and Copy values copies them.
 
 To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` into `prototype/public/sounds/local/`, which is also gitignored. The panel's Sound Pack switch flips between them and the built-in ones, and any sound missing from the local folder falls back to the built-in one.
 

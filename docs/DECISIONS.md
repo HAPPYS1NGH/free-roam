@@ -178,3 +178,7 @@ Rejected:
 - Asking for Screen Recording at launch: it stays optional.
 - Dropping playlists missing from a list out of the saved choice: a short list turned them into new playlists when they came back.
 - Reading the playlists on every ⌥Q press: the read went ahead of a tap's tune.
+
+## 2026-10-23: The station name is the caption's largest line
+
+- The station line is 3.4%H and the artist and title stay 2.6%H. With all three the same size, the artist's capitals read larger than the station name. The station line keeps the others' leading and stays centred 5%H above the ring's centre, so Radio Off doesn't move, and the artist and title hang below it. It's a new token, `sizes.stationSize`, which the Mac app doesn't read yet: `CaptionView` still spaces the lines `index × captionPitch` apart.

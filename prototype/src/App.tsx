@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties }
 import { Desktop } from "./Desktop"
 import { isLegibilityPreset, LEGIBILITY_PRESETS, legibilityControls, legibilityReadout } from "./legibility"
 import { loadLibrary, type Library } from "./library"
-import { RadioWheel, radioWheelControls } from "./RadioWheel"
+import { RadioWheel, radioWheelControls, type RingLayout } from "./RadioWheel"
 import { preloadSounds, RETUNE_TAKES, SILENT_DB, SOUND_PACKS, type SoundName, type SoundPack } from "./sound"
 import { crowdedPlaylists, slotsFor } from "./stations"
 import { transitionFor } from "./timing"
@@ -54,13 +54,6 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
     () => slotsFor(crowdedPlaylists(library.playlists, stationCount)),
     [library, stationCount],
   )
-  const shownWallpaper = tuning.wallpaper === "Yours" ? wallpaper : null
-  const readout = legibilityReadout({
-    backdropBlur: tuning.backdropBlur,
-    idleOpacity: tuning.idleOpacity,
-    stations: tuning.stations,
-    wallpaper: shownWallpaper ? "your wallpaper" : "stand-in wallpaper",
-  })
 
   const harness = useDialKit(
     "Harness",
@@ -86,6 +79,16 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
     { id: "harness-v5", persist: true, onAction },
   )
   const look = useDialKit("Radio wheel", radioWheelControls, { id: "radio-wheel-v5", persist: true, onAction })
+  const shownWallpaper = tuning.wallpaper === "Yours" ? wallpaper : null
+  const readout = legibilityReadout({
+    backdropBlur: tuning.backdropBlur,
+    idleOpacity: tuning.idleOpacity,
+    stations: tuning.stations,
+    wallpaper: shownWallpaper ? "your wallpaper" : "stand-in wallpaper",
+    layout: tuning.layout,
+    stationSize: tuning.stationSize,
+    captionSize: look.captionSize,
+  })
   // The dead zone is %H like the rest of the HUD.
   const unit = useViewport().height / 100
 
@@ -124,7 +127,8 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
     if (action === "replayOpen") return wheel.peek()
     if (isLegibilityPreset(action)) return legibility.setValues(LEGIBILITY_PRESETS[action])
     if (action === "copyValues") return void copy(readout, "Values copied")
-    const tokens = buildTokens("Radio wheel", { ...look, idleOpacity: tuning.idleOpacity }, {
+    const sizes = { ...look, idleOpacity: tuning.idleOpacity, stationSize: tuning.stationSize }
+    const tokens = buildTokens("Radio wheel", sizes, {
       holdDelayMs: harness.holdDelayMs,
       deadzone: harness.deadzone,
       pickRadius: harness.pickRadius,
@@ -197,6 +201,8 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
               highlighted={wheel.highlighted}
               look={look}
               idleOpacity={tuning.idleOpacity}
+              stationSize={tuning.stationSize}
+              layout={tuning.layout as RingLayout}
               openTransition={openTransition}
               closeTransition={closeTransition}
             />

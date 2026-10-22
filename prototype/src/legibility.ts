@@ -1,9 +1,11 @@
 import type { DialConfig } from "dialkit"
+import { RING_LAYOUTS } from "./RadioWheel"
 
 // Over a bright, busy wallpaper the idle discs nearly vanish. This panel tries
 // the two fixes side by side: blur the backdrop more, make the idle discs more
 // opaque, or both, with the wheel as crowded as it gets on the Mac. Blur is in
-// CSS pixels, which are points on the Mac.
+// CSS pixels, which are points on the Mac. It also tries ways to keep a
+// crowded ring clear of the caption, and the station line's size.
 
 type Preset = { backdropBlur: number; idleOpacity: number }
 
@@ -39,13 +41,34 @@ export const legibilityControls = {
   // problem showed up on; 25 is the most the wheel takes.
   stations: { type: "select", options: [...STATION_COUNTS], default: "24" },
   wallpaper: { type: "select", options: [...WALLPAPERS], default: "Yours" },
+  layout: { type: "select", options: [...RING_LAYOUTS], default: "Today" },
+  // The caption's top line, %H. Artist and title use captionSize (2.6%H) in
+  // the Radio wheel panel, and the artist is in capitals, so the station
+  // needs about a third more to read as the largest.
+  stationSize: [3.4, 2, 5, 0.05],
   copyValues: { type: "action", label: "Copy values" },
 } satisfies DialConfig
 
-type ReadoutValues = { backdropBlur: number; idleOpacity: number; stations: string; wallpaper: string }
+type ReadoutValues = {
+  backdropBlur: number
+  idleOpacity: number
+  stations: string
+  wallpaper: string
+  layout: string
+  stationSize: number
+  captionSize: number
+}
 
-// One line to quote back, e.g. "Blur 12 px · idle discs 0.40 · 24 stations · your wallpaper".
-export function legibilityReadout({ backdropBlur, idleOpacity, stations, wallpaper }: ReadoutValues) {
-  const blur = Math.round(backdropBlur * 10) / 10
-  return `Blur ${blur} px · idle discs ${idleOpacity.toFixed(2)} · ${stations} stations · ${wallpaper}`
+// One line to quote back, e.g. "Blur 12 px · idle discs 0.40 · 24 stations ·
+// your wallpaper · Grow ring · station 3.4%H, artist and title 2.6%H".
+export function legibilityReadout(values: ReadoutValues) {
+  const blur = Math.round(values.backdropBlur * 10) / 10
+  return [
+    `Blur ${blur} px`,
+    `idle discs ${values.idleOpacity.toFixed(2)}`,
+    `${values.stations} stations`,
+    values.wallpaper,
+    values.layout,
+    `station ${values.stationSize.toFixed(2)}%H, artist and title ${values.captionSize.toFixed(2)}%H`,
+  ].join(" · ")
 }

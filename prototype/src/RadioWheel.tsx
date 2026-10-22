@@ -68,9 +68,29 @@ export type RadioWheelLook = ResolvedValues<typeof radioWheelControls>
 // whole-pixel tiles with no seams between them.
 const evenPixels = (n: number) => Math.round(n / 2) * 2
 
-export function ringGeometry(look: RadioWheelLook, count: number, unit: number) {
+// Three ways to fit a crowded ring, tried in the Legibility panel. Today is
+// the formula above, ported line for line to WheelGeometry.swift. Grow ring
+// lets the ring keep growing past maxRadius, so discs keep their size and
+// spacing. Shrink discs holds the ring at minRadius and shrinks the discs
+// instead, as Today already does below 16 slots. Both new layouts also fit
+// each caption line inside the ring (see captionWidth).
+export const RING_LAYOUTS = ["Today", "Grow ring", "Shrink discs"] as const
+export type RingLayout = (typeof RING_LAYOUTS)[number]
+
+// Grow ring's largest radius, %H. With the 4.3%H raise the selected disc's
+// ring stays about 4%H below the top of the screen, clear of a laptop's menu
+// bar. 25 stations need 37.9%H, so their discs shrink by 5%.
+const GROW_MAX_RADIUS = 36
+
+function ringRadius(look: RadioWheelLook, count: number, layout: RingLayout) {
+  if (layout === "Shrink discs") return look.minRadius
   const natural = (count * look.iconPitch) / (2 * Math.PI)
-  const radius = Math.min(Math.max(natural, look.minRadius), look.maxRadius) * unit
+  const maxRadius = layout === "Grow ring" ? GROW_MAX_RADIUS : look.maxRadius
+  return Math.min(Math.max(natural, look.minRadius), maxRadius)
+}
+
+export function ringGeometry(look: RadioWheelLook, count: number, unit: number, layout: RingLayout = "Today") {
+  const radius = ringRadius(look, count, layout) * unit
   const pitch = (2 * Math.PI * radius) / count
   const icon = evenPixels(Math.min((pitch * look.iconSize) / look.iconPitch, look.maxIconSize * unit))
   const selectedIcon = evenPixels(icon * look.selectedScale)
@@ -82,6 +102,9 @@ type Props = {
   highlighted: number
   look: RadioWheelLook
   idleOpacity: number
+  // %H, like captionSize.
+  stationSize: number
+  layout: RingLayout
   openTransition: Transition
   closeTransition: Transition
 }
@@ -124,19 +147,50 @@ function captionFor(slot: Slot, now: number) {
   return { station: slot.playlist.name, artist: live?.track.artist ?? "", title: live?.track.title ?? "No songs" }
 }
 
-export function RadioWheel({ slots, highlighted, look, idleOpacity, openTransition, closeTransition }: Props) {
+// The widest a caption line can be and stay inside a circle of `clear`
+// radius, given its top and bottom as offsets from the ring's centre. The
+// line is narrowest where it's farthest from the centre.
+function captionWidth(clear: number, top: number, bottom: number) {
+  const far = Math.max(Math.abs(top), Math.abs(bottom))
+  return 2 * Math.sqrt(Math.max(0, clear * clear - far * far))
+}
+
+export function RadioWheel(props: Props) {
+  const { slots, highlighted, look, idleOpacity, stationSize, layout, openTransition, closeTransition } = props
   const { height } = useViewport()
   const now = useNow()
   const unit = height / 100
-  const { radius, icon, selectedIcon } = ringGeometry(look, slots.length, unit)
+  const { radius, icon, selectedIcon } = ringGeometry(look, slots.length, unit, layout)
   const ringWidth = Math.round(look.ringWidth * unit)
   // Room for the selected ring and its dark edge. Even, so the centre the
   // stations and the open scale use is a whole pixel.
   const size = 2 * Math.ceil(radius + selectedIcon / 2 + ringWidth + 2)
   const centre = size / 2
   const pitch = look.captionPitch * unit
+  // The station line is the largest, with the same leading as the others.
+  const stationPitch = (stationSize / look.captionSize) * pitch
   const caption = captionFor(slots[highlighted], now)
   const ring = RING_COLOURS[look.ringPreset] ?? look.ringColor
+
+  // The station line is centred captionRaise above the ring's centre, so a
+  // one-line caption ("Radio Off") stays in the same place, and the rest hang
+  // below it, as in GTA. Today caps every line at 90% of the inner circle's
+  // width. The new layouts fit each line inside the inner circle, keeping a
+  // caption line's height clear of the selected disc's ring.
+  const captionTop = -look.captionRaise * unit - stationPitch / 2
+  const clear = radius - selectedIcon / 2 - ringWidth - pitch
+  let lineTop = captionTop
+  const lines = [
+    { key: "station", text: caption.station, className: "caption-station", height: stationPitch },
+    { key: "artist", text: caption.artist, className: "caption-artist", height: pitch },
+    { key: "title", text: caption.title, className: undefined, height: pitch },
+  ]
+    .filter((line) => line.text)
+    .map((line) => {
+      const top = lineTop
+      lineTop += line.height
+      return { ...line, maxWidth: layout === "Today" ? undefined : captionWidth(clear, top, lineTop) }
+    })
 
   return (
     <motion.div
@@ -156,6 +210,8 @@ export function RadioWheel({ slots, highlighted, look, idleOpacity, openTransiti
           "--idle-opacity": idleOpacity,
           "--caption-size": `${Math.max(13, look.captionSize * unit)}px`,
           "--caption-pitch": `${pitch}px`,
+          "--station-size": `${Math.max(13, stationSize * unit)}px`,
+          "--station-pitch": `${stationPitch}px`,
         } as CSSProperties
       }
       // Animated as one `transform` string because Motion hands that, unlike
@@ -180,19 +236,19 @@ export function RadioWheel({ slots, highlighted, look, idleOpacity, openTransiti
           </div>
         )
       })}
-      {/* The first line sits above the ring's centre and the rest hang below it,
-          as in GTA, so a one-line caption ("Radio Off") stays in the same place.
-          Long lines truncate short of the logos instead of running under them. */}
+      {/* Long lines truncate short of the logos instead of running under them. */}
       <div
         className="wheel-caption"
         role="status"
         aria-live="polite"
         aria-atomic="true"
-        style={{ top: centre - look.captionRaise * unit - pitch / 2, maxWidth: (radius - icon / 2) * 1.8 }}
+        style={{ top: centre + captionTop, maxWidth: layout === "Today" ? (radius - icon / 2) * 1.8 : undefined }}
       >
-        <span>{caption.station}</span>
-        {caption.artist && <span className="caption-artist">{caption.artist}</span>}
-        {caption.title && <span>{caption.title}</span>}
+        {lines.map((line) => (
+          <span key={line.key} className={line.className} style={{ maxWidth: line.maxWidth }}>
+            {line.text}
+          </span>
+        ))}
       </div>
     </motion.div>
   )

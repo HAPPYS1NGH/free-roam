@@ -14,15 +14,30 @@ export function slotsFor(playlists: Playlist[]): Slot[] {
   ]
 }
 
+// Real songs with long credits. The uppercase ARTIST line is the caption's
+// widest, so these are what run into the ring.
+const LONG_CREDITS: Track[] = [
+  { title: "Brown Munde", artist: "AP Dhillon, Shinda Kahlon, Gurinder Gill & Gminxr", duration: 267 },
+  { title: "Monster", artist: "Kanye West, JAY-Z, Rick Ross, Nicki Minaj & Bon Iver", duration: 378 },
+  { title: "Feels", artist: "Calvin Harris, Pharrell Williams, Katy Perry & Big Sean", duration: 223 },
+  { title: "Kesariya", artist: "Pritam, Arijit Singh & Amitabh Bhattacharya", duration: 268 },
+  { title: "All I Do Is Win", artist: "DJ Khaled, T-Pain, Ludacris, Snoop Dogg & Rick Ross", duration: 232 },
+  { title: "Forever", artist: "Drake, Kanye West, Lil Wayne & Eminem", duration: 357 },
+  { title: "Mercy", artist: "Kanye West, Big Sean, Pusha T & 2 Chainz", duration: 329 },
+]
+
 // Fills the wheel to `count` stations by repeating the playlists, to see how
 // a crowded ring reads. Repeats get a number so the caption tells them apart.
+// Every station plays one long-credited song, so whichever you land on shows
+// a caption as wide as it gets.
 export function crowdedPlaylists(playlists: Playlist[], count: number): Playlist[] {
   if (playlists.length === 0) return []
   return Array.from({ length: count }, (_, i) => {
     const source = playlists[i % playlists.length]
     const copy = Math.floor(i / playlists.length)
-    if (copy === 0) return source
-    return { ...source, id: `${source.id}-${copy + 1}`, name: `${source.name.trim()} ${copy + 1}` }
+    const tracks = [LONG_CREDITS[i % LONG_CREDITS.length]]
+    if (copy === 0) return { ...source, tracks }
+    return { ...source, id: `${source.id}-${copy + 1}`, name: `${source.name.trim()} ${copy + 1}`, tracks }
   })
 }
 
