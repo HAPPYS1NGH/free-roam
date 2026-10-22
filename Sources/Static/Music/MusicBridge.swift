@@ -179,7 +179,7 @@ enum MusicBridge {
     }
 
     /// Opens Music without bringing it to the front, so the app you're in
-    /// stays active. Scripting Music would launch it too, but in front.
+    /// stays active, and waits until it answers scripts.
     static func launch() async throws {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
             throw MusicBridgeError.notInstalled
@@ -187,6 +187,18 @@ enum MusicBridge {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+        // Music is listed as running before it can take scripts. Until then
+        // they fail with "Connection is invalid", which lost the first tune.
+        var attempts = 1
+        while true {
+            do {
+                return try await run(#"tell application id "com.apple.Music" to get version"#) { _ in }
+            } catch MusicBridgeError.script(let code, _)
+                where (code == connectionInvalid || code == procNotFound) && attempts < 50 {
+                attempts += 1
+                try await Task.sleep(for: .milliseconds(200))
+            }
+        }
     }
 
     /// Reads the `{ids, names}` pair returned by `playlists()`.
