@@ -40,7 +40,7 @@ final class RadioWheelModel {
 
     func start() {
         hotkey.onPress = { [weak self] in self?.press() }
-        hotkey.onRelease = { [weak self] lostKeyUp in self?.release(lostKeyUp: lostKeyUp) }
+        hotkey.onRelease = { [weak self] optionFirst in self?.release(optionFirst: optionFirst) }
         escape.onPress = { [weak self] in self?.dismiss() }
         do {
             try hotkey.register()
@@ -63,8 +63,8 @@ final class RadioWheelModel {
         }
     }
 
-    private func release(lostKeyUp: Bool) {
-        if lostKeyUp { log.notice("⌥ came up before Q's key-up arrived") }
+    private func release(optionFirst: Bool) {
+        if optionFirst { log.notice("⌥ came up before Q, which ends the hold") }
         if let holdTimer {
             holdTimer.cancel()
             self.holdTimer = nil

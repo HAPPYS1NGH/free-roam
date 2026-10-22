@@ -16,13 +16,15 @@ enum HotkeyError: LocalizedError {
 /// no permission and only matches this exact key and modifiers, so plain keys
 /// still reach the frontmost app.
 ///
-/// Every press gets exactly one release. Carbon can lose the key-up, so while
-/// the key is down the modifiers are polled too, and letting go of them counts
-/// as letting go of the shortcut.
+/// Every press gets exactly one release. Carbon sends the key-up only when the
+/// key itself comes up, which can be well after the modifiers, so while the key
+/// is down the modifiers are polled too and letting go of them counts as
+/// letting go of the shortcut, as with ⌘Tab. That also means a key-up that
+/// never arrives can't keep a press going.
 @MainActor
 final class Hotkey {
     var onPress: () -> Void = {}
-    var onRelease: (_ lostKeyUp: Bool) -> Void = { _ in }
+    var onRelease: (_ modifiersFirst: Bool) -> Void = { _ in }
     private(set) var isDown = false
 
     private let keyCode: Int
@@ -74,18 +76,18 @@ final class Hotkey {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(16))
                 guard let self, !Task.isCancelled else { return }
-                if !NSEvent.modifierFlags.contains(self.modifiers) { self.released(lostKeyUp: true) }
+                if !NSEvent.modifierFlags.contains(self.modifiers) { self.released(modifiersFirst: true) }
             }
         }
         onPress()
     }
 
-    private func released(lostKeyUp: Bool) {
+    private func released(modifiersFirst: Bool) {
         guard isDown else { return }
         isDown = false
         modifierPoll?.cancel()
         modifierPoll = nil
-        onRelease(lostKeyUp)
+        onRelease(modifiersFirst)
     }
 
     private var carbonModifiers: UInt32 {
@@ -121,7 +123,7 @@ final class Hotkey {
         let isPress = GetEventKind(event) == UInt32(kEventHotKeyPressed)
         MainActor.assumeIsolated {
             guard let hotkey = registered[hotkeyID.id] else { return }
-            if isPress { hotkey.pressed() } else { hotkey.released(lostKeyUp: false) }
+            if isPress { hotkey.pressed() } else { hotkey.released(modifiersFirst: false) }
         }
         return noErr
     }

@@ -1,14 +1,15 @@
 import AppKit
-import OSLog
 import SwiftUI
-
-private let log = Logger(subsystem: "com.happys1ngh.static", category: "overlay")
 
 /// A see-through panel over the whole screen with the mouse, on every Space
 /// and over full-screen apps. It never activates Static or takes the keyboard,
-/// so the app you were in stays frontmost. While it's shown, it turns mouse
-/// movement and scrolling into wheel input. It covers the screen and takes
+/// so the app you were in stays frontmost. It covers the screen and takes
 /// mouse events itself, so scrolling and clicks don't reach the app underneath.
+///
+/// While it's shown, mouse movement and scrolling become wheel input. Mouse
+/// moves go to the active app wherever the pointer is, so they're read from
+/// copies of the events sent to other apps, or from Static's own events when
+/// Static is the active app. Scrolls go to the panel under the pointer.
 final class OverlayPanel: NSPanel {
     /// Points moved, with y growing downwards.
     var onMouseMove: (_ dx: Double, _ dy: Double) -> Void = { _, _ in }
@@ -19,16 +20,6 @@ final class OverlayPanel: NSPanel {
     private static let lineHeight = 16.0
 
     private var monitors: [Any] = []
-    private var counts = InputCounts()
-
-    /// How many events arrived by each route while the panel was shown. A
-    /// non-activating panel belongs to an app in the background, so this checks
-    /// which routes deliver without the Accessibility permission.
-    private struct InputCounts {
-        var ownMoves = 0
-        var otherAppMoves = 0
-        var scrolls = 0
-    }
 
     init(content: some View) {
         super.init(contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
@@ -40,21 +31,13 @@ final class OverlayPanel: NSPanel {
         hidesOnDeactivate = false
         isReleasedWhenClosed = false
         animationBehavior = .none
-        acceptsMouseMovedEvents = true
         // Set explicitly, so the clear parts of the panel take mouse events too
         // instead of passing them to the windows underneath.
         ignoresMouseEvents = false
 
         let hosting = NSHostingView(rootView: content)
         hosting.sizingOptions = []
-        hosting.autoresizingMask = [.width, .height]
-        let container = NSView()
-        container.addSubview(hosting)
-        // Asks for mouse moves while another app is active.
-        container.addTrackingArea(NSTrackingArea(
-            rect: .zero, options: [.mouseMoved, .activeAlways, .inVisibleRect], owner: container
-        ))
-        contentView = container
+        contentView = hosting
     }
 
     override var canBecomeKey: Bool { false }
@@ -62,37 +45,40 @@ final class OverlayPanel: NSPanel {
 
     func show(on screen: NSScreen) {
         setFrame(screen.frame, display: false)
-        contentView?.subviews.first?.frame = contentView?.bounds ?? .zero
         orderFrontRegardless()
-        counts = InputCounts()
         startMonitoring()
     }
 
     func hide() {
         stopMonitoring()
         orderOut(nil)
-        log.notice("""
-            Input while shown: \(self.counts.ownMoves) mouse moves to Static, \
-            \(self.counts.otherAppMoves) to other apps, \(self.counts.scrolls) scroll events
-            """)
     }
 
     private func startMonitoring() {
         let types: NSEvent.EventTypeMask = [.mouseMoved, .leftMouseDragged, .rightMouseDragged, .otherMouseDragged, .scrollWheel]
-        // Events sent to Static's own windows, this panel included. Returning
-        // nil keeps them from going any further.
+        // Events sent to Static. Returning nil keeps them from going any further.
         if let monitor = NSEvent.addLocalMonitorForEvents(matching: types, handler: { [weak self] event in
-            MainActor.assumeIsolated { self?.handle(event, toOtherApp: false) }
+            MainActor.assumeIsolated { self?.received(event, toOtherApp: false) }
             return nil
         }) {
             monitors.append(monitor)
         }
-        // Events sent to other apps. These are copies; the app still gets them.
+        // Copies of events sent to other apps, which still get them.
         if let monitor = NSEvent.addGlobalMonitorForEvents(matching: types, handler: { [weak self] event in
-            MainActor.assumeIsolated { self?.handle(event, toOtherApp: true) }
+            MainActor.assumeIsolated { self?.received(event, toOtherApp: true) }
         }) {
             monitors.append(monitor)
         }
+    }
+
+    private func received(_ event: NSEvent, toOtherApp: Bool) {
+        if event.type == .scrollWheel {
+            if !toOtherApp { scroll(event) }
+            return
+        }
+        // Every move reaches the active app, and the panel gets some of them
+        // again, so only the active app's copy counts.
+        if toOtherApp != NSApp.isActive { onMouseMove(event.deltaX, event.deltaY) }
     }
 
     private func stopMonitoring() {
@@ -100,13 +86,7 @@ final class OverlayPanel: NSPanel {
         monitors.removeAll()
     }
 
-    private func handle(_ event: NSEvent, toOtherApp: Bool) {
-        guard event.type == .scrollWheel else {
-            if toOtherApp { counts.otherAppMoves += 1 } else { counts.ownMoves += 1 }
-            onMouseMove(event.deltaX, event.deltaY)
-            return
-        }
-        counts.scrolls += 1
+    private func scroll(_ event: NSEvent) {
         let unit = event.hasPreciseScrollingDeltas ? 1 : Self.lineHeight
         // Negated to match browser wheel deltas, which the prototype was tuned
         // with: scrolling down the page is positive. Trackpads scroll on both
