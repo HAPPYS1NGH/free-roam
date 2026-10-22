@@ -27,6 +27,7 @@ enum MusicPermission: Equatable, Sendable {
 
 enum MusicBridgeError: LocalizedError {
     case notPermitted
+    case notInstalled
     case invalidPersistentID(String)
     case script(code: Int, message: String)
 
@@ -39,6 +40,7 @@ enum MusicBridgeError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .notPermitted: "Static isn't allowed to control Music."
+        case .notInstalled: "Music isn't installed."
         case .invalidPersistentID(let id): "Not a Music persistent ID: \(id)"
         case .script(let code, let message): "Music error \(code): \(message)"
         }
@@ -101,6 +103,80 @@ enum MusicBridge {
             """) { _ in }
     }
 
+    /// Each track's length in seconds, in playlist order. Tracks with no
+    /// length, such as missing files, count as 0.
+    static func trackDurations(playlistID: String) async throws -> [TimeInterval] {
+        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        return try await run("""
+            tell application id "com.apple.Music"
+                return duration of every track of (first user playlist whose persistent ID is "\(playlistID)")
+            end tell
+            """, parse: parseDurations)
+    }
+
+    /// Plays track `track` (1-based) of a playlist from `position` seconds in,
+    /// and returns where Music says it is afterwards. Music carries on through
+    /// the playlist from there.
+    static func play(playlistID: String, track: Int, from position: TimeInterval) async throws -> TimeInterval {
+        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        // AppleScript reals always use a dot, and "%f" never uses the locale's comma.
+        return try await run("""
+            tell application id "com.apple.Music"
+                play track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
+                set player position to \(String(format: "%.2f", position))
+                return player position
+            end tell
+            """) { $0.doubleValue }
+    }
+
+    static func pause() async throws {
+        try await run(#"tell application id "com.apple.Music" to pause"#) { _ in }
+    }
+
+    /// The playlist Music is playing from, or nil when it's paused or stopped.
+    /// It can be a playlist that isn't on the wheel, such as the library.
+    static func playingPlaylistID() async throws -> String? {
+        try await run("""
+            tell application id "com.apple.Music"
+                if player state is not playing then return ""
+                try
+                    return persistent ID of current playlist
+                on error
+                    return ""
+                end try
+            end tell
+            """) { result in
+            let id = result.stringValue ?? ""
+            return isPersistentID(id) ? id : nil
+        }
+    }
+
+    /// Music's own volume, 0–100, which sits under the system volume.
+    static func volume() async throws -> Int {
+        try await run(#"tell application id "com.apple.Music" to return sound volume"#) { Int($0.int32Value) }
+    }
+
+    static func setVolume(_ volume: Int) async throws {
+        try await run(volumeScript(volume)) { _ in }
+    }
+
+    /// Blocks until Music has the new volume, for when Static is about to quit
+    /// and can't wait for an answer.
+    static func setVolumeNow(_ volume: Int) throws {
+        _ = try queue.sync { try execute(volumeScript(volume)) }
+    }
+
+    /// Opens Music without bringing it to the front, so the app you're in
+    /// stays active. Scripting Music would launch it too, but in front.
+    static func launch() async throws {
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            throw MusicBridgeError.notInstalled
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        configuration.activates = false
+        _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+    }
+
     /// Reads the `{ids, names}` pair returned by `playlists()`.
     static func parsePlaylists(_ result: NSAppleEventDescriptor) -> [Playlist] {
         let ids = strings(in: result.atIndex(1))
@@ -108,6 +184,18 @@ enum MusicBridge {
         return zip(ids, names)
             .filter { id, _ in isPersistentID(id) }
             .map { Playlist(id: $0, name: $1) }
+    }
+
+    /// Reads the list of reals returned by `trackDurations(playlistID:)`.
+    static func parseDurations(_ result: NSAppleEventDescriptor) -> [TimeInterval] {
+        (0..<result.numberOfItems).map { index in
+            let seconds = result.atIndex(index + 1)?.doubleValue ?? 0
+            return seconds.isFinite && seconds > 0 ? seconds : 0
+        }
+    }
+
+    private static func volumeScript(_ volume: Int) -> String {
+        #"tell application id "com.apple.Music" to set sound volume to \#(min(max(volume, 0), 100))"#
     }
 
     private static func strings(in list: NSAppleEventDescriptor?) -> [String] {
@@ -121,14 +209,16 @@ enum MusicBridge {
     ) async throws -> Value {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                var errorInfo: NSDictionary?
-                let result = NSAppleScript(source: source)?.executeAndReturnError(&errorInfo)
-                if let result, errorInfo == nil {
-                    continuation.resume(returning: parse(result))
-                } else {
-                    continuation.resume(throwing: MusicBridgeError(errorInfo: errorInfo ?? [:]))
-                }
+                continuation.resume(with: Result { try parse(execute(source)) })
             }
         }
+    }
+
+    /// Only ever called on `queue`.
+    private static func execute(_ source: String) throws -> NSAppleEventDescriptor {
+        var errorInfo: NSDictionary?
+        let result = NSAppleScript(source: source)?.executeAndReturnError(&errorInfo)
+        guard let result, errorInfo == nil else { throw MusicBridgeError(errorInfo: errorInfo ?? [:]) }
+        return result
     }
 }

@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.OpenScripting
 import Testing
 @testable import Static
 
@@ -23,6 +24,12 @@ struct MusicBridgeTests {
         await #expect(throws: MusicBridgeError.self) {
             try await MusicBridge.play(playlistID: "\"; beep")
         }
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.play(playlistID: "\"; beep", track: 1, from: 0)
+        }
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.trackDurations(playlistID: "\"; beep")
+        }
     }
 
     @Test func parsesPlaylistsAndDropsUnexpectedIDs() {
@@ -42,6 +49,20 @@ struct MusicBridgeTests {
         result.insert(list([]), at: 2)
 
         #expect(MusicBridge.parsePlaylists(result).isEmpty)
+    }
+
+    @Test func parsesDurationsAndZeroesMissingOnes() {
+        let result = NSAppleEventDescriptor.list()
+        result.insert(NSAppleEventDescriptor(double: 241.5), at: 1)
+        result.insert(NSAppleEventDescriptor(typeCode: OSType(cMissingValue)), at: 2)
+        result.insert(NSAppleEventDescriptor(double: -1), at: 3)
+        result.insert(NSAppleEventDescriptor(int32: 180), at: 4)
+
+        #expect(MusicBridge.parseDurations(result) == [241.5, 0, 0, 180])
+    }
+
+    @Test func parsesAnEmptyPlaylist() {
+        #expect(MusicBridge.parseDurations(.list()).isEmpty)
     }
 
     private func list(_ strings: [String]) -> NSAppleEventDescriptor {
