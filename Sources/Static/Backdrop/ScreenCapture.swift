@@ -14,17 +14,17 @@ enum ScreenCapture {
     /// Never prompts.
     static var isAllowed: Bool { CGPreflightScreenCaptureAccess() }
 
-    /// Captures the main display once and returns the image size. The first
-    /// call makes macOS ask for Screen Recording permission; until it's
-    /// granted, this throws.
-    static func captureMainDisplay() async throws -> CGSize {
+    /// Captures the main display once. The first call makes macOS ask for
+    /// Screen Recording permission; until it's granted, this throws.
+    static func captureMainDisplay() async throws -> CGImage {
         try await capture(displayID: CGMainDisplayID())
     }
 
-    /// Captures a display at full pixel resolution, leaving out Static's own
-    /// windows, and logs how long listing the screen's content and taking the
-    /// image each took. Returns the image size.
-    static func capture(displayID: CGDirectDisplayID) async throws -> CGSize {
+    /// Captures a display at full pixel resolution, in the display's colour
+    /// space, and logs how long listing the screen's content and taking the
+    /// image each took. `excludedWindow` is left out, such as the wheel's
+    /// panel while it's still fading out.
+    static func capture(displayID: CGDirectDisplayID, excluding excludedWindow: CGWindowID? = nil) async throws -> CGImage {
         let clock = ContinuousClock()
         let started = clock.now
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
@@ -33,8 +33,8 @@ enum ScreenCapture {
             throw ScreenCaptureError.noDisplay
         }
 
-        let ownApp = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
-        let filter = SCContentFilter(display: display, excludingApplications: ownApp, exceptingWindows: [])
+        let excluded = content.windows.filter { $0.windowID == excludedWindow }
+        let filter = SCContentFilter(display: display, excludingWindows: excluded)
         let configuration = SCStreamConfiguration()
         configuration.width = Int(Float(display.width) * filter.pointPixelScale)
         configuration.height = Int(Float(display.height) * filter.pointPixelScale)
@@ -46,7 +46,7 @@ enum ScreenCapture {
             Captured \(image.width)×\(image.height) in \(milliseconds(finished - started)) ms: \
             listing content \(milliseconds(listed - started)) ms, image \(milliseconds(finished - listed)) ms
             """)
-        return CGSize(width: image.width, height: image.height)
+        return image
     }
 
     private static func milliseconds(_ duration: Duration) -> Int {

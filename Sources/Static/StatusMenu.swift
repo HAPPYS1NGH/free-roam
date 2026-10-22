@@ -45,8 +45,8 @@ final class StatusMenuModel {
 
     func captureScreen() async {
         do {
-            let size = try await ScreenCapture.captureMainDisplay()
-            message = "Captured the screen at \(Int(size.width))×\(Int(size.height))"
+            let image = try await ScreenCapture.captureMainDisplay()
+            message = "Captured the screen at \(image.width)×\(image.height)"
             log.notice("\(self.message ?? "", privacy: .public)")
         } catch {
             show(error, while: "capturing the screen")
