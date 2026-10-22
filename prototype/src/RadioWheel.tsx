@@ -39,11 +39,13 @@ export const radioWheelControls = {
   // Black rim round the art on each side, as a fraction of the disc. At 5%
   // the art circle is 90% of the disc, where GTA's Radio Off ring sits.
   rim: [0.05, 0, 0.2, 0.005],
+  // The selected disc's rim, thinner so the art runs almost up to the ring.
+  selectedRim: [0.01, 0, 0.2, 0.005],
   ringPreset: { type: "select", options: [...Object.keys(RING_COLOURS), "Custom"], default: "Blue" },
   ringColor: "#65B4D4",
   ringWidth: [0.55, 0.2, 1.5, 0.05],
   selectedScale: [1, 1, 1.2, 0.01],
-  idleOpacity: [0.3, 0.05, 1, 0.01],
+  idleOpacity: [0.4, 0.05, 1, 0.01],
   selectedInColour: true,
   captionSize: [2.6, 1.5, 4, 0.05],
   captionPitch: [3.4, 2, 5, 0.05],
@@ -149,7 +151,7 @@ export function RadioWheel({ slots, highlighted, look, openTransition, closeTran
           "--disc": `${icon}px`,
           "--rim": `${Math.round(icon * look.rim)}px`,
           "--selected-disc": `${selectedIcon}px`,
-          "--selected-rim": `${Math.round(selectedIcon * look.rim)}px`,
+          "--selected-rim": `${Math.round(selectedIcon * look.selectedRim)}px`,
           "--idle-opacity": look.idleOpacity,
           "--caption-size": `${Math.max(13, look.captionSize * unit)}px`,
           "--caption-pitch": `${pitch}px`,

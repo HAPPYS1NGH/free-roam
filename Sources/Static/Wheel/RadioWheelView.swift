@@ -30,7 +30,7 @@ struct RadioWheelView: View {
                     StationDisc(
                         art: art(for: slot),
                         size: size,
-                        rim: (size * sizes.rim).rounded(),
+                        rim: (size * (selected ? sizes.selectedRim : sizes.rim)).rounded(),
                         ringWidth: selected ? ringWidth : 0,
                         ringColor: Color(hex: style.colors.ringColor) ?? .white,
                         inColour: selected && style.flags.selectedInColour,

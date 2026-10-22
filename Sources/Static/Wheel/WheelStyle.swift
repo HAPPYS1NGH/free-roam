@@ -28,6 +28,8 @@ struct WheelStyle: Decodable, Sendable {
         let raise: Double
         /// Black rim round the art on each side, as a fraction of the disc.
         let rim: Double
+        /// The same for the selected disc.
+        let selectedRim: Double
         let ringWidth: Double
         let selectedScale: Double
         let idleOpacity: Double

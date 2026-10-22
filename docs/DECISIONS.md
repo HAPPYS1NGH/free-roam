@@ -136,6 +136,7 @@ Measured on macOS 27.0.1 with the Phase 2 step 4 build, by hand and from Static'
 - The sounds play through a small mixer on the audio thread (an `AVAudioSourceNode`), so a sound can fade out at an exact sample like a Web Audio gain ramp. A new retune fades the last one out over 12 ms, and hover ticks get quieter, darker and shorter the faster you sweep, as in the prototype. The audio engine starts on ⌥Q and stops 10 s after the last sound, so it doesn't hold the audio device.
 - Tunes land 175–360 ms after letting go, and once took 1.8 s, straight after Radio Off. With the local retune, the start of the song wasn't noticeable by hand.
 - The volume fix from step 3 held: over 7 opens, every dip went to 30, 0.4 × 75, and every restore came back to 75.
+- Two deliberate changes from GTA's numbers, after using the wheel on the Mac. The selected disc's black rim is 1% of the disc instead of 5%: on a 982 pt screen the 5% band was 5 pt, as wide as the blue ring, and looked heavy. Idle discs are 40% opaque instead of 30%, which was too faint. `selectedRim` is a new token, and the prototype uses the same values.
 
 Rejected:
 

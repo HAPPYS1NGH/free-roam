@@ -18,6 +18,7 @@ struct WheelStyleTests {
     @Test func decodesThePrototypeTokens() throws {
         let style = try TokensFixture.style()
         #expect(style.sizes.iconPitch == 9.15)
+        #expect(style.sizes.selectedRim == 0.01)
         #expect(style.colors.ringColor == "#65B4D4")
         #expect(style.behaviour.holdDelayMs == 150)
         #expect(style.animations.open.duration == 0.14)
