@@ -4,7 +4,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react"
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { Desktop } from "./Desktop"
 import { loadLibrary, type Library } from "./library"
-import { BackdropProto } from "./proto/backdrop/BackdropProto" // proto:backdrop
 import { RadioWheel, radioWheelControls } from "./RadioWheel"
 import { preloadSounds, RETUNE_TAKES, SILENT_DB, SOUND_PACKS, type SoundName, type SoundPack } from "./sound"
 import { slotsFor } from "./stations"
@@ -177,8 +176,6 @@ function Studio({ library, localSounds }: { library: Library; localSounds: numbe
         library={library}
         sounds={harness.soundPack === "Local" && localSounds > 0 ? `${localSounds} local sounds` : "synthesised sounds"}
       />
-      {/* proto:backdrop — dev-only backdrop comparison; remove once the backdrop is decided */}
-      {import.meta.env.DEV && <BackdropProto library={library} wheelOpen={wheel.open} />}
       <DialRoot position="top-right" theme="dark" />
     </>
   )
