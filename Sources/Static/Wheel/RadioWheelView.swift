@@ -46,12 +46,10 @@ struct RadioWheelView: View {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
                     CaptionView(
                         lines: caption(at: context.date),
-                        fontSize: max(13, sizes.captionSize * unit),
-                        pitch: sizes.captionPitch * unit,
-                        maxWidth: (ring.radius - ring.icon / 2) * 1.8,
-                        // The first line sits above the ring's centre and the
-                        // rest hang below it, so "Radio Off" stays in place.
-                        firstLine: CGPoint(x: centre.x, y: centre.y - sizes.captionRaise * unit)
+                        sizes: sizes,
+                        ring: ring,
+                        centre: centre,
+                        screenHeight: proxy.size.height
                     )
                 }
             }
@@ -209,15 +207,27 @@ private struct RadioOffGlyph: Shape {
 /// readable on white windows. SwiftUI's shadow radius is half a CSS blur.
 private struct CaptionView: View {
     let lines: CaptionLines
-    let fontSize: Double
-    let pitch: Double
-    let maxWidth: Double
-    let firstLine: CGPoint
+    let sizes: WheelStyle.Sizes
+    let ring: WheelGeometry.Ring
+    let centre: CGPoint
+    let screenHeight: Double
 
     var body: some View {
-        let shown = [(lines.station, false), (lines.artist, true), (lines.title, false)].filter { !$0.0.isEmpty }
+        let unit = screenHeight / 100
+        let pitch = sizes.captionPitch * unit
+        // The station line is the largest, with the same leading as the others.
+        let stationPitch = sizes.stationSize / sizes.captionSize * pitch
+        let shown = [
+            (text: lines.station, size: sizes.stationSize, height: stationPitch, isArtist: false),
+            (text: lines.artist, size: sizes.captionSize, height: pitch, isArtist: true),
+            (text: lines.title, size: sizes.captionSize, height: pitch, isArtist: false),
+        ].filter { !$0.text.isEmpty }
+        let layout = WheelGeometry.captionLines(
+            heights: shown.map(\.height), ring: ring, sizes: sizes, screenHeight: screenHeight
+        )
         ForEach(shown.indices, id: \.self) { index in
-            let (text, isArtist) = shown[index]
+            let (text, size, _, isArtist) = shown[index]
+            let fontSize = max(13, size * unit)
             // Condensed capitals crowd each other, so the artist gets a
             // little tracking.
             Text(isArtist ? text.uppercased() : text)
@@ -232,8 +242,8 @@ private struct CaptionView: View {
                 .shadow(color: .black.opacity(0.45), radius: 2)
                 // Long lines stop short of the logos instead of running under them.
                 .padding(.horizontal, 4)
-                .frame(maxWidth: maxWidth)
-                .position(x: firstLine.x, y: firstLine.y + Double(index) * pitch)
+                .frame(maxWidth: layout[index].maxWidth)
+                .position(x: centre.x, y: centre.y + layout[index].y)
         }
     }
 }

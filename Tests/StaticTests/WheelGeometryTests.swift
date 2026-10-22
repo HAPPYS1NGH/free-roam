@@ -60,6 +60,51 @@ struct WheelGeometryTests {
         #expect(ring.radius == 305)
         #expect(ring.icon == 70)
     }
+
+    /// Station, artist and title at the token sizes, from the top.
+    private func captionHeights(_ sizes: WheelStyle.Sizes, unit: Double) -> [Double] {
+        let pitch = sizes.captionPitch * unit
+        return [sizes.stationSize / sizes.captionSize * pitch, pitch, pitch]
+    }
+
+    @Test func theStationLineStaysPutAndTheRestHangBelowIt() throws {
+        let sizes = try TokensFixture.style().sizes
+        let ring = WheelGeometry.ring(sizes, count: 25, screenHeight: 1000)
+        let heights = captionHeights(sizes, unit: 10)
+        let lines = WheelGeometry.captionLines(heights: heights, ring: ring, sizes: sizes, screenHeight: 1000)
+        let radioOff = WheelGeometry.captionLines(heights: [heights[0]], ring: ring, sizes: sizes, screenHeight: 1000)
+        #expect(abs(lines[0].y + 50) < 1e-9)
+        #expect(abs(radioOff[0].y + 50) < 1e-9)
+        #expect(abs(lines[1].y - lines[0].y - (heights[0] + heights[1]) / 2) < 1e-9)
+        #expect(abs(lines[2].y - lines[1].y - heights[1]) < 1e-9)
+    }
+
+    /// Each line at its widest keeps the margin from every disc, wherever the
+    /// selected one is, and uses the room up to it. 12 stations sit on the
+    /// smallest ring, 16 on a grown one, and 24 and 25 on the largest, where
+    /// the discs shrink instead.
+    @Test(arguments: [12, 16, 24, 25])
+    func captionLinesStayClearOfTheDiscs(stations: Int) throws {
+        let sizes = try TokensFixture.style().sizes
+        let screenHeight = 1000.0
+        let unit = screenHeight / 100
+        let count = stations + 1
+        let ring = WheelGeometry.ring(sizes, count: count, screenHeight: screenHeight)
+        let heights = captionHeights(sizes, unit: unit)
+        let lines = WheelGeometry.captionLines(heights: heights, ring: ring, sizes: sizes, screenHeight: screenHeight)
+        let reach = ring.selectedIcon / 2 + (sizes.ringWidth * unit).rounded() + WheelGeometry.captionMargin * unit
+        for (line, height) in zip(lines, heights) {
+            let gaps = (0..<count).map { slot in
+                let angle = WheelGeometry.slotAngle(slot, count: count)
+                let dx = max(abs(ring.radius * sin(angle)) - line.maxWidth / 2, 0)
+                let dy = max(abs(-ring.radius * cos(angle) - line.y) - height / 2, 0)
+                return hypot(dx, dy) - reach
+            }
+            let nearest = try #require(gaps.min())
+            #expect(nearest >= -1e-9)
+            #expect(nearest < unit)
+        }
+    }
 }
 
 struct PickCursorTests {

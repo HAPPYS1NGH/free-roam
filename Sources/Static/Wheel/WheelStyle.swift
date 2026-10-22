@@ -33,7 +33,10 @@ struct WheelStyle: Decodable, Sendable {
         let ringWidth: Double
         let selectedScale: Double
         let idleOpacity: Double
+        /// The artist and title lines.
         let captionSize: Double
+        /// The station line, the caption's largest.
+        let stationSize: Double
         let captionPitch: Double
         let captionRaise: Double
     }
