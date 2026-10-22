@@ -114,19 +114,31 @@ enum MusicBridge {
             """, parse: parseDurations)
     }
 
-    /// Plays track `track` (1-based) of a playlist from `position` seconds in,
-    /// and returns where Music says it is afterwards. Music carries on through
-    /// the playlist from there.
-    static func play(playlistID: String, track: Int, from position: TimeInterval) async throws -> TimeInterval {
+    /// Plays track `track` (1-based) of a playlist from the start.
+    static func play(playlistID: String, track: Int) async throws {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
-        // AppleScript reals always use a dot, and "%f" never uses the locale's comma.
-        return try await run("""
+        try await run("""
             tell application id "com.apple.Music"
                 play track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
-                set player position to \(String(format: "%.2f", position))
-                return player position
             end tell
-            """) { $0.doubleValue }
+            """) { _ in }
+    }
+
+    /// Moves the current track to `position` seconds and returns where Music
+    /// says it is afterwards. Until a track has loaded, Music ignores the new
+    /// position, or refuses it, which returns nil.
+    static func seek(to position: TimeInterval) async throws -> TimeInterval? {
+        do {
+            // AppleScript reals always use a dot, and "%f" never uses the locale's comma.
+            return try await run("""
+                tell application id "com.apple.Music"
+                    set player position to \(String(format: "%.2f", position))
+                    return player position
+                end tell
+                """) { $0.doubleValue }
+        } catch MusicBridgeError.script(let code, _) where code == errAEWriteDenied {
+            return nil
+        }
     }
 
     static func pause() async throws {

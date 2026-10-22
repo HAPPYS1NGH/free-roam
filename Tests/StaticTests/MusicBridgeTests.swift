@@ -25,7 +25,7 @@ struct MusicBridgeTests {
             try await MusicBridge.play(playlistID: "\"; beep")
         }
         await #expect(throws: MusicBridgeError.self) {
-            try await MusicBridge.play(playlistID: "\"; beep", track: 1, from: 0)
+            try await MusicBridge.play(playlistID: "\"; beep", track: 1)
         }
         await #expect(throws: MusicBridgeError.self) {
             try await MusicBridge.trackDurations(playlistID: "\"; beep")

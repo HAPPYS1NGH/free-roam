@@ -12,6 +12,8 @@ private let log = Logger(subsystem: "com.happys1ngh.static", category: "wheel")
 final class RadioWheelModel {
     /// Stations on the ring, not counting Radio Off.
     static let maxStations = 25
+    /// About 4 s of retries while a track loads.
+    private static let seekAttempts = 30
 
     let style: WheelStyle
     /// Slot 0 is Radio Off, so station `i` is in slot `i + 1`.
@@ -243,14 +245,41 @@ final class RadioWheelModel {
                 log.notice("Playlist \(id, privacy: .public) has no tracks to play")
                 return
             }
-            let reported = try await MusicBridge.play(playlistID: id, track: onAir.index + 1, from: onAir.position)
-            log.notice("""
-                Playing track \(onAir.index + 1) of \(durations.count) in playlist \(id, privacy: .public) \
-                from \(Int(onAir.position)) s of \(Int(durations[onAir.index])) s; Music says \(Int(reported)) s
-                """)
+            try await MusicBridge.play(playlistID: id, track: onAir.index + 1)
+            try await seek(id, to: onAir, of: durations)
         } catch {
             log.error("Couldn't tune Music: \(String(describing: error), privacy: .public)")
         }
+    }
+
+    /// Music ignores or refuses a new position until a streamed track has
+    /// loaded, so keep setting it, with the target moving on with the clock,
+    /// until Music reports it. Most tracks took a few tries.
+    private func seek(_ id: String, to onAir: Broadcast.OnAir, of durations: [TimeInterval]) async throws {
+        let duration = durations[onAir.index]
+        let clock = ContinuousClock()
+        let started = clock.now
+        var reported: TimeInterval?
+        for attempt in 1...Self.seekAttempts {
+            // Another tune has the player now, so this position isn't for its track.
+            guard tunedID == id else { return }
+            let elapsed = (clock.now - started) / .seconds(1)
+            // Short of the end, or Music would move on to the next track.
+            let target = max(min(onAir.position + elapsed, duration - 1), 0)
+            reported = try await MusicBridge.seek(to: target)
+            if let reported, abs(reported - target) < 2 {
+                log.notice("""
+                    Playing track \(onAir.index + 1) of \(durations.count) in playlist \(id, privacy: .public) \
+                    from \(Int(target)) s of \(Int(duration)) s, after \(attempt) tries
+                    """)
+                return
+            }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+        log.error("""
+            Music didn't move to \(Int(onAir.position)) s of track \(onAir.index + 1) in playlist \(id, privacy: .public) \
+            and says \(reported.map { "\(Int($0)) s" } ?? "it can't", privacy: .public)
+            """)
     }
 
     private func stationName(_ slot: Int) -> String {
