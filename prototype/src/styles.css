@@ -42,6 +42,12 @@ body {
     oklch(0.27 0.07 280);
 }
 
+/* Your own desktop picture, copied by `npm run wallpaper`, scaled to fill the
+   screen as macOS does. */
+.desktop[data-wallpaper] {
+  background: var(--wallpaper) center / cover no-repeat, #000;
+}
+
 .menubar {
   display: flex;
   justify-content: space-between;
@@ -160,7 +166,7 @@ body {
 .mini-player {
   position: absolute;
   left: 24px;
-  bottom: 100px;
+  bottom: 140px;
   display: grid;
   grid-template-columns: 56px 1fr;
   gap: 12px;
@@ -269,14 +275,16 @@ body {
    screen's shape. Untouched out to ~45% of the way to the corners, then down
    to roughly a third of the brightness in the corners. The tint and vignette
    are plain overlays; the Mac app needs a screen capture, and so Screen
-   Recording permission, only for the desaturation. */
+   Recording permission, only for the desaturation. The blur, 0 by default
+   like GTA, comes last so it ports as a Core Image blur after the colour
+   matrix. */
 
 .wheel-backdrop {
   position: fixed;
   inset: 0;
   z-index: 10;
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(var(--saturation)) brightness(var(--brightness));
-  backdrop-filter: blur(var(--blur)) saturate(var(--saturation)) brightness(var(--brightness));
+  -webkit-backdrop-filter: saturate(var(--saturation)) brightness(var(--brightness)) blur(var(--blur));
+  backdrop-filter: saturate(var(--saturation)) brightness(var(--brightness)) blur(var(--blur));
   background:
     radial-gradient(
       ellipse farthest-corner,
@@ -327,6 +335,12 @@ body {
 .hint strong {
   color: white;
   font-weight: 600;
+}
+
+/* The Legibility panel's values, in full, to quote back. */
+.hint-readout {
+  color: white;
+  font-variant-numeric: tabular-nums;
 }
 
 .hint kbd {

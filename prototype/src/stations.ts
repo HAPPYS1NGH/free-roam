@@ -14,6 +14,18 @@ export function slotsFor(playlists: Playlist[]): Slot[] {
   ]
 }
 
+// Fills the wheel to `count` stations by repeating the playlists, to see how
+// a crowded ring reads. Repeats get a number so the caption tells them apart.
+export function crowdedPlaylists(playlists: Playlist[], count: number): Playlist[] {
+  if (playlists.length === 0) return []
+  return Array.from({ length: count }, (_, i) => {
+    const source = playlists[i % playlists.length]
+    const copy = Math.floor(i / playlists.length)
+    if (copy === 0) return source
+    return { ...source, id: `${source.id}-${copy + 1}`, name: `${source.name.trim()} ${copy + 1}` }
+  })
+}
+
 // Used when no library has been exported. The names are deliberately awkward:
 // one very long, one with an emoji, one tiny.
 export const mockPlaylists: Playlist[] = [

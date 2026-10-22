@@ -45,7 +45,7 @@ export const radioWheelControls = {
   ringColor: "#65B4D4",
   ringWidth: [0.55, 0.2, 1.5, 0.05],
   selectedScale: [1, 1, 1.2, 0.01],
-  idleOpacity: [0.4, 0.05, 1, 0.01],
+  // idleOpacity is tuned in the Legibility panel (legibility.ts).
   selectedInColour: true,
   captionSize: [2.6, 1.5, 4, 0.05],
   captionPitch: [3.4, 2, 5, 0.05],
@@ -81,6 +81,7 @@ type Props = {
   slots: Slot[]
   highlighted: number
   look: RadioWheelLook
+  idleOpacity: number
   openTransition: Transition
   closeTransition: Transition
 }
@@ -123,7 +124,7 @@ function captionFor(slot: Slot, now: number) {
   return { station: slot.playlist.name, artist: live?.track.artist ?? "", title: live?.track.title ?? "No songs" }
 }
 
-export function RadioWheel({ slots, highlighted, look, openTransition, closeTransition }: Props) {
+export function RadioWheel({ slots, highlighted, look, idleOpacity, openTransition, closeTransition }: Props) {
   const { height } = useViewport()
   const now = useNow()
   const unit = height / 100
@@ -152,7 +153,7 @@ export function RadioWheel({ slots, highlighted, look, openTransition, closeTran
           "--rim": `${Math.round(icon * look.rim)}px`,
           "--selected-disc": `${selectedIcon}px`,
           "--selected-rim": `${Math.round(selectedIcon * look.selectedRim)}px`,
-          "--idle-opacity": look.idleOpacity,
+          "--idle-opacity": idleOpacity,
           "--caption-size": `${Math.max(13, look.captionSize * unit)}px`,
           "--caption-pitch": `${pitch}px`,
         } as CSSProperties

@@ -5,11 +5,16 @@ import { hueFor, initialsFor, type Playlist } from "./stations"
 
 // A stand-in macOS desktop so the wheel is judged over real-looking clutter.
 
-type Props = { playlist: Playlist | null; volume: number; wheelOpen: boolean }
+type Props = { playlist: Playlist | null; volume: number; wheelOpen: boolean; wallpaper: string | null }
 
-export function Desktop({ playlist, volume, wheelOpen }: Props) {
+export function Desktop({ playlist, volume, wheelOpen, wallpaper }: Props) {
   return (
-    <div className="desktop" aria-hidden="true">
+    <div
+      className="desktop"
+      aria-hidden="true"
+      data-wallpaper={wallpaper ? true : undefined}
+      style={wallpaper ? ({ "--wallpaper": `url("${wallpaper}")` } as CSSProperties) : undefined}
+    >
       <MenuBar wheelOpen={wheelOpen} />
       <Editor />
       <MiniPlayer playlist={playlist} volume={volume} />
@@ -85,7 +90,7 @@ const Editor = memo(function Editor() {
   )
 })
 
-function MiniPlayer({ playlist, volume }: Omit<Props, "wheelOpen">) {
+function MiniPlayer({ playlist, volume }: Pick<Props, "playlist" | "volume">) {
   const now = useNow()
   const live = playlist ? onAir(playlist.tracks, now) : null
   const progress = live ? live.position / live.track.duration : 0

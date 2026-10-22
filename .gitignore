@@ -22,5 +22,8 @@ prototype/dist/
 # Your exported Music library (prototype only)
 prototype/public/library/
 
+# Your desktop picture (prototype only)
+prototype/public/wallpaper/
+
 # Sounds you can't commit, e.g. ones you don't have the rights to share
 prototype/public/sounds/local/
