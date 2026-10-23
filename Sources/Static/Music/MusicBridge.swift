@@ -22,6 +22,9 @@ struct NowPlaying: Equatable, Sendable {
     let playlistID: String
     let onAir: Broadcast.OnAir
     let date: Date
+    /// How many tracks the playlist has now, which tells an edited playlist
+    /// from the tracks loaded for it.
+    let trackCount: Int
 }
 
 enum MusicPermission: Equatable, Sendable {
@@ -211,8 +214,8 @@ enum MusicBridge {
         try await run(#"tell application id "com.apple.Music" to pause"#) { _ in }
     }
 
-    /// The playlist Music is playing from, with the track and how far in, or
-    /// nil when it's paused or stopped. The playlist can be one that isn't on
+    /// The playlist Music is playing from, with the track, how far in and how
+    /// many tracks the playlist has, or nil when it's paused or stopped. The playlist can be one that isn't on
     /// the wheel, such as the library.
     static func nowPlaying() async throws -> NowPlaying? {
         // A timeout throws, because Music not answering isn't Music playing nothing.
@@ -220,7 +223,7 @@ enum MusicBridge {
             tell application id "com.apple.Music"
                 if player state is not playing then return {}
                 try
-                    return {persistent ID of current playlist, index of current track, player position}
+                    return {persistent ID of current playlist, index of current track, player position, count of tracks of current playlist}
                 on error errText number errNumber
                     if errNumber is \(errAETimeout) then error errText number errNumber
                     return {}
@@ -292,14 +295,20 @@ enum MusicBridge {
             .map { Playlist(id: $0, name: $1) }
     }
 
-    /// Reads the `{id, track number, position}` returned by `nowPlaying()`.
+    /// Reads the `{id, track number, position, track count}` returned by `nowPlaying()`.
     static func parseNowPlaying(_ result: NSAppleEventDescriptor, at date: Date) -> NowPlaying? {
-        guard result.numberOfItems == 3,
+        guard result.numberOfItems == 4,
               let id = result.atIndex(1)?.stringValue, isPersistentID(id),
               let track = result.atIndex(2)?.int32Value, track > 0,
-              let position = result.atIndex(3)?.doubleValue, position.isFinite, position >= 0
+              let position = result.atIndex(3)?.doubleValue, position.isFinite, position >= 0,
+              let trackCount = result.atIndex(4)?.int32Value
         else { return nil }
-        return NowPlaying(playlistID: id, onAir: Broadcast.OnAir(index: Int(track) - 1, position: position), date: date)
+        return NowPlaying(
+            playlistID: id,
+            onAir: Broadcast.OnAir(index: Int(track) - 1, position: position),
+            date: date,
+            trackCount: Int(trackCount)
+        )
     }
 
     /// Reads the list of reals returned by `trackDurations(playlistID:)`.

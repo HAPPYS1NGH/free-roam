@@ -24,12 +24,12 @@ struct CaptionTests {
     @Test func followsTheTrackMusicIsPlaying() {
         // Skipped to the second track in Music 10 s before, while the clock is on the first.
         let playing = NowPlaying(
-            playlistID: station.id, onAir: .init(index: 1, position: 0), date: Broadcast.epoch.addingTimeInterval(20)
+            playlistID: station.id, onAir: .init(index: 1, position: 0), date: Broadcast.epoch.addingTimeInterval(20), trackCount: 2
         )
         let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing, at: Broadcast.epoch.addingTimeInterval(30))
         #expect([caption.artist, caption.title] == ["M83", "Midnight City"])
 
-        let elsewhere = NowPlaying(playlistID: "E5B25C359F6E2F36", onAir: playing.onAir, date: playing.date)
+        let elsewhere = NowPlaying(playlistID: "E5B25C359F6E2F36", onAir: playing.onAir, date: playing.date, trackCount: 2)
         let clock = CaptionLines(station: station, tracks: tracks, nowPlaying: elsewhere, at: Broadcast.epoch.addingTimeInterval(30))
         #expect([clock.artist, clock.title] == ["Frank Ocean", "Nights"])
     }

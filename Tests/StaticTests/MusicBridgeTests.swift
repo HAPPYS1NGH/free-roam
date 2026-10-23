@@ -90,9 +90,10 @@ struct MusicBridgeTests {
         result.insert(NSAppleEventDescriptor(string: "B965EB2A37B2731C"), at: 1)
         result.insert(NSAppleEventDescriptor(int32: 3), at: 2)
         result.insert(NSAppleEventDescriptor(double: 121.5), at: 3)
+        result.insert(NSAppleEventDescriptor(int32: 12), at: 4)
 
         #expect(MusicBridge.parseNowPlaying(result, at: Broadcast.epoch) == NowPlaying(
-            playlistID: "B965EB2A37B2731C", onAir: .init(index: 2, position: 121.5), date: Broadcast.epoch
+            playlistID: "B965EB2A37B2731C", onAir: .init(index: 2, position: 121.5), date: Broadcast.epoch, trackCount: 12
         ))
     }
 
@@ -103,6 +104,7 @@ struct MusicBridgeTests {
         notAnID.insert(NSAppleEventDescriptor(string: "library"), at: 1)
         notAnID.insert(NSAppleEventDescriptor(int32: 1), at: 2)
         notAnID.insert(NSAppleEventDescriptor(double: 0), at: 3)
+        notAnID.insert(NSAppleEventDescriptor(int32: 1), at: 4)
         #expect(MusicBridge.parseNowPlaying(notAnID, at: Broadcast.epoch) == nil)
     }
 

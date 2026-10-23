@@ -27,11 +27,22 @@ final class StationDetails {
     @ObservationIgnored private var loading: Task<Void, Never>?
 
     /// Loads stations that haven't loaded yet. Asking Music would launch it,
-    /// so nothing loads while it isn't running. A station that failed is
-    /// tried again on the next call.
+    /// so nothing loads while it isn't running. A station that failed, or
+    /// had no tracks, is tried again on the next call.
     func load(_ playlists: [Playlist]) {
-        let missing = playlists.map(\.id).filter { tracks[$0] == nil && !queued.contains($0) }
-        queued.append(contentsOf: missing)
+        enqueue(playlists.map(\.id).filter { tracks[$0] == nil })
+    }
+
+    /// Loads a station again when Music has a different number of tracks in
+    /// it from the ones loaded, because the playlist was edited. Until then
+    /// the caption and logo stay as they were.
+    func reloadIfChanged(_ id: String, trackCount: Int) {
+        guard let loaded = tracks[id], loaded.count != trackCount else { return }
+        enqueue([id])
+    }
+
+    private func enqueue(_ ids: [String]) {
+        queued.append(contentsOf: ids.filter { !queued.contains($0) })
         guard loading == nil, !queued.isEmpty, MusicBridge.isRunning else { return }
         loading = Task {
             await loadQueued()
@@ -49,7 +60,11 @@ final class StationDetails {
             for id in batch {
                 guard MusicBridge.isRunning else { break }
                 do {
-                    tracks[id] = try await MusicBridge.tracks(playlistID: id)
+                    let stationTracks = try await MusicBridge.tracks(playlistID: id)
+                    // An empty playlist isn't kept, so it's read again on the
+                    // next open in case it has tracks by then.
+                    tracks[id] = stationTracks.isEmpty ? nil : stationTracks
+                    if stationTracks.isEmpty { logos[id] = nil }
                 } catch {
                     log.error("Couldn't read the tracks of \(id, privacy: .public): \(String(describing: error), privacy: .public)")
                 }
@@ -60,7 +75,7 @@ final class StationDetails {
                 guard MusicBridge.isRunning, let stationTracks = tracks[id] else { continue }
                 let data = await coverData(id, stationTracks)
                 covers += data.count
-                if let logo = await Self.logo(from: data) { logos[id] = logo }
+                logos[id] = await Self.logo(from: data)
             }
             queued.removeFirst(batch.count)
             log.notice("""

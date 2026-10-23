@@ -291,7 +291,10 @@ final class RadioWheelModel {
             }
             guard let self, !Task.isCancelled else { return }
             nowPlaying = playing
-            if let playing { logIfOffTheClock(playing) }
+            if let playing {
+                details.reloadIfChanged(playing.playlistID, trackCount: playing.trackCount)
+                logIfOffTheClock(playing)
+            }
             let id = playing?.playlistID
             guard id != tunedID else { return }
             tunedID = id
@@ -364,6 +367,7 @@ final class RadioWheelModel {
             let launching = !MusicBridge.isRunning
             if launching { try await MusicBridge.launch() }
             let durations = try await MusicBridge.trackDurations(playlistID: id)
+            details.reloadIfChanged(id, trackCount: durations.count)
             // Superseded by a later tune while the durations were on their way.
             guard tunedID == id else { return }
             // A station with nothing to play is dead air, like Radio Off.
