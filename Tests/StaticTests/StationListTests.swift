@@ -133,6 +133,26 @@ struct StationListTests {
         #expect(stations.onWheel == Array(library(26).dropFirst()))
     }
 
+    @Test func keepsPlaylistsWithTheSameNameApart() {
+        let first = Playlist(id: playlist(1).id, name: "Mix")
+        let second = Playlist(id: playlist(2).id, name: "Mix")
+        let stations = StationList(defaults: defaults)
+        stations.update(library: [first, second])
+        #expect(stations.onWheel == [first, second])
+
+        stations.setOn(false, id: first.id)
+        stations.move(fromOffsets: [1], toOffset: 0)
+        #expect(stations.onWheel == [second])
+        #expect(stations.entries.map(\.id) == [second.id, first.id])
+
+        // Only the one Music no longer lists drops off.
+        stations.update(library: [first])
+        #expect(stations.onWheel.isEmpty)
+        #expect(stations.entries.map(\.id) == [first.id])
+        stations.update(library: [first, second])
+        #expect(stations.onWheel == [second])
+    }
+
     @Test func followsLibraryOrderWhenTheSavedChoiceIsUnreadable() {
         defaults.set(Data("not json".utf8), forKey: "stations")
         let stations = StationList(defaults: defaults)
