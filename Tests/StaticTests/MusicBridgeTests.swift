@@ -84,6 +84,19 @@ struct MusicBridgeTests {
         #expect(checks == 4)
     }
 
+    /// A newer pick cancels a tune waiting for ⌥, which leaves Music closed.
+    @Test func stopsWaitingForOptionOnceCancelled() async {
+        let clock = ContinuousClock()
+        let started = clock.now
+        let wait = Task {
+            try await MusicBridge.waitForOptionUp(every: .milliseconds(5)) { true }
+        }
+        try? await Task.sleep(for: .milliseconds(20))
+        wait.cancel()
+        await #expect(throws: CancellationError.self) { try await wait.value }
+        #expect(clock.now - started < .seconds(1))
+    }
+
     @Test func givesUpRatherThanLaunchWithOptionHeld() async {
         let clock = ContinuousClock()
         let started = clock.now

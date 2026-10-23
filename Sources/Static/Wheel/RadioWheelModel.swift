@@ -75,6 +75,9 @@ final class RadioWheelModel {
     /// Tunes whose commands haven't reached Music yet, or that launched Music
     /// and haven't checked it's still playing.
     @ObservationIgnored private var tunesInFlight = 0
+    /// The latest tune. The next pick cancels it, so a tune still waiting for
+    /// ⌥ to come up never launches Music for a station you've left.
+    @ObservationIgnored private var tuning: Task<Void, Never>?
 
     init(style: WheelStyle, stations: StationList) {
         self.style = style
@@ -343,7 +346,8 @@ final class RadioWheelModel {
         sounds.play(.retune)
         log.notice("Tuned to \(self.stationName(slot), privacy: .public), \(reason, privacy: .public)")
         tunesInFlight += 1
-        Task { [weak self] in
+        tuning?.cancel()
+        tuning = Task { [weak self] in
             await self?.playOnAir(id)
             self?.tunesInFlight -= 1
             self?.refreshStations()
@@ -360,7 +364,8 @@ final class RadioWheelModel {
 
     /// Plays the station's on-air track from partway in, or pauses for Radio
     /// Off and for a station with nothing to play. Music launches for a
-    /// station, but not for Radio Off.
+    /// station, but not for Radio Off, and not once a newer pick cancels
+    /// the tune.
     private func playOnAir(_ id: String?) async {
         do {
             guard let id else {
@@ -384,6 +389,8 @@ final class RadioWheelModel {
             }
             try await seek(id, to: onAir, of: durations)
             if launching { try await keepPlayingAfterLaunch(id) }
+        } catch is CancellationError {
+            log.notice("A newer pick replaced the tune to \(id ?? "Radio Off", privacy: .public)")
         } catch {
             log.error("Couldn't tune Music: \(String(describing: error), privacy: .public)")
         }
