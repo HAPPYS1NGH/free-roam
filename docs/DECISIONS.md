@@ -159,7 +159,7 @@ Built in Phase 2 step 5, from `.wheel-backdrop` in `prototype/src/styles.css`. P
 
 ## 2026-10-23: Settings and the stations on the wheel
 
-Built in Phase 2 step 6. It still needs checking by hand, including whether the wheel follows the mouse while the Settings window is active.
+Built in Phase 2 step 6. Passed by hand on 2026-10-23: picking stations by mouse and by scroll while the Settings window was active, Settings showing in the backdrop, ticking, unticking and dragging stations, a new playlist joining the end, a deleted one dropping off, Music launching hidden, the stations surviving a relaunch, and the new menu. The numbers come from Static's logs over 10 runs and 166 opens.
 
 - Settings is one list of Music's playlists in the wheel's order. Ticking a playlist puts it on the wheel, dragging moves it, and every change saves at once. Stations run clockwise from Radio Off in list order. The wheel holds 25 stations, so a 26th can't be ticked.
 - Until you change anything in Settings, the wheel follows Music's library order and takes the first 25 playlists, as the prototype does. After that, Static saves every playlist's persistent ID and name in `UserDefaults`, with whether it's on. The names let the wheel show its stations before Music has started.
@@ -169,6 +169,9 @@ Built in Phase 2 step 6. It still needs checking by hand, including whether the 
 - Opening Settings while Music is closed launches Music hidden, because only Music can list the playlists. Tuning launches it hidden too, so its window no longer opens. The wheel itself still doesn't launch Music just to open.
 - The menu is Settings…, Quit, and an Allow item for each permission Static is missing, checked again whenever the menu opens. Play Playlist and Capture Screen are gone.
 - Capture Screen was the only thing that made macOS ask for Screen Recording. Static now asks only from Allow Screen Recording…, never at launch, because the backdrop works without it. The item calls `CGRequestScreenCaptureAccess`, which adds Static to the list in System Settings and shows macOS's prompt the first time, then opens that list.
+- Reading the playlists took 10–395 ms, 17 ms at the median, over 165 reads of 12 to 25 playlists. The wheel opened with 8 to 25 stations and was full for 70 of the opens. Thirteen new playlists joined the end, up to five in one read, and deleting 11 in Music hid all 11 in the next read. None came back and none found the wheel full. The backdrop's still was ready 35–146 ms after ⌥Q went down, 68 ms at the median, so always before the open.
+- With Music closed, the wheel opened with its saved stations, and picking one launched Music hidden and played 1.6 s after letting go. A press a second later found Music playing nothing, though, so the wheel opened on Radio Off.
+- The hand test turned up three problems for step 7, and nothing else logged an error. Music answers an empty playlist's `every track` with error -1728, so tuning one failed and Static tried to load it again on every open, 240 times in all. Twice Music stopped answering scripts, for about 1.5 and 5 minutes, and because scripts run one at a time, every tune, volume dip and read waited behind it until AppleScript's 2-minute timeout. And Music's repeat is off, so a station stops when its playlist ends: 5 of the 15 presses that found Music playing nothing came after the tuned station's last track had finished.
 
 Rejected:
 
