@@ -49,8 +49,11 @@ struct StationListTests {
     }
 
     @Test func followsTheLastLibraryBeforeMusicHasLoaded() {
-        StationList(defaults: defaults).update(library: library(3))
-        StationList(defaults: defaults).update(library: [])
+        let stations = StationList(defaults: defaults)
+        stations.update(library: library(3))
+        // As while Music's library loads after it launches.
+        stations.update(library: [])
+        #expect(stations.onWheel == library(3))
 
         let relaunched = StationList(defaults: defaults)
         #expect(relaunched.library == nil)

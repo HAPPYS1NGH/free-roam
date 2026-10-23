@@ -54,7 +54,10 @@ final class StationList {
 
     /// The stations on the wheel, in order.
     var onWheel: [Playlist] {
-        let entries = choice ?? (library ?? lastLibrary).map(Self.libraryOrder) ?? []
+        // An empty list is far more likely a library that hasn't loaded yet,
+        // as just after Music launches, than every playlist deleted.
+        let playlists = library?.isEmpty == false ? library : lastLibrary
+        let entries = choice ?? playlists.map(Self.libraryOrder) ?? []
         return entries.filter { $0.isOn && !$0.isMissing }.map { Playlist(id: $0.id, name: $0.name) }
     }
 
