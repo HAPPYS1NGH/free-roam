@@ -213,3 +213,8 @@ Rejected:
 - Putting shuffle and repeat back on Radio Off or on quit: you chose to leave them set.
 - `NowPlaying.swift`, listening for Music's `com.apple.Music.playerInfo` notifications: each press already asks Music what it's playing, and two more values in that script cover skips and pauses.
 - Telling playlists with the same name apart in Settings.
+
+## 2026-10-23: The first X post uses the local sound pack
+
+- Nothing has been posted to X yet, so the first post is the recording at the end of Phase 2, not a prototype clip.
+- The recording uses the sounds Static plays now: the local pack, which `bundle.sh` copies over the synthesised sounds on this Mac. Release builds still ship only synthesised sounds, and `bundle.sh` is unchanged.

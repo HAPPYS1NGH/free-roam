@@ -73,7 +73,7 @@ The goal is to settle how the wheel looks and moves, down to the exact numbers, 
 - [x] Tuning panel with an export to `tokens.json`
 - [x] Pick a retune take (`retune`) and export `prototype/tokens.json` from the tuned defaults
 
-**Done when:** you like the feel, `tokens.json` is committed and there's a screen recording for X post #1.
+**Done when:** you like the feel and `tokens.json` is committed.
 
 ## Phase 2: Mac app with the radio wheel (MVP)
 
@@ -125,7 +125,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
 - [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
 - [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle goes off and repeat on, and the caption follows the track Music is actually playing
-- [ ] The recording for X post #2
+- [ ] The recording for the first X post, with the local sound pack
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
 - Menu bar menu: Settings… and Quit, plus "Allow Static to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing. Static asks for Screen Recording only from that item, never at launch.
@@ -156,7 +156,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
   - loading the slot config when a playlist is missing
   - AppleScript string escaping
 
-**Done when:** in any app, hold ⌥Q, flick, release, and Music tunes in mid-song with the static burst. X post #2.
+**Done when:** in any app, hold ⌥Q, flick, release, and Music tunes in mid-song with the static burst. The first X post.
 
 ## Phase 3: Weapon wheel (moved to Later)
 
@@ -189,12 +189,13 @@ v1 ships the radio wheel only; see [DECISIONS.md](DECISIONS.md). The earlier des
 
 ## X plan
 
+Nothing has been posted yet. The prototype clip planned for the end of Phase 1 didn't go out, so the first post comes at the end of Phase 2.
+
 | Post | When | Content |
 |---|---|---|
-| 1 | End of Phase 1 | Prototype clip: "making Apple Music feel like GTA" |
-| 2 | End of Phase 2 | First real switch on the Mac, with sound |
-| 3 | After v1 | Weapon wheel: "you asked for it" |
-| 4 | v1.0 | Launch video, repo link, download |
+| 1 | End of Phase 2 | First real switch on the Mac, with sound |
+| 2 | After v1 | Weapon wheel: "you asked for it" |
+| 3 | v1.0 | Launch video, repo link, download |
 
 ## Rules
 
