@@ -35,6 +35,37 @@ struct MusicBridgeTests {
         }
     }
 
+    @Test func retriesWhileMusicIsStarting() async throws {
+        var tries = 0
+        try await MusicBridge.retryWhileStarting(for: .seconds(5), every: .milliseconds(1)) {
+            tries += 1
+            if tries < 3 { throw MusicBridgeError.script(code: connectionInvalid, message: "Connection is invalid.") }
+        }
+        #expect(tries == 3)
+    }
+
+    @Test func stopsRetryingAfterTheLimit() async {
+        let clock = ContinuousClock()
+        let started = clock.now
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.retryWhileStarting(for: .milliseconds(100), every: .milliseconds(10)) {
+                throw MusicBridgeError.script(code: errAETimeout, message: "AppleEvent timed out.")
+            }
+        }
+        #expect(clock.now - started < .seconds(1))
+    }
+
+    @Test func doesNotRetryOtherErrors() async {
+        var tries = 0
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.retryWhileStarting(for: .seconds(5), every: .milliseconds(1)) {
+                tries += 1
+                throw MusicBridgeError.notPermitted
+            }
+        }
+        #expect(tries == 1)
+    }
+
     @Test func parsesPlaylistsAndDropsUnexpectedIDs() {
         let result = NSAppleEventDescriptor.list()
         result.insert(list(["B965EB2A37B2731C", "not an id", "E5B25C359F6E2F36"]), at: 1)

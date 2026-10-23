@@ -257,17 +257,26 @@ enum MusicBridge {
         configuration.activates = false
         configuration.hides = true
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
-        // Music is listed as running before it can take scripts. Until then
-        // they fail with "Connection is invalid", which lost the first tune,
-        // or time out.
-        var attempts = 1
+        try await retryWhileStarting(for: .seconds(15)) {
+            try await run(#"tell application id "com.apple.Music" to get version"#) { _ in }
+        }
+    }
+
+    /// Music is listed as running before it can take scripts. Until then they
+    /// fail with "Connection is invalid", which lost the first tune, or time
+    /// out. A Music that never answers, such as one stuck behind a dialog,
+    /// would hold every script queued behind it, so this stops trying once
+    /// `limit` has passed, though the last try can run on to its own timeout.
+    static func retryWhileStarting(
+        for limit: Duration, every interval: Duration = .milliseconds(200), _ script: () async throws -> Void
+    ) async throws {
+        let deadline = ContinuousClock.now + limit
         while true {
             do {
-                return try await run(#"tell application id "com.apple.Music" to get version"#) { _ in }
+                return try await script()
             } catch MusicBridgeError.script(let code, _)
-                where [connectionInvalid, procNotFound, errAETimeout].contains(code) && attempts < 50 {
-                attempts += 1
-                try await Task.sleep(for: .milliseconds(200))
+                where [connectionInvalid, procNotFound, errAETimeout].contains(code) && ContinuousClock.now < deadline {
+                try await Task.sleep(for: interval)
             }
         }
     }
