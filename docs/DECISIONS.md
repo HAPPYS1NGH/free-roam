@@ -194,3 +194,22 @@ Rejected:
 - Each line has its own maximum width. Take a circle one caption line (`captionPitch`, 3.4%H) inside the selected disc's ring, as the prototype does. The width is that circle's chord at whichever of the line's top and bottom edges is farther from the centre. A line's corners come nearest the discs, so the whole line stays inside that circle, whichever disc is selected. Long lines still end in an ellipsis on one line. The maths is `captionWidth` from the prototype's Grow ring and Shrink discs layouts, and the Mac app keeps today's ring.
 - That leaves the ends of long lines 4.4–5.1%H from the idle discs, against 2–3%H before. At 24 stations lines get 43–45%H. At 12, where the inner circle is smallest, they get 21–25%H, down from 30%H, so long station names cut off sooner.
 - The prototype's other token change since the backdrop, `backdropBlur` renamed to `backdropBlurPx` and still 0, doesn't change the app, which has no blur. Idle discs stay at 0.4.
+
+## 2026-10-23: Edge cases
+
+Built in Phase 2 step 7. It still needs checking by hand, including on a second display and with Show Apple Music Features off.
+
+- An empty playlist: Music answers `every track` of it with -1728, so the scripts count the tracks first and return empty lists. The station loads once with no tracks and its caption says "No songs". Tuning it pauses Music, as Radio Off does, because a station with nothing to play is dead air.
+- Shuffle and repeat: the broadcast clock plays each playlist in order and loops it. Every tune turns Music's shuffle off and sets repeat to all, in the same script as `play`, and leaves them that way. They're Music's own settings, so this changes how Music plays outside Static too. The log says when either was different. With repeat off, the step 6 hand test found 5 stations that had stopped at the end of their playlists.
+- Music not answering: every script runs inside `with timeout of 10 seconds`. Scripts took 0.4 s at most in the step 6 test. A stuck one now fails with -1712 after 10 s instead of AppleScript's 2 minutes, and the queue moves on. Launching Music retries a script that timed out, as it does one Music refused while starting.
+- Music not running: until you change anything in Settings, the wheel follows the last playlist list Music gave, saved in `UserDefaults`, so it isn't empty when Music is closed at launch. Logos still come from Music, so stations show initials until it runs. A tune that launches Music stays in flight for 2 s after its seek lands. A press meanwhile opens on that station without asking Music, and then, if Music isn't playing, Static tells it to play on and logs that it had to. It isn't known yet whether Music really stopped after launching in the step 6 test or only said so.
+- Duplicate names: stations are kept, ordered and hidden by persistent ID, so two playlists with the same name are two stations, told apart by their logos. A test pins it down.
+- Several displays: the wheel opens on the screen with the mouse, sized to that screen, and the press captures that display. Each display now gets the warm-up capture, at launch or when it's connected, instead of only the main one.
+- No subscription: nothing changed. Apple Music tracks can't play without one. This library has 159 subscription tracks and 8 uploaded ones, so it's checked by hand with Show Apple Music Features off.
+- The caption: each press asks Music for its playlist, track number and position, in the script that already asked for the playlist. For the station Music is playing, the caption plays on from there in order, looping, so it still changes track while the wheel is open. Other stations, and one just tuned, follow the clock. The log says when Music and the clock are on different tracks.
+
+Rejected:
+
+- Putting shuffle and repeat back on Radio Off or on quit: you chose to leave them set.
+- `NowPlaying.swift`, listening for Music's `com.apple.Music.playerInfo` notifications: each press already asks Music what it's playing, and two more values in that script cover skips and pauses.
+- Telling playlists with the same name apart in Settings.

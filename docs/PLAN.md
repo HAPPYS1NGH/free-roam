@@ -34,7 +34,7 @@ Checked on this Mac or known limits of macOS:
 ```text
 ⌥Q pressed (works in any app)
   Hotkey.onPress
-    MusicBridge.playingPlaylistID()      the station the wheel opens on
+    MusicBridge.nowPlaying()             the station the wheel opens on, and Music's track for the caption
     BackdropStill.make()                 captures and filters the screen with the mouse
   still held after 150 ms
     OverlayPanel.show()                  transparent window over the screen
@@ -50,11 +50,9 @@ Checked on this Mac or known limits of macOS:
       BackdropView fades out over 450 ms, then the panel leaves the screen
     if the pick moved
       play retune.wav
-      Broadcast.onAir → MusicBridge.play(track N), then seek(to: on-air position)
+      Broadcast.onAir → MusicBridge.play(track N) with shuffle off and repeat on, then seek(to: on-air position)
     VolumeDip.restore()
     StationList.reload()                 once any tune has reached Music, for playlists added or deleted
-Music.app changes track
-  com.apple.Music.playerInfo → NowPlaying updates the centre label
 ```
 
 ## Phase 0: Setup
@@ -106,8 +104,7 @@ static/
 │   │   └── BackdropView.swift   # the still, wash and vignette behind the wheel
 │   ├── Music/
 │   │   ├── MusicBridge.swift    # AppleScript commands, off the main thread
-│   │   ├── VolumeDip.swift      # Music quieter while the wheel is open
-│   │   └── NowPlaying.swift     # track-change notifications
+│   │   └── VolumeDip.swift      # Music quieter while the wheel is open
 │   ├── Settings/
 │   │   ├── StationList.swift    # the stations on the wheel, saved by persistent ID
 │   │   └── StationsSettingsView.swift # tick and drag playlists onto the wheel
@@ -127,14 +124,16 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font. The pointer hides while the wheel is open
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
 - [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
-- [ ] Edge cases (Music not running, duplicate names, several displays, no subscription) and the recording for X post #2
+- [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle goes off and repeat on, and the caption follows the track Music is actually playing
+- [ ] The recording for X post #2
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
 - Menu bar menu: Settings… and Quit, plus "Allow Static to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing. Static asks for Screen Recording only from that item, never at launch.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
-  - play track N of a playlist (by persistent ID) and set `player position`, for mid-song tune-in
-  - pause and next track
+  - play track N of a playlist (by persistent ID), with shuffle off and repeat on, and set `player position`, for mid-song tune-in
+  - pause, and play on after launching Music
+  - the playlist, track number and position Music is playing
   - album artwork of a playlist's first four distinct albums (playlists themselves expose none)
   - get and set the volume
   - check whether Music is running
@@ -144,7 +143,9 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - Backdrop: desaturate other apps through a screen capture, as decided in [DECISIONS.md](DECISIONS.md). That needs Screen Recording permission. If it's denied, show the vignette and tint only, which need none.
 - Edge cases:
   - Music isn't running: don't launch it just to show the wheel; launch it when a station is picked.
+  - Music stops answering: each script gives up after 10 s.
   - A playlist was deleted: it drops off the ring.
+  - A playlist is empty: tuning it pauses Music.
   - Two playlists share a name.
   - Several displays: show the wheel on the screen with the mouse.
   - Full-screen apps.

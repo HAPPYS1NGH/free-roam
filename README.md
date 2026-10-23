@@ -35,7 +35,7 @@ To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` 
 
 ## Build the Mac app
 
-The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, with your playlists' album art, over a desaturated and vignetted screen. Flick or scroll to a station and let go, and Music tunes in mid-song. A quick tap skips to the next station. Settings… in the menu bar menu picks which playlists are on the wheel and in what order. You need Xcode 16 or later.
+The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, with your playlists' album art, over a desaturated and vignetted screen. Flick or scroll to a station and let go, and Music tunes in mid-song. Tuning turns Music's shuffle off and repeat on, so each station plays in order and loops, and leaves them that way. A quick tap skips to the next station. Settings… in the menu bar menu picks which playlists are on the wheel and in what order. You need Xcode 16 or later.
 
 ```sh
 scripts/make-signing-cert.sh   # once per Mac
