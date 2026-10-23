@@ -54,6 +54,27 @@ struct MusicBridgeTests {
         #expect(MusicBridge.parsePlaylists(result).isEmpty)
     }
 
+    @Test func parsesWhatMusicIsPlaying() {
+        let result = NSAppleEventDescriptor.list()
+        result.insert(NSAppleEventDescriptor(string: "B965EB2A37B2731C"), at: 1)
+        result.insert(NSAppleEventDescriptor(int32: 3), at: 2)
+        result.insert(NSAppleEventDescriptor(double: 121.5), at: 3)
+
+        #expect(MusicBridge.parseNowPlaying(result, at: Broadcast.epoch) == NowPlaying(
+            playlistID: "B965EB2A37B2731C", onAir: .init(index: 2, position: 121.5), date: Broadcast.epoch
+        ))
+    }
+
+    @Test func parsesNothingPlaying() {
+        #expect(MusicBridge.parseNowPlaying(.list(), at: Broadcast.epoch) == nil)
+
+        let notAnID = NSAppleEventDescriptor.list()
+        notAnID.insert(NSAppleEventDescriptor(string: "library"), at: 1)
+        notAnID.insert(NSAppleEventDescriptor(int32: 1), at: 2)
+        notAnID.insert(NSAppleEventDescriptor(double: 0), at: 3)
+        #expect(MusicBridge.parseNowPlaying(notAnID, at: Broadcast.epoch) == nil)
+    }
+
     @Test func parsesDurationsAndZeroesMissingOnes() {
         let result = NSAppleEventDescriptor.list()
         result.insert(NSAppleEventDescriptor(double: 241.5), at: 1)

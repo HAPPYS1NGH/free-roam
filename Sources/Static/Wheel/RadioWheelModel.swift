@@ -67,6 +67,10 @@ final class RadioWheelModel {
     /// The playlist Music is playing from, which may not be on the ring. Nil
     /// is Radio Off: paused, stopped or not running.
     @ObservationIgnored private var tunedID: String?
+    /// Where Music was at the last press, so the caption follows the track
+    /// Music is playing after a skip or a pause in Music moved it off the
+    /// broadcast clock. Nil after a tune, which puts Music back on the clock.
+    private(set) var nowPlaying: NowPlaying?
     @ObservationIgnored private var playingRead: Task<Void, Never>?
     /// Tunes whose commands haven't reached Music yet, or that launched Music
     /// and haven't checked it's still playing.
@@ -272,22 +276,38 @@ final class RadioWheelModel {
         guard tunesInFlight == 0 else { return }
         guard MusicBridge.isRunning else {
             tunedID = nil
+            nowPlaying = nil
             return
         }
         playingRead = Task { [weak self] in
-            let id: String?
+            let playing: NowPlaying?
             do {
-                id = try await MusicBridge.playingPlaylistID()
+                playing = try await MusicBridge.nowPlaying()
             } catch {
                 log.error("Couldn't read what Music is playing: \(String(describing: error), privacy: .public)")
                 return
             }
-            guard let self, !Task.isCancelled, id != tunedID else { return }
+            guard let self, !Task.isCancelled else { return }
+            nowPlaying = playing
+            if let playing { logIfOffTheClock(playing) }
+            let id = playing?.playlistID
+            guard id != tunedID else { return }
             tunedID = id
             let name = id.flatMap { id in stationList.onWheel.first { $0.id == id }?.name } ?? id ?? "nothing"
             log.notice("Music is playing \(name, privacy: .public)")
             if isOpen, !picked { highlighted = tunedSlot }
         }
+    }
+
+    private func logIfOffTheClock(_ playing: NowPlaying) {
+        guard let durations = details.tracks[playing.playlistID]?.map(\.duration),
+              let clock = Broadcast.onAir(durations: durations, at: playing.date),
+              clock.index != playing.onAir.index
+        else { return }
+        log.notice("""
+            Music is on track \(playing.onAir.index + 1) of playlist \(playing.playlistID, privacy: .public) \
+            and the clock on track \(clock.index + 1), so the caption follows Music
+            """)
     }
 
     private func tapNext() {
@@ -311,6 +331,7 @@ final class RadioWheelModel {
         guard id != tunedID else { return }
         playingRead?.cancel()
         tunedID = id
+        nowPlaying = nil
         sounds.play(.retune)
         log.notice("Tuned to \(self.stationName(slot), privacy: .public), \(reason, privacy: .public)")
         tunesInFlight += 1

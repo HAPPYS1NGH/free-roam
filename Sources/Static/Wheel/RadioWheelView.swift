@@ -20,7 +20,8 @@ struct RadioWheelView: View {
             highlighted: model.highlighted,
             presence: model.presence,
             logos: model.details.logos,
-            tracks: model.details.tracks
+            tracks: model.details.tracks,
+            nowPlaying: model.nowPlaying
         )
     }
 
@@ -43,6 +44,7 @@ struct RadioWheelContent: View {
     let presence: RadioWheelModel.Presence
     let logos: [String: CGImage]
     let tracks: [String: [Track]]
+    var nowPlaying: NowPlaying?
 
     var body: some View {
         GeometryReader { proxy in
@@ -101,7 +103,7 @@ struct RadioWheelContent: View {
 
     private func caption(at date: Date) -> CaptionLines {
         let station = highlighted == 0 ? nil : stations[highlighted - 1]
-        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, at: date)
+        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, nowPlaying: nowPlaying, at: date)
     }
 }
 
@@ -112,8 +114,9 @@ struct CaptionLines: Equatable {
     let title: String
 
     /// Nil is Radio Off. A station whose tracks haven't loaded yet shows its
-    /// name alone.
-    init(station: Playlist?, tracks: [Track]?, at date: Date) {
+    /// name alone. While Music plays the station, the lines follow Music,
+    /// which a skip or a pause in Music moves off the broadcast clock.
+    init(station: Playlist?, tracks: [Track]?, nowPlaying: NowPlaying? = nil, at date: Date) {
         guard let station else {
             self.station = "Radio Off"
             artist = ""
@@ -126,7 +129,13 @@ struct CaptionLines: Equatable {
             title = ""
             return
         }
-        let onAir = Broadcast.onAir(durations: tracks.map(\.duration), at: date)
+        let durations = tracks.map(\.duration)
+        let musicOnAir = nowPlaying.flatMap { playing in
+            playing.playlistID == station.id
+                ? Broadcast.onAir(durations: durations, at: date, from: playing.onAir, at: playing.date)
+                : nil
+        }
+        let onAir = musicOnAir ?? Broadcast.onAir(durations: durations, at: date)
         artist = onAir.map { tracks[$0.index].artist } ?? ""
         title = onAir.map { tracks[$0.index].title } ?? "No songs"
     }

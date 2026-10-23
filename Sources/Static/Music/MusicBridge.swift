@@ -16,6 +16,14 @@ struct Track: Hashable, Sendable {
     let duration: TimeInterval
 }
 
+/// Where Music was in the playlist it's playing when it was asked.
+struct NowPlaying: Equatable, Sendable {
+    /// The playlist Music is playing from, which may not be on the wheel.
+    let playlistID: String
+    let onAir: Broadcast.OnAir
+    let date: Date
+}
+
 enum MusicPermission: Equatable, Sendable {
     case allowed
     case denied
@@ -203,22 +211,20 @@ enum MusicBridge {
         try await run(#"tell application id "com.apple.Music" to pause"#) { _ in }
     }
 
-    /// The playlist Music is playing from, or nil when it's paused or stopped.
-    /// It can be a playlist that isn't on the wheel, such as the library.
-    static func playingPlaylistID() async throws -> String? {
+    /// The playlist Music is playing from, with the track and how far in, or
+    /// nil when it's paused or stopped. The playlist can be one that isn't on
+    /// the wheel, such as the library.
+    static func nowPlaying() async throws -> NowPlaying? {
         try await run("""
             tell application id "com.apple.Music"
-                if player state is not playing then return ""
+                if player state is not playing then return {}
                 try
-                    return persistent ID of current playlist
+                    return {persistent ID of current playlist, index of current track, player position}
                 on error
-                    return ""
+                    return {}
                 end try
             end tell
-            """) { result in
-            let id = result.stringValue ?? ""
-            return isPersistentID(id) ? id : nil
-        }
+            """) { parseNowPlaying($0, at: .now) }
     }
 
     /// Music's own volume, 0–100, which sits under the system volume.
@@ -273,6 +279,16 @@ enum MusicBridge {
         return zip(ids, names)
             .filter { id, _ in isPersistentID(id) }
             .map { Playlist(id: $0, name: $1) }
+    }
+
+    /// Reads the `{id, track number, position}` returned by `nowPlaying()`.
+    static func parseNowPlaying(_ result: NSAppleEventDescriptor, at date: Date) -> NowPlaying? {
+        guard result.numberOfItems == 3,
+              let id = result.atIndex(1)?.stringValue, isPersistentID(id),
+              let track = result.atIndex(2)?.int32Value, track > 0,
+              let position = result.atIndex(3)?.doubleValue, position.isFinite, position >= 0
+        else { return nil }
+        return NowPlaying(playlistID: id, onAir: Broadcast.OnAir(index: Int(track) - 1, position: position), date: date)
     }
 
     /// Reads the list of reals returned by `trackDurations(playlistID:)`.

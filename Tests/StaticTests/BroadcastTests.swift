@@ -34,6 +34,18 @@ struct BroadcastTests {
         #expect(Broadcast.onAir(durations: [0, 100], at: seconds(10)) == .init(index: 1, position: 10))
     }
 
+    @Test func playsOnFromWhereMusicWas() {
+        let start = Broadcast.OnAir(index: 0, position: 90)
+        #expect(Broadcast.onAir(durations: durations, at: seconds(1000), from: start, at: seconds(1000)) == start)
+        #expect(Broadcast.onAir(durations: durations, at: seconds(1030), from: start, at: seconds(1000)) == .init(index: 1, position: 20))
+        #expect(Broadcast.onAir(durations: durations, at: seconds(1230), from: start, at: seconds(1000)) == .init(index: 0, position: 20))
+    }
+
+    @Test func aStartThatIsNoLongerInThePlaylistHasNothingOnAir() {
+        let start = Broadcast.OnAir(index: 2, position: 0)
+        #expect(Broadcast.onAir(durations: durations, at: seconds(0), from: start, at: seconds(0)) == nil)
+    }
+
     @Test func emptyPlaylistsHaveNothingOnAir() {
         #expect(Broadcast.onAir(durations: [], at: seconds(10)) == nil)
         #expect(Broadcast.onAir(durations: [0, 0], at: seconds(10)) == nil)
