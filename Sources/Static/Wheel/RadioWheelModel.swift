@@ -389,12 +389,14 @@ final class RadioWheelModel {
     /// A press a second after a tune had launched Music once found it playing
     /// nothing, and the wheel opened on Radio Off. A tune that launches Music
     /// stays in flight a little longer, so a press meanwhile trusts it, and
-    /// then Music plays on if it has stopped.
+    /// then Music plays on if it has stopped. That log didn't say whether
+    /// Music was paused or stopped, so both play on, and the log now says.
+    /// Radio Off or another station meanwhile still wins.
     private func keepPlayingAfterLaunch(_ id: String) async throws {
         try await Task.sleep(for: Self.launchSettle)
         guard tunedID == id else { return }
-        if try await MusicBridge.resume() {
-            log.notice("Music had stopped after it launched, so it plays on")
+        if let state = try await MusicBridge.resume() {
+            log.notice("Music was \(state, privacy: .public) after it launched, so it plays on")
         }
     }
 
