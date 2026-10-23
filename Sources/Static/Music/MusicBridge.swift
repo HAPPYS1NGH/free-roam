@@ -188,6 +188,17 @@ enum MusicBridge {
         }
     }
 
+    /// Plays on if Music has paused or stopped, and says whether it had to.
+    static func resume() async throws -> Bool {
+        try await run("""
+            tell application id "com.apple.Music"
+                if player state is playing then return false
+                play
+                return true
+            end tell
+            """) { $0.booleanValue }
+    }
+
     static func pause() async throws {
         try await run(#"tell application id "com.apple.Music" to pause"#) { _ in }
     }

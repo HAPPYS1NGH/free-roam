@@ -21,6 +21,8 @@ final class RadioWheelModel {
     nonisolated static let maxStations = 25
     /// About 4 s of retries while a track loads.
     private static let seekAttempts = 30
+    /// How long after a tune that launched Music it's checked for playing.
+    private static let launchSettle = Duration.seconds(2)
 
     let style: WheelStyle
     /// Slot 0 is Radio Off, so station `i` is in slot `i + 1`.
@@ -64,7 +66,8 @@ final class RadioWheelModel {
     /// is Radio Off: paused, stopped or not running.
     @ObservationIgnored private var tunedID: String?
     @ObservationIgnored private var playingRead: Task<Void, Never>?
-    /// Tunes whose commands haven't reached Music yet.
+    /// Tunes whose commands haven't reached Music yet, or that launched Music
+    /// and haven't checked it's still playing.
     @ObservationIgnored private var tunesInFlight = 0
 
     init(style: WheelStyle, stations: StationList) {
@@ -327,7 +330,8 @@ final class RadioWheelModel {
                 if MusicBridge.isRunning { try await MusicBridge.pause() }
                 return
             }
-            if !MusicBridge.isRunning { try await MusicBridge.launch() }
+            let launching = !MusicBridge.isRunning
+            if launching { try await MusicBridge.launch() }
             let durations = try await MusicBridge.trackDurations(playlistID: id)
             // Superseded by a later tune while the durations were on their way.
             guard tunedID == id else { return }
@@ -341,8 +345,21 @@ final class RadioWheelModel {
                 log.notice("Turned Music's shuffle off and repeat on, so stations play in order and loop")
             }
             try await seek(id, to: onAir, of: durations)
+            if launching { try await keepPlayingAfterLaunch(id) }
         } catch {
             log.error("Couldn't tune Music: \(String(describing: error), privacy: .public)")
+        }
+    }
+
+    /// A press a second after a tune had launched Music once found it playing
+    /// nothing, and the wheel opened on Radio Off. A tune that launches Music
+    /// stays in flight a little longer, so a press meanwhile trusts it, and
+    /// then Music plays on if it has stopped.
+    private func keepPlayingAfterLaunch(_ id: String) async throws {
+        try await Task.sleep(for: Self.launchSettle)
+        guard tunedID == id else { return }
+        if try await MusicBridge.resume() {
+            log.notice("Music had stopped after it launched, so it plays on")
         }
     }
 
