@@ -1,6 +1,7 @@
 import AppKit
 import Carbon.OpenScripting
 import CoreServices
+import OSAKit
 import OSLog
 
 private let log = Logger(subsystem: "com.happys1ngh.static", category: "music")
@@ -57,8 +58,8 @@ enum MusicBridgeError: LocalizedError, Equatable {
     case script(code: Int, message: String)
 
     init(errorInfo: NSDictionary) {
-        let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
-        let message = errorInfo[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
+        let code = errorInfo[OSAScriptErrorNumberKey] as? Int ?? 0
+        let message = errorInfo[OSAScriptErrorMessageKey] as? String ?? "Unknown AppleScript error"
         switch code {
         case errAEEventNotPermitted: self = .notPermitted
         case MusicBridge.notRunningError: self = .notRunning
@@ -78,16 +79,24 @@ enum MusicBridgeError: LocalizedError, Equatable {
     }
 }
 
-/// Talks to Music.app through AppleScript.
+/// Talks to Music.app through AppleScript. Each script is the body of a
+/// `tell` to Music, and `execute(_:terms:in:)` sends it to Music's process.
 enum MusicBridge {
     static let bundleID = "com.apple.Music"
 
-    // NSAppleScript isn't thread-safe, so scripts run one at a time on this
+    // AppleScript isn't thread-safe, so scripts run one at a time on this
     // queue, which also keeps slow Apple Events off the main thread.
     private static let queue = DispatchQueue(label: "com.happys1ngh.static.music")
+    /// One AppleScript instance for every script, so Music's terms load once:
+    /// a new instance for each script added about 17 ms. Only used while
+    /// holding `appleScriptLock`.
+    nonisolated(unsafe) private static let appleScript = OSALanguage(forName: "AppleScript")
+        .map { OSALanguageInstance(language: $0) }
+    /// Tests run scripts off `queue`, and the instance isn't thread-safe.
+    private static let appleScriptLock = NSLock()
     /// How long a script waits for Music before it fails with -1712.
     private static let timeoutSeconds = 10
-    /// The error a script raises when Music isn't running. A number of
+    /// The error a script raises when Music's process has gone. A number of
     /// Static's own, so it can't be mistaken for one of Music's.
     fileprivate static let notRunningError = 1000
 
@@ -122,11 +131,9 @@ enum MusicBridge {
         // Variable names have to avoid Music's own terms: `names` is one of
         // its constants, so `set names to …` fails with "Access not allowed".
         try await run("""
-            tell application id "com.apple.Music"
-                set playlistIDs to persistent ID of every user playlist whose special kind is none
-                set playlistNames to name of every user playlist whose special kind is none
-                return {playlistIDs, playlistNames}
-            end tell
+            set playlistIDs to persistent ID of every user playlist whose special kind is none
+            set playlistNames to name of every user playlist whose special kind is none
+            return {playlistIDs, playlistNames}
             """, parse: parsePlaylists)
     }
 
@@ -137,11 +144,9 @@ enum MusicBridge {
         // Music can't get `every track` of an empty playlist (-1728), so it's
         // counted first.
         return try await run("""
-            tell application id "com.apple.Music"
-                set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
-                if (count of tracks of thePlaylist) is 0 then return {}
-                return duration of every track of thePlaylist
-            end tell
+            set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
+            if (count of tracks of thePlaylist) is 0 then return {}
+            return duration of every track of thePlaylist
             """, parse: parseDurations)
     }
 
@@ -150,15 +155,13 @@ enum MusicBridge {
     static func tracks(playlistID: String) async throws -> [Track] {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
         return try await run("""
-            tell application id "com.apple.Music"
-                set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
-                if (count of tracks of thePlaylist) is 0 then return {{}, {}, {}, {}}
-                set trackTitles to name of every track of thePlaylist
-                set trackArtists to artist of every track of thePlaylist
-                set trackAlbums to album of every track of thePlaylist
-                set trackDurations to duration of every track of thePlaylist
-                return {trackTitles, trackArtists, trackAlbums, trackDurations}
-            end tell
+            set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
+            if (count of tracks of thePlaylist) is 0 then return {{}, {}, {}, {}}
+            set trackTitles to name of every track of thePlaylist
+            set trackArtists to artist of every track of thePlaylist
+            set trackAlbums to album of every track of thePlaylist
+            set trackDurations to duration of every track of thePlaylist
+            return {trackTitles, trackArtists, trackAlbums, trackDurations}
             """, parse: parseTracks)
     }
 
@@ -167,11 +170,9 @@ enum MusicBridge {
     static func artwork(playlistID: String, track: Int) async throws -> Data? {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
         return try await run("""
-            tell application id "com.apple.Music"
-                set theTrack to track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
-                if (count of artworks of theTrack) is 0 then return missing value
-                return raw data of artwork 1 of theTrack
-            end tell
+            set theTrack to track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
+            if (count of artworks of theTrack) is 0 then return missing value
+            return raw data of artwork 1 of theTrack
             """) { isMissingValue($0) ? nil : $0.data }
     }
 
@@ -182,13 +183,11 @@ enum MusicBridge {
     static func play(playlistID: String, track: Int) async throws -> Bool {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
         return try await run("""
-            tell application id "com.apple.Music"
-                set alreadyInOrder to shuffle enabled is false and song repeat is all
-                set shuffle enabled to false
-                set song repeat to all
-                play track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
-                return not alreadyInOrder
-            end tell
+            set alreadyInOrder to shuffle enabled is false and song repeat is all
+            set shuffle enabled to false
+            set song repeat to all
+            play track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
+            return not alreadyInOrder
             """) { $0.booleanValue }
     }
 
@@ -199,10 +198,8 @@ enum MusicBridge {
         do {
             // AppleScript reals always use a dot, and "%f" never uses the locale's comma.
             return try await run("""
-                tell application id "com.apple.Music"
-                    set player position to \(String(format: "%.2f", position))
-                    return player position
-                end tell
+                set player position to \(String(format: "%.2f", position))
+                return player position
                 """) { $0.doubleValue }
         } catch MusicBridgeError.script(let code, _) where code == errAEWriteDenied {
             return nil
@@ -213,12 +210,10 @@ enum MusicBridge {
     /// in, or nil when it was playing.
     static func resume() async throws -> String? {
         try await run("""
-            tell application id "com.apple.Music"
-                if player state is playing then return ""
-                set previousState to player state as text
-                play
-                return previousState
-            end tell
+            if player state is playing then return ""
+            set previousState to player state as text
+            play
+            return previousState
             """) { result in
             let state = result.stringValue ?? ""
             return state.isEmpty ? nil : state
@@ -226,7 +221,7 @@ enum MusicBridge {
     }
 
     static func pause() async throws {
-        try await run(#"tell application id "com.apple.Music" to pause"#) { _ in }
+        try await run("pause") { _ in }
     }
 
     /// The playlist Music is playing from, with the track, how far in and how
@@ -235,21 +230,19 @@ enum MusicBridge {
     static func nowPlaying() async throws -> NowPlaying? {
         // A timeout throws, because Music not answering isn't Music playing nothing.
         try await run("""
-            tell application id "com.apple.Music"
-                if player state is not playing then return {}
-                try
-                    return {persistent ID of current playlist, index of current track, player position, count of tracks of current playlist}
-                on error errText number errNumber
-                    if errNumber is \(errAETimeout) then error errText number errNumber
-                    return {}
-                end try
-            end tell
+            if player state is not playing then return {}
+            try
+                return {persistent ID of current playlist, index of current track, player position, count of tracks of current playlist}
+            on error errText number errNumber
+                if errNumber is \(errAETimeout) then error errText number errNumber
+                return {}
+            end try
             """) { parseNowPlaying($0, at: .now) }
     }
 
     /// Music's own volume, 0–100, which sits under the system volume.
     static func volume() async throws -> Int {
-        try await run(#"tell application id "com.apple.Music" to return sound volume"#) { Int($0.int32Value) }
+        try await run("return sound volume") { Int($0.int32Value) }
     }
 
     static func setVolume(_ volume: Int) async throws {
@@ -281,7 +274,7 @@ enum MusicBridge {
         configuration.hides = true
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
         try await retryWhileStarting(for: .seconds(15)) {
-            try await run(#"tell application id "com.apple.Music" to get version"#) { _ in }
+            try await run("get version") { _ in }
         }
     }
 
@@ -376,7 +369,7 @@ enum MusicBridge {
     }
 
     private static func volumeScript(_ volume: Int) -> String {
-        #"tell application id "com.apple.Music" to set sound volume to \#(min(max(volume, 0), 100))"#
+        "set sound volume to \(min(max(volume, 0), 100))"
     }
 
     private static func strings(in list: NSAppleEventDescriptor?) -> [String] {
@@ -398,34 +391,71 @@ enum MusicBridge {
         }
     }
 
-    /// Only ever called on `queue`. `tell application` launches Music if it
-    /// isn't running, so every script checks first, when its turn comes.
-    /// Checking in Swift skips compiling the script. Checking again inside
-    /// the script closes the gap for a Music that quits in between.
-    private static func execute(_ source: String) throws -> NSAppleEventDescriptor {
-        guard isRunning else { throw MusicBridgeError.notRunning }
-        return try execute(source, ifRunning: bundleID)
+    /// Only ever called on `queue`. Runs `body` in the Music that's running
+    /// when its turn comes, and throws `notRunning` when none is.
+    private static func execute(_ body: String) throws -> NSAppleEventDescriptor {
+        let music = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first { !$0.isTerminated }
+        guard let music else { throw MusicBridgeError.notRunning }
+        return try execute(body, terms: bundleID, in: music.processIdentifier)
     }
 
-    /// Runs `source` only if the app is running, and throws `notRunning`
-    /// otherwise. Scripts queued behind a Music stuck at launch relaunched it
-    /// moments after you quit it, because Music was running when they were
-    /// queued. Music answers in well under a second, but a Music that stops
-    /// answering held each script for AppleScript's default 2 minutes, and
-    /// every script queued behind it waited too.
-    static func execute(_ source: String, ifRunning appID: String) throws -> NSAppleEventDescriptor {
-        var errorInfo: NSDictionary?
-        let guarded = """
+    /// Runs `body` with the terms of `appID`, sending every Apple Event it
+    /// makes to `processID`, and throws `notRunning` once that process has
+    /// gone.
+    ///
+    /// `tell application id` starts an app that isn't running before it sends
+    /// the first event, even right after `is running` said it was: Music quit
+    /// and 81 ms later a queued read started it again. So the body tells the
+    /// current application, which is always running, and `sendToProcess`
+    /// readdresses each event to the process. A process can't be started.
+    ///
+    /// Music answers in well under a second, but a Music that stops answering
+    /// held each script for AppleScript's default 2 minutes, and every script
+    /// queued behind it waited too.
+    static func execute(_ body: String, terms appID: String, in processID: pid_t) throws -> NSAppleEventDescriptor {
+        precondition(!body.contains("application"), "A script that names an application can start it")
+        guard let appleScript else { throw MusicBridgeError.script(code: Int(errOSACantOpenComponent), message: "No AppleScript") }
+        appleScriptLock.lock()
+        defer { appleScriptLock.unlock() }
+        let status = OSASetSendProc(appleScript.componentInstance, sendToProcess, UnsafeMutableRawPointer(bitPattern: Int(processID)))
+        guard status == noErr else { throw MusicBridgeError.script(code: Int(status), message: "Couldn't address the script") }
+        let source = """
             with timeout of \(timeoutSeconds) seconds
-            if application id "\(appID)" is running then
-            \(source)
-            else
-            error "Not running" number \(notRunningError)
-            end if
+            using terms from application id "\(appID)"
+            tell current application
+            \(body)
+            end tell
+            end using terms from
             end timeout
             """
-        let result = NSAppleScript(source: guarded)?.executeAndReturnError(&errorInfo)
+        var errorInfo: NSDictionary?
+        let result = OSAScript(source: source, from: nil, languageInstance: appleScript, using: [])
+            .executeAndReturnError(&errorInfo)
         guard let result, errorInfo == nil else { throw MusicBridgeError(errorInfo: errorInfo ?? [:]) }
         return result
+    }
+
+    /// AppleScript's send function, which sends each event to the process
+    /// whose ID is in `refCon` instead of the current application.
+    private static let sendToProcess: OSASendUPP = { event, reply, sendMode, _, timeoutTicks, _, _, refCon in
+        guard let event, let reply else { return OSErr(paramErr) }
+        var processID = pid_t(Int(bitPattern: refCon))
+        var address = AEAddressDesc()
+        var status = AECreateDesc(typeKernelProcessID, &processID, MemoryLayout<pid_t>.size, &address)
+        guard status == noErr else { return status }
+        defer { AEDisposeDesc(&address) }
+        var readdressed = AppleEvent()
+        status = AEDuplicateDesc(event, &readdressed)
+        guard status == noErr else { return status }
+        defer { AEDisposeDesc(&readdressed) }
+        status = AEPutAttributeDesc(&readdressed, keyAddressAttr, &address)
+        guard status == noErr else { return status }
+        let sent = AESendMessage(&readdressed, reply, sendMode, Int(timeoutTicks))
+        guard sent == procNotFound || sent == connectionInvalid else { return OSErr(truncatingIfNeeded: sent) }
+        // AppleScript answers procNotFound by trying to start its target
+        // again, so it never gets one. A starting Music that refuses scripts
+        // stays connectionInvalid, which `retryWhileStarting` retries.
+        let isAlive = kill(processID, 0) == 0 || errno == EPERM
+        return OSErr(isAlive ? connectionInvalid : notRunningError)
     }
 }
