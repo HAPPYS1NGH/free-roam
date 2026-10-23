@@ -262,12 +262,21 @@ enum MusicBridge {
 
     /// Opens Music hidden, so the app you're in stays active and in front,
     /// and waits until it answers scripts. This is the only way Static starts
-    /// Music: every script throws `notRunning` instead.
+    /// Music: every script throws `notRunning` instead. Cancelling the task
+    /// while it waits for ⌥ leaves Music closed.
     static func launch() async throws {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
             throw MusicBridgeError.notInstalled
         }
-        let waited = try await waitForOptionUp()
+        let waited: Duration
+        do {
+            waited = try await waitForOptionUp()
+            // A wait that ends at once never sleeps, so it can't see a cancel.
+            try Task.checkCancellation()
+        } catch is CancellationError {
+            log.notice("Didn't launch Music: cancelled while waiting for ⌥ to come up")
+            throw CancellationError()
+        }
         log.notice("Launching Music hidden, after waiting \(waited / .milliseconds(1), format: .fixed(precision: 0)) ms for ⌥ to come up")
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
