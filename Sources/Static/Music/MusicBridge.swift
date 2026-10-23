@@ -65,6 +65,8 @@ enum MusicBridge {
     // NSAppleScript isn't thread-safe, so scripts run one at a time on this
     // queue, which also keeps slow Apple Events off the main thread.
     private static let queue = DispatchQueue(label: "com.happys1ngh.static.music")
+    /// How long a script waits for Music before it fails with -1712.
+    private static let timeoutSeconds = 10
 
     static var isRunning: Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
@@ -239,13 +241,14 @@ enum MusicBridge {
         configuration.hides = true
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
         // Music is listed as running before it can take scripts. Until then
-        // they fail with "Connection is invalid", which lost the first tune.
+        // they fail with "Connection is invalid", which lost the first tune,
+        // or time out.
         var attempts = 1
         while true {
             do {
                 return try await run(#"tell application id "com.apple.Music" to get version"#) { _ in }
             } catch MusicBridgeError.script(let code, _)
-                where (code == connectionInvalid || code == procNotFound) && attempts < 50 {
+                where [connectionInvalid, procNotFound, errAETimeout].contains(code) && attempts < 50 {
                 attempts += 1
                 try await Task.sleep(for: .milliseconds(200))
             }
@@ -314,10 +317,13 @@ enum MusicBridge {
         }
     }
 
-    /// Only ever called on `queue`.
+    /// Only ever called on `queue`. Music answers in well under a second, but
+    /// a Music that stops answering held each script for AppleScript's default
+    /// 2 minutes, and every script queued behind it waited too.
     private static func execute(_ source: String) throws -> NSAppleEventDescriptor {
         var errorInfo: NSDictionary?
-        let result = NSAppleScript(source: source)?.executeAndReturnError(&errorInfo)
+        let limited = "with timeout of \(timeoutSeconds) seconds\n\(source)\nend timeout"
+        let result = NSAppleScript(source: limited)?.executeAndReturnError(&errorInfo)
         guard let result, errorInfo == nil else { throw MusicBridgeError(errorInfo: errorInfo ?? [:]) }
         return result
     }
