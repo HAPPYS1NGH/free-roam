@@ -4,9 +4,10 @@ import SwiftUI
 private let log = Logger(subsystem: "com.happys1ngh.static", category: "stations")
 
 /// Which playlists are on the wheel, and in what order. Until you change
-/// anything in Settings, the wheel follows Music's library order. From then on
-/// your choice is saved by persistent ID, which survives renames, with each
-/// name, so the wheel has its stations before Music has started.
+/// anything in Settings, the wheel follows Music's library order, as last
+/// read. From then on your choice is saved by persistent ID, which survives
+/// renames, with each name. Either way the wheel has its stations before
+/// Music has started.
 @MainActor @Observable
 final class StationList {
     /// A playlist as Settings lists it, on the wheel or switched off.
@@ -26,6 +27,9 @@ final class StationList {
 
     /// Music's playlists in library order. Nil until they've loaded.
     private(set) var library: [Playlist]?
+    /// The library as Music last listed it, saved for the wheel to follow
+    /// until Music's playlists load, while you haven't made a choice.
+    @ObservationIgnored private var lastLibrary: [Playlist]?
     /// Why the playlists didn't load, for Settings.
     private(set) var loadError: String?
     /// Your choice in wheel order, with the playlists you switched off, so a
@@ -40,15 +44,17 @@ final class StationList {
     @ObservationIgnored private var loading: Task<Void, Never>?
 
     private static let defaultsKey = "stations"
+    private static let libraryKey = "library"
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        choice = Self.savedChoice(in: defaults)
+        choice = Self.saved([Entry].self, forKey: Self.defaultsKey, in: defaults)
+        lastLibrary = Self.saved([Playlist].self, forKey: Self.libraryKey, in: defaults)
     }
 
     /// The stations on the wheel, in order.
     var onWheel: [Playlist] {
-        let entries = choice ?? library.map(Self.libraryOrder) ?? []
+        let entries = choice ?? (library ?? lastLibrary).map(Self.libraryOrder) ?? []
         return entries.filter { $0.isOn && !$0.isMissing }.map { Playlist(id: $0.id, name: $0.name) }
     }
 
@@ -107,6 +113,10 @@ final class StationList {
     /// playlists join the end of the wheel while it has room.
     func update(library playlists: [Playlist]) {
         if library != playlists { library = playlists }
+        if !playlists.isEmpty, playlists != lastLibrary {
+            lastLibrary = playlists
+            save(playlists, forKey: Self.libraryKey)
+        }
         // An empty list is far more likely a library that hasn't loaded than
         // every playlist deleted, and taking it would hide every station.
         if let choice, !playlists.isEmpty {
@@ -186,19 +196,25 @@ final class StationList {
 
     private func save(_ entries: [Entry]) {
         choice = entries
+        save(entries, forKey: Self.defaultsKey)
+    }
+
+    private func save(_ value: some Encodable, forKey key: String) {
         do {
-            defaults.set(try JSONEncoder().encode(entries), forKey: Self.defaultsKey)
+            defaults.set(try JSONEncoder().encode(value), forKey: key)
         } catch {
-            log.error("Couldn't save the stations: \(String(describing: error), privacy: .public)")
+            log.error("Couldn't save the \(key, privacy: .public): \(String(describing: error), privacy: .public)")
         }
     }
 
-    private static func savedChoice(in defaults: UserDefaults) -> [Entry]? {
-        guard let data = defaults.data(forKey: defaultsKey) else { return nil }
+    /// Nil when nothing is saved or it can't be read. Unreadable stations
+    /// leave the wheel following library order.
+    private static func saved<Value: Decodable>(_ type: Value.Type, forKey key: String, in defaults: UserDefaults) -> Value? {
+        guard let data = defaults.data(forKey: key) else { return nil }
         do {
-            return try JSONDecoder().decode([Entry].self, from: data)
+            return try JSONDecoder().decode(type, from: data)
         } catch {
-            log.error("Couldn't read the saved stations, so the wheel follows library order: \(String(describing: error), privacy: .public)")
+            log.error("Couldn't read the saved \(key, privacy: .public): \(String(describing: error), privacy: .public)")
             return nil
         }
     }

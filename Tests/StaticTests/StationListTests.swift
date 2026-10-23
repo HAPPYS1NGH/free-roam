@@ -48,6 +48,16 @@ struct StationListTests {
         #expect(relaunched.onWheel == [playlist(4), playlist(1), playlist(3)])
     }
 
+    @Test func followsTheLastLibraryBeforeMusicHasLoaded() {
+        StationList(defaults: defaults).update(library: library(3))
+        StationList(defaults: defaults).update(library: [])
+
+        let relaunched = StationList(defaults: defaults)
+        #expect(relaunched.library == nil)
+        #expect(relaunched.onWheel == library(3))
+        #expect(relaunched.entries.isEmpty)
+    }
+
     @Test func dropsDeletedPlaylistsAndPicksUpRenames() {
         let stations = StationList(defaults: defaults)
         stations.update(library: library(3))

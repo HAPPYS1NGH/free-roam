@@ -2,7 +2,7 @@ import AppKit
 import Carbon.OpenScripting
 import CoreServices
 
-struct Playlist: Identifiable, Hashable, Sendable {
+struct Playlist: Codable, Identifiable, Hashable, Sendable {
     /// Music's persistent ID: 16 hex digits that survive renames and relaunches.
     let id: String
     let name: String
