@@ -74,8 +74,7 @@ final class StationList {
         return choice ?? Self.libraryOrder(library)
     }
 
-    /// Reads Music's playlists again. Asking would launch Music, so this does
-    /// nothing while it isn't running.
+    /// Reads Music's playlists again. Does nothing while Music isn't running.
     func reload() {
         load(launchingMusic: false)
     }

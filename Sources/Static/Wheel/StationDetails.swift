@@ -26,9 +26,9 @@ final class StationDetails {
     @ObservationIgnored private var queued: [String] = []
     @ObservationIgnored private var loading: Task<Void, Never>?
 
-    /// Loads stations that haven't loaded yet. Asking Music would launch it,
-    /// so nothing loads while it isn't running. A station that failed, or
-    /// had no tracks, is tried again on the next call.
+    /// Loads stations that haven't loaded yet. Nothing loads while Music
+    /// isn't running. A station that failed, or had no tracks, is tried again
+    /// on the next call.
     func load(_ playlists: [Playlist]) {
         enqueue(playlists.map(\.id).filter { tracks[$0] == nil })
     }

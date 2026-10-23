@@ -218,3 +218,22 @@ Rejected:
 
 - Nothing has been posted to X yet, so the first post is the recording at the end of Phase 2, not a prototype clip.
 - The recording uses the sounds Static plays now: the local pack, which `bundle.sh` copies over the synthesised sounds on this Mac. Release builds still ship only synthesised sounds, and `bundle.sh` is unchanged.
+
+## 2026-10-24: Static starts Music only by launching it, and never with ⌥ held
+
+The bug: after you quit Music, ⌥Q sometimes brought up Music's "Music needs a library to continue" dialog, and after you closed it Music crashed. Found from Static's log, Music's launches and exits in the system log, and two crash reports.
+
+- Music shows that dialog when it starts with ⌥ held, and ⌥ is half of the hotkey. Of 5 tunes that launched Music, 3 got the dialog: both tunes from resting on a station, with ⌥ down, and one release where Q came up before ⌥. Music started 21–34 ms after each tune. The other two were a release with ⌥ up first, and one with Q up first where ⌥ followed before Music checked.
+- A press with Music closed never launched it, because a press only asks what's playing when Music is running.
+- While the dialog was up, every script timed out after 10 s and the queue backed up. Quitting Music from the dialog let the next queued script run, and its `tell application` started Music again 14–36 ms later. Those scripts had been queued while Music was running: a tune's track lengths twice, and a station's tracks once. That's the Music that "starts working".
+- Two of those three Musics crashed when quit with ⌘Q, 4.7 s and 6.6 s after starting. Both crashed in `-[NSApplication terminate:]`, in one of Music's will-terminate observers, with EXC_BREAKPOINT and "__CFTypeCollectionRelease() called with NULL; likely a collection has been corrupted". Static had sent Music nothing for 3 s before either crash, so the crash is Music's own bug. Static's part was starting a Music you had just quit. The third relaunched Music quit 20 s after starting without crashing, and so did one that Static launched and you quit 6 s later.
+- Every script now checks that Music is running when its turn comes, in Swift and again inside the script (`if application id "com.apple.Music" is running`), and otherwise throws `notRunning`. Before, only the playlist read checked when its turn came, and only in Swift. So `MusicBridge.launch()` is the only way Static starts Music. A press whose read finds Music has quit opens on Radio Off.
+- `launch()` first waits for ⌥ to come up, reading `CGEventSource.flagsState` every 20 ms. You can rest on a station and keep holding, so it waits up to 30 s, then gives up rather than open the dialog. The log says how long each launch waited. The 15 s for Music to answer, and the 2 s a launching tune stays in flight, both start once Music is open, as before.
+- So with Music closed, resting on a station no longer plays it while the wheel is open. Music starts when you let go.
+- Not covered: pressing ⌥ again in the moment Music starts can still bring up the dialog. A tune waiting for ⌥ still launches Music when you let go, even if you picked Radio Off since, so Music sits open, hidden and silent, as it did when tunes launched it at once.
+- Tests cover the ⌥ wait, using an injected key state, and a guarded script for Chess, which stands in for Music: it throws `notRunning` and Chess stays closed. Each Music script was compiled with its guard but not run, so Music staying closed needs checking by hand.
+
+Rejected:
+
+- Launching anyway after 30 s: that's the dialog.
+- Waiting for every modifier: ⌥ is the one that brings up the dialog.

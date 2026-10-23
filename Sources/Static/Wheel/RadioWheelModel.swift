@@ -268,8 +268,8 @@ final class RadioWheelModel {
     }
 
     /// Music can change station without Static, so each press asks what's
-    /// playing before the wheel opens on it. Asking would launch Music, so
-    /// when it isn't running that's Radio Off.
+    /// playing before the wheel opens on it. When Music isn't running that's
+    /// Radio Off, and Music isn't asked.
     private func readPlaying() {
         // Until Music answers, the caption follows the clock, so a read that
         // fails leaves no stale position behind.
@@ -285,6 +285,9 @@ final class RadioWheelModel {
             let playing: NowPlaying?
             do {
                 playing = try await MusicBridge.nowPlaying()
+            } catch MusicBridgeError.notRunning {
+                // Music quit while the read waited its turn.
+                playing = nil
             } catch {
                 log.error("Couldn't read what Music is playing: \(String(describing: error), privacy: .public)")
                 return

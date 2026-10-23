@@ -4,8 +4,7 @@ private let log = Logger(subsystem: "com.happys1ngh.static", category: "music")
 
 /// Lowers Music's volume while the wheel is open, as GTA quietens the radio,
 /// and brings it back afterwards, over the same times as the screen filter
-/// fades. Setting the volume would launch Music, so nothing happens while it
-/// isn't running.
+/// fades. Nothing happens while Music isn't running.
 @MainActor
 final class VolumeDip {
     /// Music drops a volume change that comes within about 100 ms of the last

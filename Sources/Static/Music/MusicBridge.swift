@@ -1,6 +1,9 @@
 import AppKit
 import Carbon.OpenScripting
 import CoreServices
+import OSLog
+
+private let log = Logger(subsystem: "com.happys1ngh.static", category: "music")
 
 struct Playlist: Codable, Identifiable, Hashable, Sendable {
     /// Music's persistent ID: 16 hex digits that survive renames and relaunches.
@@ -45,17 +48,22 @@ enum MusicPermission: Equatable, Sendable {
     }
 }
 
-enum MusicBridgeError: LocalizedError {
+enum MusicBridgeError: LocalizedError, Equatable {
     case notPermitted
     case notInstalled
     case notRunning
+    case optionHeld
     case invalidPersistentID(String)
     case script(code: Int, message: String)
 
     init(errorInfo: NSDictionary) {
         let code = errorInfo[NSAppleScript.errorNumber] as? Int ?? 0
         let message = errorInfo[NSAppleScript.errorMessage] as? String ?? "Unknown AppleScript error"
-        self = code == errAEEventNotPermitted ? .notPermitted : .script(code: code, message: message)
+        switch code {
+        case errAEEventNotPermitted: self = .notPermitted
+        case MusicBridge.notRunningError: self = .notRunning
+        default: self = .script(code: code, message: message)
+        }
     }
 
     var errorDescription: String? {
@@ -63,6 +71,7 @@ enum MusicBridgeError: LocalizedError {
         case .notPermitted: "Static isn't allowed to control Music."
         case .notInstalled: "Music isn't installed."
         case .notRunning: "Music isn't running."
+        case .optionHeld: "⌥ stayed down, and Music asks for a library when it starts with ⌥ held."
         case .invalidPersistentID(let id): "Not a Music persistent ID: \(id)"
         case .script(let code, let message): "Music error \(code): \(message)"
         }
@@ -78,6 +87,9 @@ enum MusicBridge {
     private static let queue = DispatchQueue(label: "com.happys1ngh.static.music")
     /// How long a script waits for Music before it fails with -1712.
     private static let timeoutSeconds = 10
+    /// The error a script raises when Music isn't running. A number of
+    /// Static's own, so it can't be mistaken for one of Music's.
+    fileprivate static let notRunningError = 1000
 
     static var isRunning: Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
@@ -106,8 +118,6 @@ enum MusicBridge {
     }
 
     /// User playlists in library order, without folders or Music's own lists.
-    /// Throws `notRunning` rather than launching Music, even if it quit while
-    /// the script waited its turn.
     static func playlists() async throws -> [Playlist] {
         // Variable names have to avoid Music's own terms: `names` is one of
         // its constants, so `set names to …` fails with "Access not allowed".
@@ -117,7 +127,7 @@ enum MusicBridge {
                 set playlistNames to name of every user playlist whose special kind is none
                 return {playlistIDs, playlistNames}
             end tell
-            """, onlyIfRunning: true, parse: parsePlaylists)
+            """, parse: parsePlaylists)
     }
 
     /// Each track's length in seconds, in playlist order. Tracks with no
@@ -258,11 +268,14 @@ enum MusicBridge {
     }
 
     /// Opens Music hidden, so the app you're in stays active and in front,
-    /// and waits until it answers scripts.
+    /// and waits until it answers scripts. This is the only way Static starts
+    /// Music: every script throws `notRunning` instead.
     static func launch() async throws {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
             throw MusicBridgeError.notInstalled
         }
+        let waited = try await waitForOptionUp()
+        log.notice("Launching Music hidden, after waiting \(waited / .milliseconds(1), format: .fixed(precision: 0)) ms for ⌥ to come up")
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
         configuration.hides = true
@@ -277,6 +290,8 @@ enum MusicBridge {
     /// out. A Music that never answers, such as one stuck behind a dialog,
     /// would hold every script queued behind it, so this stops trying once
     /// `limit` has passed, though the last try can run on to its own timeout.
+    /// A Music that quits meanwhile, as from its library dialog, throws
+    /// `notRunning`, which isn't retried.
     static func retryWhileStarting(
         for limit: Duration, every interval: Duration = .milliseconds(200), _ script: () async throws -> Void
     ) async throws {
@@ -289,6 +304,26 @@ enum MusicBridge {
                 try await Task.sleep(for: interval)
             }
         }
+    }
+
+    /// Music asks you to choose or create a library when it starts with ⌥
+    /// held, and ⌥ is half of Static's hotkey: tunes picked while ⌥Q was
+    /// down opened that dialog, as did a release where Q came up before ⌥.
+    /// So a launch waits for ⌥ to come up. You can rest on a station and
+    /// keep holding, so the wait is long, and it gives up after `limit`
+    /// rather than open the dialog. Returns how long it waited.
+    static func waitForOptionUp(
+        for limit: Duration = .seconds(30),
+        every interval: Duration = .milliseconds(20),
+        isOptionDown: () -> Bool = { CGEventSource.flagsState(.combinedSessionState).contains(.maskAlternate) }
+    ) async throws -> Duration {
+        let clock = ContinuousClock()
+        let started = clock.now
+        while isOptionDown() {
+            guard clock.now - started < limit else { throw MusicBridgeError.optionHeld }
+            try await Task.sleep(for: interval)
+        }
+        return clock.now - started
     }
 
     /// Reads the `{ids, names}` pair returned by `playlists()`.
@@ -352,30 +387,44 @@ enum MusicBridge {
         }
     }
 
-    /// `onlyIfRunning` checks Music is running when the script's turn comes,
-    /// because `tell application` would launch it.
     private static func run<Value: Sendable>(
         _ source: String,
-        onlyIfRunning: Bool = false,
         parse: @escaping @Sendable (NSAppleEventDescriptor) -> Value
     ) async throws -> Value {
         try await withCheckedThrowingContinuation { continuation in
             queue.async {
-                continuation.resume(with: Result {
-                    if onlyIfRunning, !isRunning { throw MusicBridgeError.notRunning }
-                    return try parse(execute(source))
-                })
+                continuation.resume(with: Result { try parse(execute(source)) })
             }
         }
     }
 
-    /// Only ever called on `queue`. Music answers in well under a second, but
-    /// a Music that stops answering held each script for AppleScript's default
-    /// 2 minutes, and every script queued behind it waited too.
+    /// Only ever called on `queue`. `tell application` launches Music if it
+    /// isn't running, so every script checks first, when its turn comes.
+    /// Checking in Swift skips compiling the script. Checking again inside
+    /// the script closes the gap for a Music that quits in between.
     private static func execute(_ source: String) throws -> NSAppleEventDescriptor {
+        guard isRunning else { throw MusicBridgeError.notRunning }
+        return try execute(source, ifRunning: bundleID)
+    }
+
+    /// Runs `source` only if the app is running, and throws `notRunning`
+    /// otherwise. Scripts queued behind a Music stuck at launch relaunched it
+    /// moments after you quit it, because Music was running when they were
+    /// queued. Music answers in well under a second, but a Music that stops
+    /// answering held each script for AppleScript's default 2 minutes, and
+    /// every script queued behind it waited too.
+    static func execute(_ source: String, ifRunning appID: String) throws -> NSAppleEventDescriptor {
         var errorInfo: NSDictionary?
-        let limited = "with timeout of \(timeoutSeconds) seconds\n\(source)\nend timeout"
-        let result = NSAppleScript(source: limited)?.executeAndReturnError(&errorInfo)
+        let guarded = """
+            with timeout of \(timeoutSeconds) seconds
+            if application id "\(appID)" is running then
+            \(source)
+            else
+            error "Not running" number \(notRunningError)
+            end if
+            end timeout
+            """
+        let result = NSAppleScript(source: guarded)?.executeAndReturnError(&errorInfo)
         guard let result, errorInfo == nil else { throw MusicBridgeError(errorInfo: errorInfo ?? [:]) }
         return result
     }

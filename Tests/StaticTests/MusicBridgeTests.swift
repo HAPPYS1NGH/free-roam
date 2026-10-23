@@ -66,6 +66,33 @@ struct MusicBridgeTests {
         #expect(tries == 1)
     }
 
+    @Test func launchesAtOnceWhenOptionIsUp() async throws {
+        var checks = 0
+        _ = try await MusicBridge.waitForOptionUp(every: .milliseconds(1)) {
+            checks += 1
+            return false
+        }
+        #expect(checks == 1)
+    }
+
+    @Test func waitsForOptionToComeUpBeforeLaunching() async throws {
+        var checks = 0
+        _ = try await MusicBridge.waitForOptionUp(every: .milliseconds(1)) {
+            checks += 1
+            return checks < 4
+        }
+        #expect(checks == 4)
+    }
+
+    @Test func givesUpRatherThanLaunchWithOptionHeld() async {
+        let clock = ContinuousClock()
+        let started = clock.now
+        await #expect(throws: MusicBridgeError.optionHeld) {
+            try await MusicBridge.waitForOptionUp(for: .milliseconds(50), every: .milliseconds(5)) { true }
+        }
+        #expect(clock.now - started < .seconds(1))
+    }
+
     @Test func parsesPlaylistsAndDropsUnexpectedIDs() {
         let result = NSAppleEventDescriptor.list()
         result.insert(list(["B965EB2A37B2731C", "not an id", "E5B25C359F6E2F36"]), at: 1)
@@ -166,5 +193,29 @@ struct MusicBridgeTests {
             list.insert(NSAppleEventDescriptor(string: string), at: index + 1)
         }
         return list
+    }
+}
+
+/// Every script checks inside itself that its app is running. Chess stands
+/// in for Music, which tests mustn't script, and every Mac has it. These run
+/// one at a time because NSAppleScript isn't thread-safe.
+@Suite(.serialized) struct GuardedScriptTests {
+    static let standIn = "com.apple.Chess"
+
+    static var standInIsRunning: Bool {
+        !NSRunningApplication.runningApplications(withBundleIdentifier: standIn).isEmpty
+    }
+
+    @Test(.enabled(if: !standInIsRunning)) func aScriptForAClosedAppDoesNotLaunchIt() {
+        #expect(throws: MusicBridgeError.notRunning) {
+            try MusicBridge.execute(#"tell application id "com.apple.Chess" to get version"#, ifRunning: Self.standIn)
+        }
+        #expect(!Self.standInIsRunning)
+    }
+
+    /// Sends no Apple Event, so it needs no permission.
+    @Test func aScriptForARunningAppRuns() throws {
+        let result = try MusicBridge.execute(#"return "ran""#, ifRunning: "com.apple.finder")
+        #expect(result.stringValue == "ran")
     }
 }
