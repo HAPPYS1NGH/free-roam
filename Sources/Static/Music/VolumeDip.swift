@@ -110,6 +110,10 @@ final class VolumeDip {
                 do {
                     try await MusicBridge.setVolume(next)
                 } catch {
+                    // A change that timed out still reaches Music once it
+                    // answers again, so it counts as made and a restore
+                    // undoes it, instead of leaving Music quiet.
+                    if case MusicBridgeError.script(errAETimeout, _) = error { level = next }
                     log.error("Couldn't set Music's volume: \(String(describing: error), privacy: .public)")
                     return
                 }
