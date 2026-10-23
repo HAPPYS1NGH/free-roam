@@ -271,12 +271,14 @@ final class RadioWheelModel {
     /// playing before the wheel opens on it. Asking would launch Music, so
     /// when it isn't running that's Radio Off.
     private func readPlaying() {
+        // Until Music answers, the caption follows the clock, so a read that
+        // fails leaves no stale position behind.
+        nowPlaying = nil
         // A tune still on its way to Music is newer than anything Music can
         // report yet.
         guard tunesInFlight == 0 else { return }
         guard MusicBridge.isRunning else {
             tunedID = nil
-            nowPlaying = nil
             return
         }
         playingRead = Task { [weak self] in

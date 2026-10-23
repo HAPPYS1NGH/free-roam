@@ -215,12 +215,14 @@ enum MusicBridge {
     /// nil when it's paused or stopped. The playlist can be one that isn't on
     /// the wheel, such as the library.
     static func nowPlaying() async throws -> NowPlaying? {
+        // A timeout throws, because Music not answering isn't Music playing nothing.
         try await run("""
             tell application id "com.apple.Music"
                 if player state is not playing then return {}
                 try
                     return {persistent ID of current playlist, index of current track, player position}
-                on error
+                on error errText number errNumber
+                    if errNumber is \(errAETimeout) then error errText number errNumber
                     return {}
                 end try
             end tell
