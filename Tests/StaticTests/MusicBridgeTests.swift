@@ -68,6 +68,13 @@ struct MusicBridgeTests {
         #expect(MusicBridge.parseDurations(.list()).isEmpty)
     }
 
+    @Test func parsesTheTracksOfAnEmptyPlaylist() {
+        let result = NSAppleEventDescriptor.list()
+        for index in 1...4 { result.insert(.list(), at: index) }
+
+        #expect(MusicBridge.parseTracks(result).isEmpty)
+    }
+
     @Test func parsesTracksAndBlanksMissingValues() {
         let missing = NSAppleEventDescriptor(typeCode: OSType(cMissingValue))
         let durations = NSAppleEventDescriptor.list()

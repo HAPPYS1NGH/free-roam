@@ -319,7 +319,8 @@ final class RadioWheelModel {
     }
 
     /// Plays the station's on-air track from partway in, or pauses for Radio
-    /// Off. Music launches for a station, but not to pause.
+    /// Off and for a station with nothing to play. Music launches for a
+    /// station, but not for Radio Off.
     private func playOnAir(_ id: String?) async {
         do {
             guard let id else {
@@ -330,8 +331,10 @@ final class RadioWheelModel {
             let durations = try await MusicBridge.trackDurations(playlistID: id)
             // Superseded by a later tune while the durations were on their way.
             guard tunedID == id else { return }
+            // A station with nothing to play is dead air, like Radio Off.
             guard let onAir = Broadcast.onAir(durations: durations, at: .now) else {
-                log.notice("Playlist \(id, privacy: .public) has no tracks to play")
+                try await MusicBridge.pause()
+                log.notice("Playlist \(id, privacy: .public) has no tracks to play, so Music is paused")
                 return
             }
             try await MusicBridge.play(playlistID: id, track: onAir.index + 1)

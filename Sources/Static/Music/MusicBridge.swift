@@ -111,9 +111,13 @@ enum MusicBridge {
     /// length, such as missing files, count as 0.
     static func trackDurations(playlistID: String) async throws -> [TimeInterval] {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        // Music can't get `every track` of an empty playlist (-1728), so it's
+        // counted first.
         return try await run("""
             tell application id "com.apple.Music"
-                return duration of every track of (first user playlist whose persistent ID is "\(playlistID)")
+                set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
+                if (count of tracks of thePlaylist) is 0 then return {}
+                return duration of every track of thePlaylist
             end tell
             """, parse: parseDurations)
     }
@@ -125,6 +129,7 @@ enum MusicBridge {
         return try await run("""
             tell application id "com.apple.Music"
                 set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
+                if (count of tracks of thePlaylist) is 0 then return {{}, {}, {}, {}}
                 set trackTitles to name of every track of thePlaylist
                 set trackArtists to artist of every track of thePlaylist
                 set trackAlbums to album of every track of thePlaylist
