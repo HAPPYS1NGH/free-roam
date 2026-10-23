@@ -56,6 +56,8 @@ final class RadioWheelModel {
     @ObservationIgnored private var capture: Task<Void, Never>?
     /// The display the latest press captured.
     @ObservationIgnored private var captureDisplay: CGDirectDisplayID?
+    /// Displays whose slow first capture has already run.
+    @ObservationIgnored private var warmedUp: Set<CGDirectDisplayID> = []
     /// Whether the highlight has moved since the wheel opened. Letting go
     /// without picking leaves Music alone, even when what it's playing isn't
     /// on the ring and the wheel opened on Radio Off.
@@ -94,6 +96,12 @@ final class RadioWheelModel {
             log.error("Couldn't register ⌥Q: \(error.localizedDescription, privacy: .public)")
         }
         warmUpCapture()
+        // A display connected while Static runs gets its own warm-up.
+        _ = NotificationCenter.default.addObserver(
+            forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.warmUpCapture() }
+        }
     }
 
     /// Loads the tracks and logos of stations that haven't loaded yet, in the
@@ -441,21 +449,26 @@ final class RadioWheelModel {
     }
 
     /// The first capture after launch took 145 ms, and the first filter
-    /// sets up Core Image, so both run once now instead of on the first press.
+    /// sets up Core Image, so both run once for each display, at launch or
+    /// when it's connected, instead of on its first press.
     private func warmUpCapture() {
         guard ScreenCapture.isAllowed else { return }
         let behaviour = style.behaviour
-        Task {
-            let clock = ContinuousClock()
-            let started = clock.now
-            let still = await BackdropStill.make(
-                displayID: CGMainDisplayID(),
-                excluding: nil,
-                saturation: behaviour.backdropSaturation,
-                brightness: behaviour.backdropBrightness
-            )
-            guard still != nil else { return }
-            log.notice("Warmed up the backdrop at launch in \((clock.now - started) / .milliseconds(1), format: .fixed(precision: 0)) ms")
+        for screen in NSScreen.screens {
+            guard let displayID = screen.displayID, warmedUp.insert(displayID).inserted else { continue }
+            let size = "\(Int(screen.frame.width))×\(Int(screen.frame.height))"
+            Task {
+                let clock = ContinuousClock()
+                let started = clock.now
+                let still = await BackdropStill.make(
+                    displayID: displayID,
+                    excluding: nil,
+                    saturation: behaviour.backdropSaturation,
+                    brightness: behaviour.backdropBrightness
+                )
+                guard still != nil else { return }
+                log.notice("Warmed up the backdrop on a \(size, privacy: .public) screen in \((clock.now - started) / .milliseconds(1), format: .fixed(precision: 0)) ms")
+            }
         }
     }
 
