@@ -152,14 +152,21 @@ enum MusicBridge {
             """) { isMissingValue($0) ? nil : $0.data }
     }
 
-    /// Plays track `track` (1-based) of a playlist from the start.
-    static func play(playlistID: String, track: Int) async throws {
+    /// Plays track `track` (1-based) of a playlist from the start. Shuffle
+    /// goes off and repeat covers the whole playlist, so the station plays in
+    /// the broadcast clock's order and loops as the clock does, and both stay
+    /// that way. Returns whether either was set otherwise.
+    static func play(playlistID: String, track: Int) async throws -> Bool {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
-        try await run("""
+        return try await run("""
             tell application id "com.apple.Music"
+                set alreadyInOrder to shuffle enabled is false and song repeat is all
+                set shuffle enabled to false
+                set song repeat to all
                 play track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
+                return not alreadyInOrder
             end tell
-            """) { _ in }
+            """) { $0.booleanValue }
     }
 
     /// Moves the current track to `position` seconds and returns where Music

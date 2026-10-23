@@ -337,7 +337,9 @@ final class RadioWheelModel {
                 log.notice("Playlist \(id, privacy: .public) has no tracks to play, so Music is paused")
                 return
             }
-            try await MusicBridge.play(playlistID: id, track: onAir.index + 1)
+            if try await MusicBridge.play(playlistID: id, track: onAir.index + 1) {
+                log.notice("Turned Music's shuffle off and repeat on, so stations play in order and loop")
+            }
             try await seek(id, to: onAir, of: durations)
         } catch {
             log.error("Couldn't tune Music: \(String(describing: error), privacy: .public)")
