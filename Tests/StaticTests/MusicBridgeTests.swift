@@ -196,26 +196,51 @@ struct MusicBridgeTests {
     }
 }
 
-/// Every script checks inside itself that its app is running. Chess stands
-/// in for Music, which tests mustn't script, and every Mac has it. These run
-/// one at a time because NSAppleScript isn't thread-safe.
-@Suite(.serialized) struct GuardedScriptTests {
+/// Every script sends its Apple Events to one process, and nowhere else.
+/// Chess stands in for Music, which tests mustn't script, and every Mac has
+/// it. These run one at a time because AppleScript isn't thread-safe.
+@Suite(.serialized) struct ProcessScriptTests {
     static let standIn = "com.apple.Chess"
 
     static var standInIsRunning: Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: standIn).isEmpty
     }
 
-    @Test(.enabled(if: !standInIsRunning)) func aScriptForAClosedAppDoesNotLaunchIt() {
+    /// As when Music quits after its turn came: 81 ms after Music quit, a
+    /// read that had checked it was running started it again.
+    @Test(.enabled(if: !standInIsRunning)) func aScriptForAProcessThatHasGoneStartsNothing() throws {
+        let gone = try Self.exitedProcessID()
         #expect(throws: MusicBridgeError.notRunning) {
-            try MusicBridge.execute(#"tell application id "com.apple.Chess" to get version"#, ifRunning: Self.standIn)
+            try MusicBridge.execute("count windows", terms: Self.standIn, in: gone)
         }
         #expect(!Self.standInIsRunning)
     }
 
+    /// This process has no handler for `count`, so the error shows the event
+    /// reached it, and not Chess.
+    @Test(.enabled(if: !standInIsRunning)) func aScriptSendsItsEventsToTheProcess() {
+        let error = #expect(throws: MusicBridgeError.self) {
+            try MusicBridge.execute("count windows", terms: Self.standIn, in: getpid())
+        }
+        guard case .script(let code, _) = error else {
+            Issue.record("Expected an Apple Event error, got \(String(describing: error))")
+            return
+        }
+        #expect(code == errAEEventNotHandled)
+        #expect(!Self.standInIsRunning)
+    }
+
     /// Sends no Apple Event, so it needs no permission.
-    @Test func aScriptForARunningAppRuns() throws {
-        let result = try MusicBridge.execute(#"return "ran""#, ifRunning: "com.apple.finder")
+    @Test func aScriptThatSendsNothingRuns() throws {
+        let result = try MusicBridge.execute(#"return "ran""#, terms: Self.standIn, in: getpid())
         #expect(result.stringValue == "ran")
+    }
+
+    private static func exitedProcessID() throws -> pid_t {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+        try process.run()
+        process.waitUntilExit()
+        return process.processIdentifier
     }
 }
