@@ -33,6 +33,20 @@ The Legibility panel at the top is for keeping the idle discs visible over a bus
 
 To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` into `prototype/public/sounds/local/`, which is also gitignored. The panel's Sound Pack switch flips between them and the built-in ones, and any sound missing from the local folder falls back to the built-in one.
 
+## Free Roam landing-page exploration
+
+With the prototype dev server running, open `/free-roam/` to compare three directions for the proposed Free Roam name:
+
+- **After Hours:** a coastal night drive with an interactive radio wheel.
+- **FM / 98.6:** an orange radio poster with physical station presets.
+- **Passenger Seat:** a printed travel-journal layout with a wheel demo.
+
+Use the bottom picker or keys **1–3** to switch. Arrow keys also cycle directions. The URL saves the direction as `?v=1`, `?v=2`, or `?v=3`. Hold **Q**, point, and release to tune the wheel, or click a station. Sound is off initially; enabling it plays tuning effects only. The page does not control Music or stream songs.
+
+The exploration lives in `prototype/src/free-roam/`, with its own HTML entry. `npm run build` builds both it and the existing wheel prototype. The Mac app is still named Static. No direction has been selected for production.
+
+Design references and verification notes are in [docs/free-roam-design.md](docs/free-roam-design.md).
+
 ## Build the Mac app
 
 The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, with your playlists' album art, over a desaturated and vignetted screen. Flick or scroll to a station and let go, and Music tunes in mid-song. Tuning turns Music's shuffle off and repeat on, so each station plays in order and loops, and leaves them that way. A quick tap skips to the next station. Settings… in the menu bar menu picks which playlists are on the wheel and in what order. You need Xcode 16 or later.
