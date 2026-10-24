@@ -1,0 +1,93 @@
+{
+  "source": "Static.app build 96",
+  "sounds": {
+    "open": "e8a2623c85afa7ff92a866ce0894495708508ce75ac50d5c488f86d4a59d8292",
+    "close": "e8a2623c85afa7ff92a866ce0894495708508ce75ac50d5c488f86d4a59d8292",
+    "hover": "b9599a080db7a9c4243c56179c4e6a1052fb35231c076c05fcde4918c4e8dd1c",
+    "retune": "f8b6061933cc8a376b37055ca24aef3bed934946218b703947632d3e85205a31"
+  },
+  "settings": {
+    "app": "Static",
+    "name": "Radio wheel",
+    "exportedAt": "2026-10-22T05:46:14.020Z",
+    "animations": {
+      "open": {
+        "duration": 0.14,
+        "bezier": [
+          0.23,
+          1,
+          0.32,
+          1
+        ]
+      },
+      "close": {
+        "duration": 0.1,
+        "bezier": [
+          0.23,
+          1,
+          0.32,
+          1
+        ]
+      },
+      "filterIn": {
+        "duration": 0.15,
+        "bezier": [
+          0.4,
+          0,
+          0.6,
+          1
+        ]
+      },
+      "filterOut": {
+        "duration": 0.45,
+        "bezier": [
+          0.4,
+          0,
+          0.6,
+          1
+        ]
+      }
+    },
+    "sizes": {
+      "openScale": 0.96,
+      "iconSize": 8.8,
+      "maxIconSize": 10.5,
+      "iconPitch": 9.15,
+      "minRadius": 22,
+      "maxRadius": 30.5,
+      "raise": 4.3,
+      "rim": 0.05,
+      "selectedRim": 0.01,
+      "ringWidth": 0.55,
+      "selectedScale": 1,
+      "idleOpacity": 0.4,
+      "captionSize": 2.6,
+      "stationSize": 3.4,
+      "captionPitch": 3.4,
+      "captionRaise": 5
+    },
+    "colors": {
+      "ringPreset": "Blue",
+      "ringColor": "#65B4D4"
+    },
+    "flags": {
+      "selectedInColour": true
+    },
+    "behaviour": {
+      "holdDelayMs": 150,
+      "deadzone": 1.5,
+      "pickRadius": 60,
+      "scrollStep": 12,
+      "dwellMs": 1000,
+      "backdropBlurPx": 0,
+      "backdropSaturation": 0.45,
+      "backdropBrightness": 1.04,
+      "vignette": 1,
+      "duckVolume": 0.4,
+      "retuneTake": "retune",
+      "retuneVolumeDb": -4.5,
+      "uiVolumeDb": -2,
+      "hoverVolumeDb": -2
+    }
+  }
+}

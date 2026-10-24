@@ -43,7 +43,7 @@ G. Theming: one intentional dark theme. Checked visually on desktop and mobile w
 
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
-| Blocker | Landing demo loaded a personal Music export; Vite copied the full public directory | Fictional stations and an explicit asset allowlist | Public output cannot inherit personal library, artwork, wallpaper, or local audio exports | Fixed in `prototype/src/free-roam/demo-stations.ts:1`, `prototype/scripts/public-assets.mjs:4` |
+| Blocker | Landing demo loaded a personal Music export; Vite copied the full public directory | Public-catalog stations and an explicit asset allowlist | Public output cannot inherit personal library, artwork, wallpaper, or local audio exports | Fixed in `prototype/src/free-roam/catalog.json:1`, `prototype/scripts/public-assets.mjs:4` |
 | Blocker | Production included DialKit, a design picker, and a track panel | Public entry points contain the website and clean demo; studio is local only | Visitors see product controls only | Fixed in `prototype/src/main.tsx:1` and `prototype/src/free-roam/main.tsx:1` |
 
 ## I. Marketing
@@ -68,9 +68,17 @@ G. Theming: one intentional dark theme. Checked visually on desktop and mobile w
 
 ## Verification
 
-- `npm --prefix prototype test`: passed, 1 privacy regression test.
+- `npm --prefix prototype test`: passed, 5 privacy, catalog, audio parity, and first-gesture tests.
 - `npm --prefix prototype run build`: passed TypeScript, Vite, prerendering, and release-content checks.
-- Release check output: `Release check passed: 24 files, no private exports or studio controls.`
-- Production browser checks: station click, keyboard arrows and Enter, tap Q, hold/release Q, Escape, focus return, Radio Off, resuming from Off, and optional sound activation.
+- Release check output: `Release check passed: 26 files, no private exports or studio controls.`
+- Production browser checks: station click, keyboard arrows and Enter, tap Q, hold/release Q, Escape, focus return, Radio Off, resuming from Off, and sound enabled on first interaction, mute, and retry controls.
 - Responsive checks: desktop, 390px and 320px widths. No horizontal overflow in the landing page.
 - No lint or formatter command is configured. No native source was changed, so native tests were not rerun.
+
+## Product sound and catalog follow-up
+
+The public demo now uses ten popular-music selections with actual album artwork. Provenance is recorded per station in `prototype/src/free-roam/catalog.json`; no personal-library export was read for this selection. The selected album links to Apple Music from the full-screen demo.
+
+The four WAV files in `prototype/public/sounds/static/` match the installed Static build 96 byte for byte. `prototype/scripts/product-reference.json` pins their SHA-256 hashes and the bundled wheel settings. Changing the public sound pack or settings breaks the parity tests until deliberately reconciled with the product. The web retains the existing hover filter and overlapping-retune fade, which correspond to the native `WheelSounds` implementation.
+
+The first gesture unlocks browser audio; it no longer requires enabling sound separately. The cold-load regression test verifies that a queued opening sound survives asynchronous decoding and plays at the configured gain. Native speaker output and browser speaker output were not captured for an acoustic comparison; the verified parity is files, settings, and playback code.

@@ -20,7 +20,7 @@ test('personal exports and unapproved assets never reach the public directory', 
     writeFileSync(join(destination, 'library/stale.json'), 'old private export')
     preparePublicAssets(source, destination)
     assert.deepEqual(listFiles(destination).sort(), [...publicAssets].sort())
-    assert.equal(readFileSync(join(destination, 'sounds/retune.wav'), 'utf8'), 'sounds/retune.wav')
+    assert.equal(readFileSync(join(destination, 'sounds/static/retune.wav'), 'utf8'), 'sounds/static/retune.wav')
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

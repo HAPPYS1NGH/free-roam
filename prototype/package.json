@@ -7,7 +7,7 @@
     "dev": "node scripts/prepare-public.mjs && vite",
     "studio": "vite --mode studio --open /studio.html",
     "build": "node scripts/prepare-public.mjs && tsc --noEmit && vite build && node scripts/prerender.mjs && node scripts/check-release.mjs",
-    "test": "node --test scripts/public-assets.test.mjs",
+    "test": "node --test scripts/*.test.mjs",
     "check:release": "node scripts/check-release.mjs",
     "typecheck": "tsc --noEmit",
     "sounds": "node scripts/make-sounds.mjs",

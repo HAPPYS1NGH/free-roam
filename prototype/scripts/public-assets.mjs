@@ -7,8 +7,8 @@ export const publicAssets = [
   'fonts/sofia-sans-extra-condensed/OFL.txt',
   'free-roam/coast.jpg',
   'free-roam/app-icon.png',
-  ...['night', 'focus', 'morning', 'energy', 'slow', 'rewind'].map(name => `free-roam/stations/${name}.svg`),
-  ...['open', 'close', 'hover', 'retune', 'retune-b', 'retune-c'].map(name => `sounds/${name}.wav`),
+  ...['night', 'dance', 'pop', 'indie', 'rap', 'sunset', 'classics', 'punjabi', 'electronic', 'road'].map(name => `free-roam/albums/${name}.jpg`),
+  ...['open', 'close', 'hover', 'retune'].map(name => `sounds/static/${name}.wav`),
 ]
 
 // A new file in public/ must never become public merely because it exists.

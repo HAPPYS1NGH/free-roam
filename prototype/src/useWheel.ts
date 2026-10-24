@@ -96,6 +96,7 @@ export function useWheel(options: Options) {
 
   const show = () => {
     if (openRef.current) return
+    unlockAudio()
     openRef.current = true
     cursor.current = { x: 0, y: 0 }
     // The wheel opens on whatever is playing, like GTA.
@@ -277,6 +278,7 @@ export function useWheel(options: Options) {
 
   const choose = (index: number) => {
     if (!settings.current.slots[index]) return
+    unlockAudio()
     highlightRef.current = index
     setHighlighted(index)
     tune(index)

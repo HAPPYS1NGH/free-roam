@@ -8,10 +8,12 @@ const SOUND_NAMES: SoundName[] = ["open", "close", "hover", ...RETUNE_TAKES]
 // sounds that can't be committed. Any sound missing there falls back to the
 // synthesised one.
 export const SOUND_PACKS = ["Local", "Synth"] as const
-export type SoundPack = (typeof SOUND_PACKS)[number]
+export type SoundPack = (typeof SOUND_PACKS)[number] | "Product"
 
 const synthBuffers = new Map<SoundName, AudioBuffer>()
 const localBuffers = new Map<SoundName, AudioBuffer>()
+const productBuffers = new Map<SoundName, AudioBuffer>()
+let productPreloading: Promise<void> | null = null
 let context: AudioContext | null = null
 let preloading: Promise<number> | null = null
 
@@ -35,14 +37,19 @@ function loadInto(decoder: BaseAudioContext, buffers: Map<SoundName, AudioBuffer
   )
 }
 
-// The public demo decodes only the distributable, synthesised sound pack.
-export function preloadSynthSounds() {
+// These four approved files are byte-identical to the installed Static bundle.
+export function preloadProductSounds(): Promise<void> {
+  if (productPreloading) return productPreloading
   const decoder = new OfflineAudioContext(1, 1, 44100)
-  return Promise.all(SOUND_NAMES.map(async name => {
-    const buffer = await load(decoder, `/sounds/${name}.wav`)
+  productPreloading = Promise.all((["open", "close", "hover", "retune"] as const).map(async name => {
+    const buffer = await load(decoder, `/sounds/static/${name}.wav`)
     if (!buffer) throw new Error(`Tuning sound unavailable: ${name}`)
-    synthBuffers.set(name, buffer)
-  }))
+    productBuffers.set(name, buffer)
+  })).then(() => undefined).catch(error => {
+    productPreloading = null
+    throw error
+  })
+  return productPreloading
 }
 
 // Decodes with an offline context, which browsers allow before any user
@@ -60,7 +67,7 @@ export function preloadSounds() {
 
 // Browsers only start audio inside a user gesture, so this runs on keydown.
 export function unlockAudio() {
-  context ??= new AudioContext()
+  context ??= new AudioContext({ sampleRate: 44100 })
   if (context.state === "suspended") {
     context.resume().catch((error) => console.warn("Audio could not start:", error))
   }
@@ -131,8 +138,17 @@ function fadeOutRetune(audio: AudioContext) {
 }
 
 export function playSound(name: SoundName, volumeDb: number, pack: SoundPack = "Synth") {
-  const buffer = (pack === "Local" ? localBuffers.get(name) : undefined) ?? synthBuffers.get(name)
-  if (!context || !buffer || volumeDb <= SILENT_DB) return
+  if (!context || volumeDb <= SILENT_DB) return
+  const buffer = pack === "Product" ? productBuffers.get(name) : (pack === "Local" ? localBuffers.get(name) : undefined) ?? synthBuffers.get(name)
+  if (!buffer) {
+    // Keep the first gesture audible even on a cold cache or slow connection.
+    if (pack === "Product" && productPreloading) {
+      void productPreloading.then(() => {
+        if (productBuffers.has(name)) playSound(name, volumeDb, pack)
+      }).catch(error => console.warn("Tuning audio unavailable:", error))
+    }
+    return
+  }
   const level = 10 ** (volumeDb / 20)
   if (name === "hover") {
     playHover(context, buffer, level)

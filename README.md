@@ -25,10 +25,10 @@ npm run dev
 
 Open `/free-roam/` for the website or `/` for the full-screen demo. Hold **Q**, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Choose a station, use the arrow keys and Enter, or tap a station. Radio Off clears the selection. Escape closes the wheel.
 
-The public demo uses fictional stations, original sample artwork, and no music playback. Optional tuning sounds use the synthesised sound pack. It never loads your Music export, desktop wallpaper, or local sound pack.
+The public demo uses curated popular songs and album covers from Apple's public catalog. It does not stream songs or load your personal Music export. Open, close, hover, and retune effects are copied from Static build 96 and are enabled on the first interaction. The sound control mutes them. Personal wallpapers and unapproved local sound files remain excluded.
 
 ```sh
-npm test       # regression test for private-asset exclusion
+npm test       # privacy, catalog, sound parity, and first-gesture audio tests
 npm run build # typecheck, production build, prerender, and release-content check
 ```
 

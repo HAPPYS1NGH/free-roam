@@ -1,17 +1,16 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, type CSSProperties } from "react"
 import tokens from "../../tokens.json"
-import { preloadSynthSounds, SILENT_DB, unlockAudio, type SoundName } from "../sound"
+import { useProductAudio } from "./useProductAudio"
+import { AudioToggle } from "./AudioToggle"
 import { useWheel } from "../useWheel"
 import { useViewport } from "../useViewport"
 import { Brand } from "./Shared"
 import { WheelFace } from "./WheelFace"
-import { demoSlots } from "./demo-stations"
+import { catalogSources, demoSlots } from "./demo-stations"
 import "./full-demo.css"
 
 export function FullDemo() {
-  const [sound, setSound] = useState(false)
-  const [soundError, setSoundError] = useState(false)
-  const [loadingSound, setLoadingSound] = useState(false)
+  const audio = useProductAudio()
   const opener = useRef<HTMLButtonElement>(null)
   const wasOpen = useRef(false)
   const unit = useViewport().height / 100
@@ -23,14 +22,10 @@ export function FullDemo() {
     dwellMs: tokens.behaviour.dwellMs,
     holdDelayMs: tokens.behaviour.holdDelayMs,
     keepOpen: false,
-    sounds: {
-      pack: "Synth", retuneTake: tokens.behaviour.retuneTake as SoundName,
-      retuneVolumeDb: sound ? tokens.behaviour.retuneVolumeDb : SILENT_DB,
-      uiVolumeDb: sound ? tokens.behaviour.uiVolumeDb : SILENT_DB,
-      hoverVolumeDb: sound ? tokens.behaviour.hoverVolumeDb : SILENT_DB,
-    },
+    sounds: audio.sounds,
   })
   const playing = demoSlots.find(slot => slot.id === wheel.playingId)
+  const source = catalogSources.find(album => album.id === wheel.playingId)
   const station = playing?.kind === "playlist" ? playing.playlist.name : "Radio Off"
 
   useEffect(() => {
@@ -38,7 +33,12 @@ export function FullDemo() {
     wasOpen.current = wheel.open
   }, [wheel.open])
 
-  return <main className="full-demo direction night" data-open={wheel.open || undefined}>
+  return <main className="full-demo direction night" data-open={wheel.open || undefined} style={{
+    "--product-saturation": tokens.behaviour.backdropSaturation,
+    "--product-brightness": tokens.behaviour.backdropBrightness,
+    "--product-filter-in": `${tokens.animations.filterIn.duration}s`,
+    "--product-filter-out": `${tokens.animations.filterOut.duration}s`,
+  } as CSSProperties}>
     <img className="full-demo-photo" src="/free-roam/coast.jpg" alt="" width="1672" height="941" />
     <header className="full-demo-header"><Brand href="/free-roam/" /><a className="text-action" href="/free-roam/">← Back to Free Roam</a></header>
     <div className="full-demo-body">
@@ -57,22 +57,8 @@ export function FullDemo() {
       <p className="demo-now" role="status">{wheel.playingId === null ? "A little quiet. Pick a station whenever you're ready." : `Selected: ${station}`}</p>
     </div>
     <footer className="full-demo-footer">
-      <p>Browser demo · fictional stations · no music playback<br />In the Mac app, use <kbd>⌥</kbd> + <kbd>Q</kbd> with your own playlists.</p>
-      <div><button className="sound-toggle" aria-pressed={sound} disabled={loadingSound} onClick={async () => {
-        if (sound) { setSound(false); return }
-        setLoadingSound(true)
-        try {
-          unlockAudio()
-          await preloadSynthSounds()
-          setSound(true)
-          setSoundError(false)
-        } catch {
-          setSoundError(true)
-        } finally {
-          setLoadingSound(false)
-        }
-      }}>{loadingSound ? "Loading sounds…" : sound ? "Tuning sounds on" : "Tuning sounds off"}</button>
-      {soundError && <p role="alert">Audio is unavailable. The demo still works silently.</p>}</div>
+      <p>Popular music selections · sound effects from Static<br />In the Mac app, use <kbd>⌥</kbd> + <kbd>Q</kbd> with your own playlists. Songs aren't streamed in this preview.</p>
+      <div className="demo-audio-links"><AudioToggle audio={audio} />{source && <a className="album-source" href={source.sourceUrl} target="_blank" rel="noreferrer">{source.album} on Apple Music ↗</a>}</div>
     </footer>
   </main>
 }

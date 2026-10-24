@@ -161,3 +161,6 @@ kbd { display: inline-grid; place-items: center; font: inherit; border: 1px soli
   .hero-actions { flex-wrap: wrap; gap: 12px; }
   .hero-actions a { white-space: nowrap; }
 }
+
+.demo-options { display: flex; justify-content: center; align-items: center; gap: 20px; font-size: 12px; }
+.demo-options .sound-toggle { text-decoration: underline; text-underline-offset: 3px; font-size: 12px; }
