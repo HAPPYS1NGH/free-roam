@@ -57,7 +57,7 @@ export function FullDemo() {
       <p className="demo-now" role="status">{wheel.playingId === null ? "A little quiet. Pick a station whenever you're ready." : `Selected: ${station}`}</p>
     </div>
     <footer className="full-demo-footer">
-      <p>Popular music selections · sound effects from Static<br />In the Mac app, use <kbd>⌥</kbd> + <kbd>Q</kbd> with your own playlists. Songs aren't streamed in this preview.</p>
+      <p>Personal playlists & popular picks · sound effects from Static<br />In the Mac app, use <kbd>⌥</kbd> + <kbd>Q</kbd> with your own playlists. Songs aren't streamed in this preview.</p>
       <div className="demo-audio-links"><AudioToggle audio={audio} />{source && <a className="album-source" href={source.sourceUrl} target="_blank" rel="noreferrer">{source.album} on Apple Music ↗</a>}</div>
     </footer>
   </main>

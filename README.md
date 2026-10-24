@@ -25,7 +25,7 @@ npm run dev
 
 Open `/free-roam/` for the website or `/` for the full-screen demo. Hold **Q**, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Choose a station, use the arrow keys and Enter, or tap a station. Radio Off clears the selection. Escape closes the wheel.
 
-The public demo uses curated popular songs and album covers from Apple's public catalog. It does not stream songs or load your personal Music export. Open, close, hover, and retune effects are copied from Static build 96 and are enabled on the first interaction. The sound control mutes them. Personal wallpapers and unapproved local sound files remain excluded.
+The public demo includes four explicitly approved playlists: God's Favorite, gym, PLow, and Morning Playlist, alongside six public-catalog selections. Only their approved track metadata and artwork are copied into the demo; it never loads the full Music export or streams songs. Open, close, hover, and retune effects are copied from Static build 96 and are enabled on the first interaction. The sound control mutes them. Personal wallpapers and unapproved local sound files remain excluded.
 
 ```sh
 npm test       # privacy, catalog, sound parity, and first-gesture audio tests

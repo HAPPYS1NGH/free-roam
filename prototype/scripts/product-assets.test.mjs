@@ -20,13 +20,20 @@ test('web wheel settings match the installed Static app', () => {
   }
 })
 
-test('curated stations have real catalog sources, valid durations, and local album art', () => {
+test('approved playlists and public selections have valid tracks and local artwork', () => {
   assert.equal(new Set(catalog.map(station => station.id)).size, catalog.length)
+  assert.deepEqual(catalog.filter(station => station.provenance === 'owner-approved-playlist').map(station => station.name), ["God's Favorite", 'gym', 'PLow', 'Morning Playlist'])
+  assert.ok(!catalog.some(station => ['pop', 'dance', 'sunset', 'classics'].includes(station.id)))
   for (const station of catalog) {
-    assert.equal(new URL(station.sourceUrl).hostname, 'music.apple.com')
+    if (station.provenance === 'owner-approved-playlist') {
+      assert.equal(station.sourceUrl, null)
+      assert.ok(station.tracks.length > 0)
+    } else {
+      assert.equal(new URL(station.sourceUrl).hostname, 'music.apple.com')
+    }
     assert.ok(station.tracks.every(track => track.title && track.artist && track.duration > 0))
     for (const cover of station.covers) {
-      assert.match(cover, /^\/free-roam\/albums\/[a-z]+\.jpg$/)
+      assert.match(cover, /^\/free-roam\/albums\/[a-z0-9-]+\.jpg$/)
       const bytes = readFileSync(new URL(`../public${cover}`, import.meta.url))
       assert.equal(bytes.readUInt16BE(0), 0xffd8, cover)
     }
