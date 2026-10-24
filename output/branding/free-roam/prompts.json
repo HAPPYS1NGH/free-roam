@@ -1,0 +1,21 @@
+{
+  "tool": "Built-in image_gen",
+  "status": "Raster logo concepts for comparison; no direction selected or applied to the site.",
+  "concepts": [
+    {
+      "name": "01-on-air",
+      "title": "On Air",
+      "prompt": "Use case: logo-brand. Create one refined logo concept presentation for \"Free Roam\", an independent Mac music utility where a radial menu lets you tune into your playlists. Emotional world: discovering a favorite song while wandering a virtual city at night, personal radio, quiet freedom. Direction 1: ON AIR. Design a minimal station-selector symbol: a near-circle of six carefully spaced solid round dots, one dot slightly larger, and an open central space. Make it feel like a memorable music app mark and a subtle echo of a radial playlist selector. Pair it with a beautifully spaced, upright, medium-weight humanist sans-serif wordmark reading exactly \"Free Roam\", on one line, with subtly customized letterforms. Symbol left of text. Restrained, confident, music-focused, friendly macOS utility. Flat deep midnight navy ink on a solid warm off-white #F3EFE6 background. Generous negative space, horizontal composition, large impeccably optically aligned logo centered, no labels or extra text. Avoid cars, roads, speed, slanted type, racing aesthetics, sports emblems, gaming badges, neon gradients, shadows, 3D and mockups. Crisp vector-like edges; elegant proportions and simplicity."
+    },
+    {
+      "name": "02-side-b",
+      "title": "Side B",
+      "prompt": "Use case: logo-brand. Create one distinctive logo concept presentation for \"Free Roam\", an independent music utility for Mac. Direction 2: SIDE B, a cult independent record label identity. Main logo: an original compact typographic FR monogram above a small uppercase wordmark reading exactly \"FREE ROAM\". The FR monogram is the hero, carefully designed from broad upright geometric letterforms with soft outer corners, a shared vertical rhythm, and clever negative space. A small circular counter in the R subtly recalls the center hole of a vinyl record. Must clearly read F and R, feel relaxed and sophisticated, not a sports team. Bold and memorable at menu-bar size. Wordmark below is much smaller with tasteful generous letterspacing, upright clean grotesk. Centered composition on solid warm off-white #F3EFE6. Flat deep midnight navy ink, no other colors. Editorial identity, early independent FM stations, record-shop bags, tactile 1990s music culture translated into an original contemporary mark. Large negative space around the compact centered lockup. Only the text FR and FREE ROAM; no labels, captions, other logos. No speed stripes, italic or slanted type, roads, cars, checkered flags, wings, shields, badges, sporty lettering, aggressive edges, gradients, shadows or 3D."
+    },
+    {
+      "name": "03-easy-listening",
+      "title": "Easy Listening",
+      "prompt": "Use case: logo-brand. Create one sophisticated typographic logo concept presentation for an independent Mac music app named \"free roam\". Direction 3: EASY LISTENING. A warm, beautiful custom lowercase wordmark, two words on one line reading exactly \"free roam\". Draw original lettering with the relaxed warmth of 1970s record-sleeve typography and the intimacy of a favorite mixtape. Rounded soft serif forms with expressive teardrop terminals, generous round o counters, restrained thick-thin contrast, distinctive descending f and gracefully rounded r. Upright, unhurried, smoothly flowing rhythm. The two e letters can have a delicate original connection, but excellent legibility is essential. More independent music magazine than psychedelic festival. No separate icon: the lettering is the complete identity. Flat deep midnight navy ink on solid warm off-white #F3EFE6. Large centered horizontal wordmark, spacious polished typographic presentation with generous negative space. No extra text, no labels. Do not use a stock font appearance, bubble graffiti, swashes, italic speed lettering, racing motifs, road symbols, cars, gaming badges, 3D, shadows, texture or gradients. Crisp vector-like curves, careful optical spacing."
+    }
+  ]
+}
