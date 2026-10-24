@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Static prototype</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2210%22 fill=%22%23F2EFE6%22/%3E%3C/svg%3E" />
+    <link rel="preload" href="/fonts/sofia-sans-extra-condensed/latin-600.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- The wheel caption's face (SIL OFL, licence beside the files), loaded
+         up front because the caption only exists once the wheel opens.
+         Registered from script, not @font-face: Chrome swaps every CSS font
+         face for a fresh, unloaded copy when a stylesheet adds @font-face rules
+         (DialKit's Google Fonts import lands after start-up, and so does each
+         CSS hot reload), which blanked the caption for a frame on first open.
+         `block` so a slow load shows nothing rather than the wider fallback. -->
+    <script type="module">
+      const captionFace = (file, unicodeRange) =>
+        new FontFace("Sofia Sans Extra Condensed", `url(/fonts/sofia-sans-extra-condensed/${file}) format("woff2")`, {
+          weight: "600",
+          display: "block",
+          unicodeRange,
+        })
+      const latin = captionFace(
+        "latin-600.woff2",
+        "U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD",
+      )
+      document.fonts.add(latin)
+      document.fonts.add(
+        captionFace(
+          "latin-ext-600.woff2",
+          "U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF",
+        ),
+      )
+      latin.load()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/studio.tsx"></script>
+  </body>
+</html>

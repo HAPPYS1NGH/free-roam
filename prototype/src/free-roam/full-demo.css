@@ -1,0 +1,29 @@
+.full-demo { position: relative; isolation: isolate; min-height: 100dvh; display: flex; flex-direction: column; padding: 24px max(28px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)); }
+.full-demo::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(#08111699, #08111680 55%, #081116ee); }
+.full-demo-photo { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; object-position: 65% center; }
+.full-demo-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.full-demo-body { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; padding-block: 25px; }
+.full-demo-rest { text-align: center; padding-block: clamp(25px, 8vh, 90px); }
+.full-demo-rest h1 { font: 600 clamp(65px, 8vw, 116px)/.94 "Sofia Condensed", Impact, sans-serif; text-transform: uppercase; margin: 25px 0; }
+.full-demo-rest h1 span { color: var(--accent); }
+.full-demo-rest > p:last-child { color: #d7dcd6; font-size: 15px; line-height: 1.9; }
+.full-demo-wheel { width: min(64vh, 580px, 100%); }
+.full-demo-wheel .production-wheel-stage { margin-block: 0; max-width: none; }
+.demo-close { display: flex; margin: 0 auto 12px; border: 0; background: none; }
+.demo-toolbar { display: flex; align-items: center; justify-content: center; gap: 20px; }
+.quiet-action { min-height: 48px; padding: 0 18px; border: 1px solid #939f9c; border-radius: 3px; background: #142122; font-size: 14px; }
+.quiet-action:disabled { color: #b6bfb7; border-color: #68736e; cursor: default; }
+.demo-now { margin-top: 18px; min-height: 40px; text-align: center; font-size: 13px; color: #d5dad4; }
+.full-demo-footer { display: flex; align-items: end; justify-content: space-between; gap: 25px; font-size: 11px; color: #c4cdc7; }
+.full-demo-footer kbd { min-width: 18px; min-height: 18px; }
+.full-demo-footer .sound-toggle { font-size: 12px; text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 600px) {
+  .full-demo { padding: 18px 20px max(20px, env(safe-area-inset-bottom)); }
+  .full-demo-header .text-action { font-size: 12px; }
+  .full-demo-header .brand-wordmark { display: none; }
+  .full-demo-footer { align-items: start; flex-direction: column; gap: 8px; }
+  .full-demo-rest { padding-block: 40px; }
+  .full-demo-rest h1 { font-size: 70px; }
+  .full-demo-wheel { width: min(60vh, 100%); }
+  .demo-toolbar { gap: 12px; }
+}

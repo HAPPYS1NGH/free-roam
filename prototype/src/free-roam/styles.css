@@ -9,11 +9,13 @@
   font-family: Arial, Helvetica, sans-serif;
   color: #ece8de;
   background: #101514;
+  color-scheme: dark;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 * { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; }
 button, a, input, summary { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button, a { color: inherit; }
@@ -27,7 +29,7 @@ button:active, .primary-action:active { scale: .97; }
 ::selection { background: #b9c7bb; color: #111a15; }
 [id] { scroll-margin-top: 28px; }
 .direction { --ink: #ede9dd; --muted: #b9bcb4; --line: #39413a; --accent: #d5df99; color: var(--ink); }
-.site-header, .night-hero, .scene-bottom, .story-section, .how-section, .questions, .site-footer, .fm-hero, .paper-hero { width: min(1280px, calc(100% - 112px)); margin-inline: auto; }
+.site-header, .night-hero, .scene-bottom, .story-section, .how-section, .questions, .site-footer { width: min(1280px, calc(100% - 112px)); margin-inline: auto; }
 .site-header { display: flex; align-items: center; justify-content: space-between; min-height: 108px; position: relative; z-index: 1; border-bottom: 1px solid var(--line); }
 .brand { display: inline-flex; align-items: center; gap: 9px; font-weight: 700; font-size: 25px; letter-spacing: -1.2px; min-height: 44px; }
 .site-header nav { display: flex; align-items: center; gap: 32px; font-size: 14px; }
@@ -96,51 +98,9 @@ kbd { display: inline-grid; place-items: center; font: inherit; border: 1px soli
 .questions details[open] summary span { transform: rotate(45deg); }
 .questions details p { font-size: 14px; max-width: 55ch; color: var(--muted); padding-bottom: 20px; }
 .questions details a { display: inline-flex; min-height: 44px; align-items: center; text-decoration: underline; font-size: 14px; margin-bottom: 12px; }
-.site-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 35px 100px; border-top: 1px solid var(--line); }
+.site-footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 35px 45px; border-top: 1px solid var(--line); }
 .site-footer > span, .site-footer > a:last-child { font-size: 12px; color: var(--muted); }
 .site-footer > a { min-height: 44px; display: inline-flex; align-items: center; }
-
-/* FM / 98.6 */
-.fm { --ink: #241d17; --muted: #5a3423; --accent: #251f19; --line: #a85632; background: #e9844f; }
-.fm .primary-action { color: #fff2d9; }
-.fm .site-header { min-height: 94px; }
-.fm-title-row { display: flex; justify-content: space-between; margin-top: 34px; }
-.fm-title-row > span:last-child { text-align: right; }
-.fm h1 { font: 600 clamp(82px, 9vw, 142px)/.85 "Sofia Condensed", Impact, sans-serif; letter-spacing: -1.8px; margin-block: 32px 40px; }
-.fm h1 > span { color: #fff1d4; }
-.fm-grid { display: grid; grid-template-columns: .9fr 1.1fr; gap: 85px; align-items: center; margin-block: 20px 55px; }
-.fm-stamp { width: 64px; height: 64px; border: 2px solid currentColor; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; font: 600 34px/.8 "Sofia Condensed", sans-serif; transform: rotate(-12deg); margin-bottom: 24px; }
-.fm-stamp span { font: italic 11px/1.5 Georgia, serif; }
-.fm-copy .intro { font-size: 27px; font-weight: 500; margin-bottom: 18px; }
-.fm-copy > p:not(.intro):not(.compatibility) { font-size: 15px; }
-.fm .radio-demo { background: #292720; color: #eae0c9; padding: 12px 24px 24px; border-radius: 10px; --muted: #bcb5a3; box-shadow: 0 8px 0 #482d20, 0 24px 35px #722c2730; }
-.fm .demo-instruction { margin-top: 16px; }
-.fm-strip { border-block: 1px solid var(--line); display: flex; justify-content: space-between; padding-block: 19px; font: 11px "Courier New", monospace; text-transform: uppercase; letter-spacing: 1px; }
-.fm-panorama { height: 320px; margin-top: 45px; position: relative; overflow: hidden; background: #12201f; }
-.fm-panorama img { width: 100%; height: 100%; object-fit: cover; object-position: center 67%; filter: sepia(.25); opacity: .6; }
-.fm-panorama > span { position: absolute; inset: 0; display: grid; place-items: center; color: #fff1d4; text-align: center; font: 600 clamp(40px, 7vw, 100px)/.9 "Sofia Condensed", sans-serif; }
-.fm .story-copy a { color: var(--ink); text-decoration: underline; }
-
-/* Passenger Seat */
-.paper { --ink: #26352c; --muted: #62665a; --line: #c9c8b6; --accent: #2d4a39; background: #efeddf; }
-.paper .primary-action { color: #f3f0df; }
-.paper .site-header { min-height: 100px; }
-.paper-heading { display: grid; grid-template-columns: 1.1fr 1fr; gap: 68px; padding-block: 70px 80px; }
-.paper h1 { font: 400 clamp(55px, 6.2vw, 88px)/.98 Georgia, "Times New Roman", serif; letter-spacing: -4px; margin-block: 30px; }
-.paper h1 em { font-weight: 400; }
-.paper .intro { font-size: 23px; margin-bottom: 18px; }
-.paper-description { max-width: 38ch; font-size: 15px; color: var(--muted); }
-.paper-photo { position: relative; align-self: center; transform: rotate(3deg); background: #faf9ed; padding: 13px 13px 0; box-shadow: 0 2px 3px #333b2122, 0 20px 40px #333b2115; }
-.paper-photo img { display: block; width: 100%; height: 490px; object-fit: cover; object-position: 75% center; }
-.photo-label { display: block; padding-block: 16px 19px; font: 11px "Courier New", monospace; }
-.paper-sticker { position: absolute; bottom: 40px; left: -38px; background: #d8e2ab; border-radius: 50%; width: 124px; height: 124px; display: flex; flex-direction: column; justify-content: center; align-items: center; font: 600 27px/.95 "Sofia Condensed", sans-serif; transform: rotate(-15deg); }
-.paper-sticker em { font: italic 30px/.9 Georgia, serif; }
-.paper-radio-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 100px; border-block: 1px solid var(--line); padding: 50px; background: #e4e5d6; }
-.paper-radio-copy h2 { font: 400 58px/1.03 Georgia, serif; letter-spacing: -2px; margin-block: 20px; }
-.paper-radio-copy p { font-size: 15px; color: var(--muted); margin-top: 15px; max-width: 30ch; }
-.hand-arrow { display: block; font-size: 70px; line-height: 1; margin-top: 20px; }
-.paper .story-section h2, .paper .questions h2 { font-family: Georgia, serif; }
-.paper .story-copy a { color: var(--ink); text-decoration: underline; }
 
 @media (hover: hover) and (pointer: fine) {
   .primary-action:hover { background: color-mix(in oklch, var(--accent), white 15%); }
@@ -152,27 +112,22 @@ kbd { display: inline-grid; place-items: center; font: inherit; border: 1px soli
   .night-hero { min-height: 740px; }
 }
 @media (max-width: 1050px) {
-  .site-header, .night-hero, .scene-bottom, .story-section, .how-section, .questions, .site-footer, .fm-hero, .paper-hero { width: calc(100% - 64px); }
+  .site-header, .night-hero, .scene-bottom, .story-section, .how-section, .questions, .site-footer { width: calc(100% - 64px); }
   .night-hero { gap: 24px; }
   .night h1 { font-size: 116px; }
   .story-section { gap: 40px; }
-  .fm-grid { gap: 35px; }
-  .paper-heading { gap: 40px; }
-  .paper h1 { font-size: 65px; }
-  .paper-photo img { height: 440px; }
-  .paper-radio-row { padding: 32px; gap: 40px; }
   .hero-actions { gap: 17px; }
   .primary-action { padding-inline: 18px; gap: 20px; }
 }
 @media (max-width: 740px) {
-  .site-header, .night-hero, .scene-bottom, .story-section, .how-section, .questions, .site-footer, .fm-hero, .paper-hero { width: calc(100% - 40px); }
-  .site-header, .paper .site-header, .fm .site-header { min-height: 82px; }
+  .site-header, .night-hero, .scene-bottom, .story-section, .how-section, .questions, .site-footer { width: calc(100% - 40px); }
+  .site-header { min-height: 82px; }
   .brand { font-size: 22px; }
   .site-header nav { gap: 16px; }
   .site-header nav > a:not(.nav-cta) { display: none; }
   .site-header .nav-cta { gap: 16px; padding-inline: 12px; font-size: 12px; }
   .night-hero { grid-template-columns: 1fr; gap: 50px; padding-block: 45px 25px; }
-  .night h1 { font-size: clamp(100px, 25vw, 150px); margin-top: 23px; }
+  .night h1 { font-size: clamp(82px, 25vw, 150px); margin-top: 23px; }
   .scene-image { object-position: 68% center; }
   .scene-shade { background: linear-gradient(180deg, #08111699, #08111699 45%, #101514 100%); }
   .night .radio-demo { margin-top: 0; }
@@ -188,26 +143,21 @@ kbd { display: inline-grid; place-items: center; font: inherit; border: 1px soli
   .steps p { max-width: 45ch; }
   .how-section { padding-block: 35px 50px; }
   .questions { grid-template-columns: 1fr; gap: 25px; padding-block: 55px; }
-  .site-footer { flex-wrap: wrap; padding-bottom: 110px; gap: 12px; }
+  .site-footer { flex-wrap: wrap; padding-bottom: 40px; gap: 12px; }
   .site-footer > a:last-child { width: 100%; }
-  .fm-title-row .eyebrow { font-size: 9px; letter-spacing: .5px; }
-  .fm h1 { font-size: clamp(60px, 13.6vw, 100px); letter-spacing: -1px; margin-block: 30px; }
-  .fm-grid { grid-template-columns: 1fr; gap: 40px; }
-  .fm-stamp { display: none; }
-  .fm .radio-demo { padding: 10px 14px 22px; }
-  .fm-strip { flex-wrap: wrap; gap: 16px; font-size: 10px; }
-  .fm-strip span:last-child { display: none; }
-  .fm-panorama { height: 250px; }
-  .paper-heading { grid-template-columns: 1fr; gap: 50px; padding-block: 40px 55px; }
-  .paper h1 { font-size: clamp(55px, 13.6vw, 82px); letter-spacing: -2.5px; }
-  .paper-photo { width: calc(100% - 26px); margin-inline: auto; }
-  .paper-photo img { height: 360px; }
-  .paper-sticker { left: -20px; width: 105px; height: 105px; }
-  .paper-radio-row { grid-template-columns: 1fr; padding: 35px 12px; gap: 30px; }
-  .paper-radio-copy { padding-inline: 8px; }
-  .paper-radio-copy h2 { font-size: 48px; }
-  .hand-arrow { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+  button:active, .primary-action:active { scale: 1; }
+  .primary-action { transition: background-color 150ms; }
+}
+
+.brand-wordmark { font-size: 22px; letter-spacing: -.8px; }
+.inline-off { padding: 10px 3px; border: 0; background: none; text-decoration: underline; text-underline-offset: 3px; }
+.demo-topline .text-action { font-size: 11px; }
+@media (max-width: 740px) { .brand-wordmark { font-size: 18px; } }
+
+@media (max-width: 360px) {
+  .site-header .brand-wordmark { display: none; }
+  .hero-actions { flex-wrap: wrap; gap: 12px; }
+  .hero-actions a { white-space: nowrap; }
 }

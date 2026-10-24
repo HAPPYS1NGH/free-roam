@@ -1,14 +1,18 @@
-# Free Roam exploration
+# Free Roam
 
-The brief is the memory of playing music while driving around GTA. The page evokes the listening ritual through a radio wheel, optional tuning static, empty coastal roads, and copy about staying in the car to finish a song.
+After Hours is the selected website direction. Keep the coastal car photograph and the native wheel's layout, cyan selection ring, and condensed captions. The product is a radio for your favorite music: change the mood or choose quiet without leaving your work.
 
-Three directions are available at `/free-roam/`. None is the production choice yet.
+The brand badge follows the supplied circular reference, with only FREE ROAM in stacked ivory lettering inside a cyan ring. It has no FM suffix, road illustration, or italic racing lettering. The transparent PNG is used on the website; native app packaging remains a separate release task.
 
-| Direction | Composition | Nostalgia cue |
-| --- | --- | --- |
-| After Hours | Full-image hero, condensed headline, floating wheel | Driving without a mission at dusk |
-| FM / 98.6 | Orange poster around the original wheel | Radio-station print graphics |
-| Passenger Seat | Cream paper, serif headline, printed photograph | Keeping a photo from a memorable drive |
+## Public experience
+
+- `/free-roam/`: After Hours with a small interactive station preview.
+- `/`: clean full-screen interaction demo using the existing `useWheel` controller and `RadioWheel` renderer.
+- `/studio.html`: local design studio only; excluded from the production build.
+
+The demo preserves tap-to-skip, hold-to-open, relative mouse selection, scroll selection, dwell tuning, and release-to-choose. Visible buttons, arrow navigation, Enter, and Escape cover keyboard and touch use. Closing the full-screen wheel returns focus to its opener. No music list or persistent track player is shown.
+
+All public stations, track names, and artwork are fictional. The build copies only explicitly approved assets and checks the final output for private files and studio code. Personal Music exports remain on disk for local studio use; the public experience never requests them. Browser playback is limited to optional synthesised tuning sounds.
 
 ## References
 
@@ -18,17 +22,8 @@ Three directions are available at `/free-roam/`. None is the production choice y
 - [Nothing to Watch on recent.design](https://recent.design/i/6wmr7uw-nothing-to-watch): immersive browsing against a dark background.
 - [Friends of the New on recent.design](https://recent.design/i/a7rn7fa-friends-of-the-new): warm paper and editorial typography.
 
-The coastal photograph and transparent logo concept were generated for this exploration. The wheel reuses `RadioWheel.tsx`, its stylesheet, geometry helpers, and the settings in `tokens.json`. This replaces the rejected fictional station badges and receiver. The local preview uses the existing library loader; exported library content stays ignored. No additional dependencies were added.
+## Verification scope
 
-The logo draft combines a road inside a radio dial with a stacked Free Roam wordmark. It is a transparent PNG, not a vector master or a replacement native app icon.
+The original browser prototype and its interaction controller were inspected directly, alongside the Swift model's tap, hold, dwell, and Radio Off paths. The installed native overlay was not visually reverified in this pass. No native playback or installed-app behavior was changed.
 
-The native app bundle and Swift renderer were inspected, but the native overlay timed out in the UI inspection tool. Visual verification was performed against the original browser renderer, not a running native overlay.
-
-## Verification
-
-- TypeScript and both Vite production entries build successfully.
-- Inspected all three directions at desktop and 390px viewport widths.
-- Checked station selection, keyboard station selection, variant shortcuts, sound controls, and FAQ disclosure in the browser.
-- The page uses local demo state. Native Music control, app installation, and playback are outside this exploration.
-
-Choose a direction before integrating the landing page or renaming the Mac app.
+The website and full-screen demo were checked against the production build. The privacy regression test, TypeScript check, Vite build, and generated-output check pass. See [the release review](free-roam-release-review.md) for the remaining launch checks.

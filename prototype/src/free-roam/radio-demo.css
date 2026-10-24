@@ -28,17 +28,4 @@
   outline-offset: 3px;
 }
 
-.paper .production-wheel-stage {
-  background: linear-gradient(#0d172855, #0d172855), url("/free-roam/coast.jpg") 70% center / cover;
-  border-radius: 8px;
-}
-
-.brand-logo {
-  display: block;
-  width: 150px;
-  height: auto;
-}
-
-.paper .brand-logo, .fm .brand-logo {
-  filter: brightness(0);
-}
+.brand-logo { display: block; width: 60px; height: 60px; object-fit: contain; }

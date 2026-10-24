@@ -13,41 +13,43 @@ It's a macOS menu bar app inspired by the radio and weapon wheels in open-world 
 
 The full plan is in [docs/PLAN.md](docs/PLAN.md).
 
-## Try the prototype
+## Try Free Roam
 
-The browser prototype is where the look, sound and timing get decided before the Swift app is written.
+The website uses the After Hours design. The full-screen demo shares the original wheel renderer, saved tokens, and interaction controller.
 
 ```sh
 cd prototype
 npm install
-npm run library   # optional: use your own playlists and album art (macOS asks once to allow Music access)
-npm run wallpaper # optional: show the wheel over your own desktop picture
 npm run dev
 ```
 
-Open the URL it prints. Hold <kbd>Q</kbd>, move the mouse or scroll to pick a station, and let go. A quick tap of <kbd>Q</kbd> skips to the next station. The panel on the right tunes every size, colour and timing, and exports them as `tokens.json`.
+Open `/free-roam/` for the website or `/` for the full-screen demo. Hold **Q**, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Choose a station, use the arrow keys and Enter, or tap a station. Radio Off clears the selection. Escape closes the wheel.
 
-`npm run library` writes to `prototype/public/library/`, which is gitignored, so your library stays on your Mac. `npm run wallpaper` copies your desktop picture to `prototype/public/wallpaper/`, also gitignored. If macOS won't let it ask System Events, pass the picture's path: `npm run wallpaper -- /path/to/picture.jpg`.
+The public demo uses fictional stations, original sample artwork, and no music playback. Optional tuning sounds use the synthesised sound pack. It never loads your Music export, desktop wallpaper, or local sound pack.
 
-The Legibility panel at the top is for keeping the idle discs visible over a busy wallpaper: a backdrop blur, the idle discs' opacity, presets for both, and a 12, 24 or 25 station ring. Its Layout switch tries two ways to keep a crowded ring clear of the caption, and Station Size sets the caption's top line. The hint in the bottom left shows the current values, and Copy values copies them.
+```sh
+npm test       # regression test for private-asset exclusion
+npm run build # typecheck, production build, prerender, and release-content check
+```
 
-To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` into `prototype/public/sounds/local/`, which is also gitignored. The panel's Sound Pack switch flips between them and the built-in ones, and any sound missing from the local folder falls back to the built-in one.
+Only files listed in `prototype/scripts/public-assets.mjs` enter the generated `.site-public/` directory and production build. Deploy `prototype/dist/`, never `prototype/public/`. The build checks that private exports and studio controls are absent.
 
-## Free Roam landing-page exploration
+## Local design studio
 
-With the prototype dev server running, open `/free-roam/` to compare three directions for the proposed Free Roam name:
+The old tuning controls are retained for local development and excluded from the production entry points.
 
-- **After Hours:** a coastal night drive with an interactive radio wheel.
-- **FM / 98.6:** an orange radio poster around the original wheel.
-- **Passenger Seat:** a printed travel-journal layout with a wheel demo.
+```sh
+cd prototype
+npm run library   # optional: exports your Music playlists and art
+npm run wallpaper # optional: copies your desktop picture
+npm run studio    # opens /studio.html with DialKit
+```
 
-Use the bottom picker or keys **1–3** to switch. Arrow keys also cycle directions. The URL saves the direction as `?v=1`, `?v=2`, or `?v=3`. Hold **Q**, point, and release to tune the wheel, or click a station. Sound is off initially; enabling it plays tuning effects only. The page does not control Music or stream songs.
+This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries, wallpapers, and `public/sounds/local/` remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
 
-The exploration lives in `prototype/src/free-roam/`, with its own HTML entry. `npm run build` builds both it and the existing wheel prototype. All three pages now reuse the original `RadioWheel` renderer and the bundled wheel settings. The local preview loads your exported library when available; those files stay gitignored. The Mac app is still named Static. No direction has been selected for production.
+The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. It is used in the website header and favicon. The native app is still named Static, and its icon has not been replaced. Logo prompts are saved in `output/branding/free-roam/`.
 
-A draft Free Roam logo with a transparent background is at `prototype/public/free-roam/logo-concept.png`. It is shown in the page header; it has not replaced the native app icon.
-
-Design references and verification notes are in [docs/free-roam-design.md](docs/free-roam-design.md).
+Design decisions and verification are in [docs/free-roam-design.md](docs/free-roam-design.md).
 
 ## Build the Mac app
 

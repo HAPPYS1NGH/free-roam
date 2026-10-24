@@ -13,6 +13,7 @@ dist/
 # Prototype
 node_modules/
 prototype/dist/
+prototype/.site-public/
 
 # Env
 .env

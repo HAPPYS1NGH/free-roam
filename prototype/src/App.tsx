@@ -94,6 +94,7 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
 
   const wheel = useWheel({
     slots,
+    ignoreSelector: ".dialkit-root",
     deadzone: harness.deadzone * unit,
     pickRadius: harness.pickRadius,
     scrollStep: harness.scrollStep,

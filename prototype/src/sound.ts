@@ -35,6 +35,16 @@ function loadInto(decoder: BaseAudioContext, buffers: Map<SoundName, AudioBuffer
   )
 }
 
+// The public demo decodes only the distributable, synthesised sound pack.
+export function preloadSynthSounds() {
+  const decoder = new OfflineAudioContext(1, 1, 44100)
+  return Promise.all(SOUND_NAMES.map(async name => {
+    const buffer = await load(decoder, `/sounds/${name}.wav`)
+    if (!buffer) throw new Error(`Tuning sound unavailable: ${name}`)
+    synthBuffers.set(name, buffer)
+  }))
+}
+
 // Decodes with an offline context, which browsers allow before any user
 // gesture, so the very first open already has its sound ready. Resolves to
 // the number of local sounds found.
