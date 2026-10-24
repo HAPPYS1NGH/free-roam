@@ -21,8 +21,10 @@ export function onAir(tracks: Track[], nowSeconds: number): OnAir | null {
 }
 
 export function useNow(intervalMs = 1000) {
-  const [now, setNow] = useState(() => Date.now() / 1000)
+  const [now, setNow] = useState(BROADCAST_EPOCH_SECONDS)
   useEffect(() => {
+    // Keep prerender and hydration identical, then join the live broadcast.
+    setNow(Date.now() / 1000)
     const id = window.setInterval(() => setNow(Date.now() / 1000), intervalMs)
     return () => window.clearInterval(id)
   }, [intervalMs])

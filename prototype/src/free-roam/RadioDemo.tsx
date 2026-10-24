@@ -25,11 +25,15 @@ export function RadioDemo() {
       if (wheel.open || !["ArrowRight", "ArrowLeft", "ArrowUp", "ArrowDown"].includes(event.key)) return
       event.preventDefault()
       const direction = event.key === "ArrowRight" || event.key === "ArrowDown" ? 1 : -1
-      wheel.choose((selected + direction + demoSlots.length) % demoSlots.length)
+      const targets = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>(".production-station-target"))
+      const focused = targets.indexOf(event.target as HTMLButtonElement)
+      const next = ((focused < 0 ? selected : focused) + direction + demoSlots.length) % demoSlots.length
+      wheel.choose(next)
+      targets[next]?.focus({ preventScroll: true })
     }}>
     <div className="demo-topline"><span className="eyebrow">Your music. Your stations.</span><a className="text-action" href="/">Open demo ↗</a></div>
     <WheelFace highlighted={wheel.open ? wheel.highlighted : selected} onChoose={wheel.choose} />
-    <p className="demo-instruction">Hold <kbd>Q</kbd> and move or scroll. Let go to choose.</p>
+    <p className="demo-instruction">Tap a station, or hold <kbd>Q</kbd> and move or scroll. Let go to choose.</p>
     <div className="demo-options"><button className="inline-off" onClick={() => wheel.choose(0)}>Radio Off</button><AudioToggle audio={audio} /></div>
     <p className="demo-disclaimer">Personal playlists & popular picks · sound effects from Static</p>
   </section>

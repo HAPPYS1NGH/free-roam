@@ -25,7 +25,6 @@ type Props = {
 export function WheelFace({ highlighted, onChoose, onPointerMove, autoFocus = false }: Props) {
   const [width, setWidth] = useState(450)
   const stage = useRef<HTMLDivElement>(null)
-  const focusFrame = useRef(0)
   const reduced = useReducedMotion()
   const unit = useViewport().height / 100
   const { radius, icon, selectedIcon } = ringGeometry(look, demoSlots.length, unit)
@@ -45,15 +44,13 @@ export function WheelFace({ highlighted, onChoose, onPointerMove, autoFocus = fa
 
   useEffect(() => {
     if (autoFocus) focusSelected()
-    return () => cancelAnimationFrame(focusFrame.current)
   }, [autoFocus])
 
-  return <div className="production-wheel-stage" ref={stage} onPointerMove={onPointerMove}
-    onKeyDown={event => {
-      if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(event.key)) return
-      cancelAnimationFrame(focusFrame.current)
-      focusFrame.current = requestAnimationFrame(focusSelected)
-    }}>
+  useEffect(() => {
+    if (stage.current?.contains(document.activeElement)) focusSelected()
+  }, [highlighted])
+
+  return <div className="production-wheel-stage" ref={stage} onPointerMove={onPointerMove}>
     <div className="production-wheel-render" style={{ width: size, height: size, transform: `scale(${scale})` }}>
       {/* The native renderer raises the whole wheel relative to its screen. */}
       <div style={{ position: "absolute", top: Math.round(look.raise * unit) }}>

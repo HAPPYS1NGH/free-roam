@@ -28,11 +28,19 @@ Open `/free-roam/` for the website or `/` for the full-screen demo. Hold **Q**, 
 The public demo includes four explicitly approved playlists: God's Favorite, gym, PLow, and Morning Playlist, alongside six public-catalog selections. Only their approved track metadata and artwork are copied into the demo; it never loads the full Music export or streams songs. Open, close, hover, and retune effects are copied from Static build 96 and are enabled on the first interaction. The sound control mutes them. Personal wallpapers and unapproved local sound files remain excluded.
 
 ```sh
-npm test       # privacy, catalog, sound parity, and first-gesture audio tests
+npm test      # playlist, audio, prerender, privacy, and metadata tests
 npm run build # typecheck, production build, prerender, and release-content check
 ```
 
 Only files listed in `prototype/scripts/public-assets.mjs` enter the generated `.site-public/` directory and production build. Deploy `prototype/dist/`, never `prototype/public/`. The build checks that private exports and studio controls are absent.
+
+## Prepare the website for launch
+
+Set `SITE_URL` to the chosen HTTPS origin, without a path, then run `npm run build:release` from `prototype/`. This runs tests and the production build, writes canonical and absolute social-image URLs for both pages, and generates `robots.txt` and `sitemap.xml`. It fails if the origin is missing or invalid. `npm run build` remains available for local previews without a domain.
+
+Publish only `prototype/dist/` to a static host that serves directory `index.html` files. The landing page is `/free-roam/`; the full-screen demo is `/`. Keep missing assets and `/studio.html` as 404s instead of rewriting every URL to the demo. A host's build command is `npm run build:release` with root directory `prototype` and output directory `dist`. Use the committed npm lockfile with `npm ci` for reproducible installation.
+
+The website links to source-build instructions. A downloadable, signed native app is a separate release. See [the launch review](docs/free-roam-release-review.md) for the final device and deployed checks.
 
 ## Local design studio
 

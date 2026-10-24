@@ -19,7 +19,8 @@ html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; }
 button, a, input, summary { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 button, a { color: inherit; }
-button { font: inherit; cursor: pointer; }
+button { font: inherit; cursor: pointer; user-select: none; -webkit-user-select: none; }
+a:active, summary:active { opacity: .8; }
 a { text-decoration: none; }
 p { line-height: 1.6; text-wrap: pretty; }
 h1, h2, h3, p { margin: 0; }
@@ -48,6 +49,7 @@ button:active, .primary-action:active { scale: .97; }
 
 /* After Hours */
 .night { background: #101514; }
+#top { padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 .night-scene { position: relative; isolation: isolate; min-height: 850px; }
 .scene-image, .scene-shade { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
 .scene-image { object-position: center; }
@@ -152,7 +154,7 @@ kbd { display: inline-grid; place-items: center; font: inherit; border: 1px soli
 }
 
 .brand-wordmark { font-size: 22px; letter-spacing: -.8px; }
-.inline-off { padding: 10px 3px; border: 0; background: none; text-decoration: underline; text-underline-offset: 3px; }
+.inline-off { min-height: 44px; padding: 10px 3px; border: 0; background: none; text-decoration: underline; text-underline-offset: 3px; }
 .demo-topline .text-action { font-size: 11px; }
 @media (max-width: 740px) { .brand-wordmark { font-size: 18px; } }
 
@@ -164,3 +166,6 @@ kbd { display: inline-grid; place-items: center; font: inherit; border: 1px soli
 
 .demo-options { display: flex; justify-content: center; align-items: center; gap: 20px; font-size: 12px; }
 .demo-options .sound-toggle { text-decoration: underline; text-underline-offset: 3px; font-size: 12px; }
+
+.audio-control { min-width: 140px; }
+.audio-control > p { max-width: 30ch; font-size: 11px; }

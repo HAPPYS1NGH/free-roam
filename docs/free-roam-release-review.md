@@ -1,84 +1,85 @@
 # Free Roam release review
 
-**Not yet for public launch.** The local web build is verified. A production origin is still needed for canonical and absolute share-image URLs; a signed Free Roam app download is not available. The page offers source-build instructions instead.
+**Not yet published.** The web release candidate passes local checks. The production domain and hosting destination are still needed to generate final canonical and social URLs and deploy it. No known blocking web defect remains after this pass.
 
-Scope: the After Hours website and browser demo. Native Music playback, signing, notarization, installation, and renaming Static are outside this change.
+Scope: the After Hours landing page at `/free-roam/` and full-screen demo at `/`. Both import the same approved playlist catalog, wheel renderer, interaction controller, and Static sound hook. Native signing, notarization, installation, and renaming Static are separate work. The website accurately offers source-build instructions.
 
 ## A. Accessibility
 
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
-| Should fix | Wheel opened without moving focus into its controls | Selected station receives focus; arrows move it; closing restores the opener | Keyboard users can select and leave the wheel | Fixed in `prototype/src/free-roam/WheelFace.tsx:44` and `FullDemo.tsx:36` |
+| Should fix | Arrow navigation left focus on the old station | Inline arrows focus the next target immediately; open-wheel highlight updates move focus in `prototype/src/free-roam/RadioDemo.tsx:32` and `WheelFace.tsx:50` | Enter chooses the station reached with the keyboard | Fixed and browser-checked |
+
+Controls have accessible names, visible focus, and native button/link semantics. The wheel is an inline section, not a modal. Station changes are announced. Keyboard selection and Radio Off were exercised in the production browser preview; VoiceOver remains a device check.
 
 ## B. Performance
 
-| Severity | Before | After | Why | Status |
-| --- | --- | --- | --- | --- |
-| Should fix | Landing-page body required client JavaScript | Product copy and links are prerendered into HTML | The page is readable before hydration and by crawlers | Fixed in `prototype/scripts/prerender.mjs:1` |
+The landing page is prerendered, font and hero assets are preloaded, and wheel geometry reserves space for artwork. The shared JavaScript chunk is 374.52 kB, 119.72 kB gzip. The 1 MB raster badge remains a possible optimization; no asset redesign was done during launch prep.
 
 ## C. Mobile
 
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
-| Should fix | Narrow headers, headline, and actions wrapped awkwardly | Badge-only header and wrapping action row below 360px | Keeps actions readable at 320px | Fixed in `prototype/src/free-roam/styles.css` |
+| Should fix | No landing safe-area padding | Uses all four safe-area insets in `prototype/src/free-roam/styles.css:52` | Keeps content away from phone cutouts | Fixed; hardware check remains |
+| Should fix | Radio Off target was below 44px | Minimum 44px height in `prototype/src/free-roam/styles.css:157` | Makes the quiet control easier to tap | Fixed |
 
-D. Forms: not applicable. No signup, checkout, or input forms.
+At 390px and 320px viewport settings, document width equals scroll width. Artwork loads and playlist selection works. This is browser resizing, not physical-phone validation.
+
+## D. Forms
+
+Not applicable. The page has no forms, payments, signup, or account state.
 
 ## E. Stability and states
 
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
-| Should fix | Delayed selections and preview timers could outlive the controller | Timers cancel on teardown; the latest selection replaces an older pending one | Rapid changes settle on the latest station | Fixed in `prototype/src/useWheel.ts` |
-| Should fix | Optional sound loading had no visible failure path | Loading and error states; silent use remains available | Audio failure cannot block the wheel | Fixed in `prototype/src/free-roam/FullDemo.tsx:61` |
+| Blocker | Prerender and browser could choose different current songs | Stable initial clock, then live updates after mounting in `prototype/src/broadcast.ts:23` | Prevents hydration mismatch for multi-track playlists | Fixed and regression-tested |
+| Should fix | Sound labels shifted adjacent controls while loading | Minimum control width in `prototype/src/free-roam/styles.css:170` | Keeps Radio Off and the sound control steady | Fixed |
+
+Sound loading, mute, failure, and retry states are retained. Audio errors do not prevent station selection. Landing and full-screen controls share the same four product WAVs and native volume settings.
 
 ## F. Motion
 
-| Severity | Before | After | Why | Status |
-| --- | --- | --- | --- | --- |
-| Should fix | Reduced motion disabled all CSS transitions | Wheel uses opacity without scale; button color feedback remains | Preserves feedback without movement | Fixed in `prototype/src/free-roam/WheelFace.tsx:60` |
+No new finding. The approved native timing is preserved. Reduced motion removes wheel scaling and press movement while retaining feedback. Station highlights switch without animated travel.
 
-G. Theming: one intentional dark theme. Checked visually on desktop and mobile widths.
+## G. Theming
+
+One intentional dark theme, matching browser theme metadata. No theme switch or persisted-theme flash. Desktop and narrow layouts were inspected.
 
 ## H. Content and leftovers
 
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
-| Blocker | Landing demo loaded a personal Music export; Vite copied the full public directory | Public-catalog stations and an explicit asset allowlist | Public output cannot inherit personal library, artwork, wallpaper, or local audio exports | Fixed in `prototype/src/free-roam/catalog.json:1`, `prototype/scripts/public-assets.mjs:4` |
-| Blocker | Production included DialKit, a design picker, and a track panel | Public entry points contain the website and clean demo; studio is local only | Visitors see product controls only | Fixed in `prototype/src/main.tsx:1` and `prototype/src/free-roam/main.tsx:1` |
+| Should fix | FAQ described only public-catalog songs | Names the four creator-shared playlists in `prototype/src/free-roam/Shared.tsx:45` | Copy matches the visible demo | Fixed |
+
+God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshots and artwork. The rest of the Music export, persistent IDs, wallpaper, local sound overrides, and studio controls remain excluded. Pop Rotation, Dancefloor, Golden Hour, and Throwbacks are absent. No analytics or third-party tracking was added.
 
 ## I. Marketing
 
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
-| Should fix | Exploration metadata and placeholder favicon | Product description, generated badge, and share-image metadata | Shared pages identify Free Roam | Fixed in `prototype/free-roam/index.html:7` |
-| Should fix | No production origin | Canonical and absolute social URLs still need the chosen host | Do not invent a launch domain | Open deployment configuration |
+| Should fix | No canonical URLs or crawl metadata | Validated `SITE_URL` generates canonicals, absolute social URLs, robots, and sitemap in `prototype/scripts/site-metadata.mjs:4` | Avoids broken or ambiguous launch links | Code fixed; final domain pending |
+
+`build:release` requires the chosen HTTPS origin and runs tests before building. Release checks also verify every catalog station appears in prerendered landing markup. GitHub confirms `HAPPYS1NGH/static` is public. The CTA remains Build for Mac, not an unavailable download.
 
 ## Needs a device
 
-- On a physical phone, check station taps and bottom controls around the safe area.
-- With VoiceOver, verify station announcements and focus return.
-- Test the installed Mac app's actual Music switching and Radio Off before distributing a native release. This pass exercised the browser behavior only.
-- Once deployed, check social link previews and the full CTA path in a private browser window.
+- On a physical phone, tap stations and check controls around the notch and home indicator, including landscape.
+- With VoiceOver, verify station announcements and keyboard focus.
+- On the deployed domain, open both routes in a private window over cellular and check social previews.
+- Listen to the web and native sound output on the same Mac. File hashes, settings, and code match; no acoustic recording comparison was performed.
 
 ## Needs a human
 
-- Choose the production host so canonical and share-image URLs can use its origin.
-- Review the final public copy and badge at app-icon sizes. The logo is a transparent raster asset, not a vector master.
-- Supply or prepare the signed native release before changing Build for Mac to Download.
+- Supply the production domain and hosting destination. Then build with that `SITE_URL`, deploy `prototype/dist/`, and check the deployed links.
+- A signed native download requires a separate app release. The source-build website can launch independently.
 
 ## Verification
 
-- `npm --prefix prototype test`: passed, 5 privacy, catalog, audio parity, and first-gesture tests.
-- `npm --prefix prototype run build`: passed TypeScript, Vite, prerendering, and release-content checks.
-- Release check output: `Release check passed: 32 files, no private exports or studio controls.`
-- Production browser checks: station click, keyboard arrows and Enter, tap Q, hold/release Q, Escape, focus return, Radio Off, resuming from Off, and sound enabled on first interaction, mute, and retry controls.
-- Responsive checks: desktop, 390px and 320px widths. No horizontal overflow in the landing page.
-- No lint or formatter command is configured. No native source was changed, so native tests were not rerun.
-
-## Product sound and catalog follow-up
-
-The public demo now includes the four owner-approved playlists God's Favorite, gym, PLow, and Morning Playlist, plus six public-catalog selections. Pop Rotation, Dancefloor, Golden Hour, and Throwbacks were replaced. The approved snapshots include track metadata and album artwork without Music persistent IDs or the rest of the library. Public-catalog albums retain their Apple Music links; personal selections do not show an unrelated album link.
-
-The four WAV files in `prototype/public/sounds/static/` match the installed Static build 96 byte for byte. `prototype/scripts/product-reference.json` pins their SHA-256 hashes and the bundled wheel settings. Changing the public sound pack or settings breaks the parity tests until deliberately reconciled with the product. The web retains the existing hover filter and overlapping-retune fade, which correspond to the native `WheelSounds` implementation.
-
-The first gesture unlocks browser audio; it no longer requires enabling sound separately. The cold-load regression test verifies that a queued opening sound survives asynchronous decoding and plays at the configured gain. Native speaker output and browser speaker output were not captured for an acoustic comparison; the verified parity is files, settings, and playback code.
+- `npm --prefix prototype test`: `tests 8`, `pass 8`, `fail 0`.
+- `npm --prefix prototype run build`: TypeScript, Vite, prerender, and release check pass. `Release check passed: 32 files, no private exports or studio controls.`
+- `SITE_URL=https://release-check.example.test npm --prefix prototype run build:release`: tested with an explicitly non-production fixture origin. `Release check passed: 34 files, no private exports or studio controls.` The final local preview was rebuilt without that fixture origin.
+- Production browser: approved playlist labels and covers, PLow and Morning Playlist selection, mute/unmute, keyboard navigation, Radio Off, and landing-to-demo navigation. No console warnings or errors observed.
+- All four built WAV files match the Static build 96 bundle byte for byte.
+- No lint or formatter command exists. Native code was untouched; native tests were not rerun.
+- The available pnpm runner attempted dependency installation instead of running scripts and failed under network restrictions. Its local changes were restored; verification used the repository's existing npm lockfile and installed dependencies.

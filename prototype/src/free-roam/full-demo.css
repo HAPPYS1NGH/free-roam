@@ -30,7 +30,6 @@
 
 .full-demo-photo { transition: filter var(--product-filter-out) cubic-bezier(.4, 0, .6, 1); }
 .full-demo[data-open] .full-demo-photo { filter: saturate(var(--product-saturation)) brightness(var(--product-brightness)); transition-duration: var(--product-filter-in); }
-.audio-control > p { max-width: 30ch; font-size: 11px; }
 @media (prefers-reduced-motion: reduce) { .full-demo-photo { transition: none; } }
 .demo-audio-links { text-align: right; }
 .album-source { display: inline-flex; align-items: center; min-height: 30px; text-decoration: underline; text-underline-offset: 3px; }
