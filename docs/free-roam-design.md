@@ -7,7 +7,7 @@ Three directions are available at `/free-roam/`. None is the production choice y
 | Direction | Composition | Nostalgia cue |
 | --- | --- | --- |
 | After Hours | Full-image hero, condensed headline, floating wheel | Driving without a mission at dusk |
-| FM / 98.6 | Orange poster, physical receiver, station presets | Tuning a car stereo |
+| FM / 98.6 | Orange poster around the original wheel | Radio-station print graphics |
 | Passenger Seat | Cream paper, serif headline, printed photograph | Keeping a photo from a memorable drive |
 
 ## References
@@ -18,13 +18,17 @@ Three directions are available at `/free-roam/`. None is the production choice y
 - [Nothing to Watch on recent.design](https://recent.design/i/6wmr7uw-nothing-to-watch): immersive browsing against a dark background.
 - [Friends of the New on recent.design](https://recent.design/i/a7rn7fa-friends-of-the-new): warm paper and editorial typography.
 
-The coastal photograph was generated for this exploration. Station names and marks are invented demo content. The condensed font and tuning sound come from the existing prototype. No additional dependencies were added.
+The coastal photograph and transparent logo concept were generated for this exploration. The wheel reuses `RadioWheel.tsx`, its stylesheet, geometry helpers, and the settings in `tokens.json`. This replaces the rejected fictional station badges and receiver. The local preview uses the existing library loader; exported library content stays ignored. No additional dependencies were added.
+
+The logo draft combines a road inside a radio dial with a stacked Free Roam wordmark. It is a transparent PNG, not a vector master or a replacement native app icon.
+
+The native app bundle and Swift renderer were inspected, but the native overlay timed out in the UI inspection tool. Visual verification was performed against the original browser renderer, not a running native overlay.
 
 ## Verification
 
 - TypeScript and both Vite production entries build successfully.
 - Inspected all three directions at desktop and 390px viewport widths.
-- Checked station selection, preset selection, variant shortcuts, sound controls, and FAQ disclosure in the browser.
+- Checked station selection, keyboard station selection, variant shortcuts, sound controls, and FAQ disclosure in the browser.
 - The page uses local demo state. Native Music control, app installation, and playback are outside this exploration.
 
 Choose a direction before integrating the landing page or renaming the Mac app.

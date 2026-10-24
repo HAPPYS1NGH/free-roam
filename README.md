@@ -38,12 +38,14 @@ To try other sounds, put WAVs named like the ones in `prototype/public/sounds/` 
 With the prototype dev server running, open `/free-roam/` to compare three directions for the proposed Free Roam name:
 
 - **After Hours:** a coastal night drive with an interactive radio wheel.
-- **FM / 98.6:** an orange radio poster with physical station presets.
+- **FM / 98.6:** an orange radio poster around the original wheel.
 - **Passenger Seat:** a printed travel-journal layout with a wheel demo.
 
 Use the bottom picker or keys **1–3** to switch. Arrow keys also cycle directions. The URL saves the direction as `?v=1`, `?v=2`, or `?v=3`. Hold **Q**, point, and release to tune the wheel, or click a station. Sound is off initially; enabling it plays tuning effects only. The page does not control Music or stream songs.
 
-The exploration lives in `prototype/src/free-roam/`, with its own HTML entry. `npm run build` builds both it and the existing wheel prototype. The Mac app is still named Static. No direction has been selected for production.
+The exploration lives in `prototype/src/free-roam/`, with its own HTML entry. `npm run build` builds both it and the existing wheel prototype. All three pages now reuse the original `RadioWheel` renderer and the bundled wheel settings. The local preview loads your exported library when available; those files stay gitignored. The Mac app is still named Static. No direction has been selected for production.
+
+A draft Free Roam logo with a transparent background is at `prototype/public/free-roam/logo-concept.png`. It is shown in the page header; it has not replaced the native app icon.
 
 Design references and verification notes are in [docs/free-roam-design.md](docs/free-roam-design.md).
 

@@ -1,7 +1,11 @@
 import { sourceUrl } from "./content"
 
 export function Brand() {
-  return <a className="brand" href="#top" aria-label="Free Roam home"><svg width="30" height="24" viewBox="0 0 30 24" fill="none" aria-hidden="true"><path d="M2 19 10 5h7L9 19H2Zm11 0L21 5h7l-8 14h-7Z" fill="currentColor" /></svg><span>free roam</span></a>
+  return (
+    <a className="brand" href="#top" aria-label="Free Roam home">
+      <img className="brand-logo" src="/free-roam/logo-concept.png" alt="Free Roam" width="1983" height="793" />
+    </a>
+  )
 }
 
 export function Header() {
@@ -25,7 +29,7 @@ export function Details({ variant }: { variant: "night" | "fm" | "paper" }) {
     </div></section>
     <section className="questions"><h2>Before you hit the road.</h2><div>
       <details><summary>What do I need?<span aria-hidden="true">+</span></summary><p>A Mac running macOS 14 or later and the Music app. Your local music library works too; an Apple Music subscription is optional. Building the current app requires Xcode 16 or later.</p></details>
-      <details><summary>Can I use my own playlists?<span aria-hidden="true">+</span></summary><p>Yes. In the Mac app, open Settings from the menu bar to choose the playlists on your wheel and their order. The stations on this page are examples.</p></details>
+      <details><summary>Can I use my own playlists?<span aria-hidden="true">+</span></summary><p>Yes. In the Mac app, open Settings from the menu bar to choose the playlists on your wheel and their order. This local preview uses your exported library when available, otherwise sample playlists.</p></details>
       <details><summary>Can I download it yet?<span aria-hidden="true">+</span></summary><p>The app is a work in progress, currently named Static in the repository. Free Roam is the new name being explored here. You can try the browser prototype or build the Mac app from source.</p><a href={`${sourceUrl}#build-the-mac-app`} target="_blank" rel="noreferrer">View build instructions ↗</a></details>
       <details><summary>Is this connected to GTA?<span aria-hidden="true">+</span></summary><p>No. This is an independent app inspired by the feeling of switching radio stations in open-world games.</p></details>
     </div></section>
