@@ -57,14 +57,12 @@ struct WelcomeContent: View {
                     details: [
                         """
                         Fades the colour from the screen behind the wheel so your stations stand out. \
-                        Without it, the wheel still works, with a light tint behind it.
+                        Without it, the wheel still works with a light tint.
                         """,
-                        """
-                        Free Roam takes a picture of the screen when you press ⌥Q, and one when it starts \
-                        or you connect a display, so the first press is quick. It keeps them in memory only \
-                        until the wheel closes, and never saves or sends them.
-                        """,
-                        "After you allow it, macOS may ask you to quit and reopen Free Roam.",
+                        // Captures happen as ⌥Q goes down, and once per display at
+                        // launch or when it's connected to warm up. All stay in memory.
+                        "Free Roam only uses the screen to draw the wheel's background. It never saves or sends what it sees.",
+                        "macOS may ask you to reopen Free Roam after you allow it.",
                     ],
                     isAllowed: screenRecordingAllowed,
                     allow: allowScreenRecording
