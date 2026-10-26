@@ -18,8 +18,9 @@ struct FreeRoamApp: App {
             StatusMenu(model: appDelegate.menu)
         }
         Settings {
-            StationsSettingsView(stations: appDelegate.stations)
+            StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style)
         }
+        .windowResizability(.contentMinSize)
     }
 }
 

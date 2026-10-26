@@ -40,7 +40,7 @@ struct StationListTests {
         let stations = StationList(defaults: defaults)
         stations.update(library: library(4))
         stations.setOn(false, id: playlist(2).id)
-        stations.move(fromOffsets: [3], toOffset: 0)
+        stations.moveStation(playlist(4).id, to: 0)
         #expect(stations.onWheel == [playlist(4), playlist(1), playlist(3)])
 
         let relaunched = StationList(defaults: defaults)
@@ -64,7 +64,7 @@ struct StationListTests {
     @Test func dropsDeletedPlaylistsAndPicksUpRenames() {
         let stations = StationList(defaults: defaults)
         stations.update(library: library(3))
-        stations.move(fromOffsets: [2], toOffset: 0)
+        stations.moveStation(playlist(3).id, to: 0)
 
         let renamed = Playlist(id: playlist(1).id, name: "Renamed")
         stations.update(library: [renamed, playlist(2)])
@@ -76,13 +76,13 @@ struct StationListTests {
         let stations = StationList(defaults: defaults)
         stations.update(library: library(4))
         stations.setOn(false, id: playlist(2).id)
-        stations.move(fromOffsets: [3], toOffset: 0)
+        stations.moveStation(playlist(4).id, to: 0)
 
         // A short list, as while iCloud Music Library syncs.
         stations.update(library: [playlist(1), playlist(3)])
         #expect(stations.onWheel == [playlist(1), playlist(3)])
         #expect(stations.entries.map(\.id) == [playlist(1).id, playlist(3).id])
-        stations.move(fromOffsets: [1], toOffset: 0)
+        stations.moveStation(playlist(3).id, to: 0)
 
         stations.update(library: library(4))
         #expect(stations.onWheel == [playlist(4), playlist(3), playlist(1)])
@@ -113,7 +113,7 @@ struct StationListTests {
     @Test func aNewPlaylistStaysOffWhenTheWheelIsFull() {
         let stations = StationList(defaults: defaults)
         stations.update(library: library(26))
-        stations.move(fromOffsets: [0], toOffset: 2)
+        stations.moveStation(playlist(1).id, to: 1)
         #expect(stations.onWheel.count == 25)
 
         stations.update(library: library(27))
@@ -143,8 +143,8 @@ struct StationListTests {
         stations.update(library: [first, second])
         #expect(stations.onWheel == [first, second])
 
+        stations.moveStation(second.id, to: 0)
         stations.setOn(false, id: first.id)
-        stations.move(fromOffsets: [1], toOffset: 0)
         #expect(stations.onWheel == [second])
         #expect(stations.entries.map(\.id) == [second.id, first.id])
 

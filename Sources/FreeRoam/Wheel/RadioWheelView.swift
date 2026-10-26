@@ -95,10 +95,7 @@ struct RadioWheelContent: View {
     }
 
     private func art(for slot: Int) -> StationDisc.Art {
-        guard slot > 0 else { return .radioOff }
-        let station = stations[slot - 1]
-        if let logo = logos[station.id] { return .logo(logo) }
-        return .initials(RadioWheelView.initials(of: station.name))
+        slot > 0 ? .station(stations[slot - 1], logos: logos) : .radioOff
     }
 
     private func caption(at date: Date) -> CaptionLines {
@@ -160,11 +157,17 @@ enum CaptionFont {
     }
 }
 
-private struct StationDisc: View {
+/// A logo on its black disc, as the wheel and Settings draw it.
+struct StationDisc: View {
     enum Art {
         case radioOff
         case logo(CGImage)
         case initials(String)
+
+        /// The station's logo, or its initials until it has one.
+        static func station(_ station: Playlist, logos: [String: CGImage]) -> Art {
+            logos[station.id].map(Art.logo) ?? .initials(RadioWheelView.initials(of: station.name))
+        }
     }
 
     let art: Art
@@ -284,7 +287,7 @@ private struct CaptionView: View {
     }
 }
 
-private extension Color {
+extension Color {
     /// `#RRGGBB`, as `tokens.json` stores colours.
     init?(hex: String) {
         guard hex.hasPrefix("#"), hex.count == 7, let rgb = UInt32(hex.dropFirst(), radix: 16) else { return nil }

@@ -1,60 +1,206 @@
 import SwiftUI
 
-/// Settings' only pane: which playlists are on the wheel, and in what order.
-/// Every change is saved at once, as in System Settings.
+/// Settings' only pane: the stations on the wheel, in order, above every
+/// playlist in Music as a grid of covers. Every change is saved at once, as
+/// in System Settings.
 struct StationsSettingsView: View {
     let stations: StationList
+    let details: StationDetails
+    let style: WheelStyle?
+    @State private var search = ""
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Stations run clockwise from Radio Off, in this order. Drag a playlist to move it.")
-                .foregroundStyle(.secondary)
-            content
-        }
-        .padding(20)
-        .frame(width: 420, height: 520)
+        StationPicker(
+            phase: phase,
+            library: stations.library ?? [],
+            stations: stations.library == nil ? [] : stations.onWheel,
+            logos: details.logos,
+            songCounts: details.songCounts,
+            search: $search,
+            ringColor: style.flatMap { Color(hex: $0.colors.ringColor) } ?? .accentColor,
+            rim: style?.sizes.rim ?? StationPicker.defaultRim,
+            setOn: stations.setOn,
+            move: stations.moveStation,
+            requestLogo: details.requestLogo,
+            cancelLogo: details.cancelLogo,
+            retry: stations.loadLaunchingMusic
+        )
         // Listing every playlist needs Music, so it opens in the background.
         .onAppear { stations.loadLaunchingMusic() }
+        // A closed window reads no more covers.
+        .onDisappear { details.cancelLogoRequests() }
     }
 
-    @ViewBuilder private var content: some View {
-        if let library = stations.library {
-            if library.isEmpty { placeholder("Music has no playlists yet.") } else { playlists }
-        } else if let error = stations.loadError {
-            placeholder(error)
-        } else {
-            placeholder("Loading your playlists from Music…", loading: true)
-        }
+    private var phase: StationPicker.Phase {
+        if stations.library != nil { return .ready }
+        guard let error = stations.loadError else { return .loading }
+        if case MusicBridgeError.notPermitted = error { return .denied }
+        return .failed(error.localizedDescription)
+    }
+}
+
+/// The stations pane drawn from plain values, so a test can render each state.
+struct StationPicker: View {
+    enum Phase: Equatable {
+        case loading
+        /// Free Roam isn't allowed to control Music.
+        case denied
+        case failed(String)
+        case ready
     }
 
-    private var playlists: some View {
-        let entries = stations.entries
-        let onWheel = entries.count(where: \.isOn)
-        let full = onWheel >= RadioWheelModel.maxStations
-        return VStack(alignment: .leading, spacing: 8) {
-            List {
-                ForEach(entries) { entry in
-                    Toggle(entry.name, isOn: Binding(
-                        get: { entry.isOn },
-                        set: { stations.setOn($0, id: entry.id) }
-                    ))
-                    .toggleStyle(.checkbox)
-                    // The wheel holds 25 stations.
-                    .disabled(full && !entry.isOn)
+    /// The black rim round a disc's art, as a fraction of the disc, for when
+    /// tokens.json didn't load.
+    nonisolated static let defaultRim = 0.05
+    /// Narrow enough for a small laptop, and wide enough for all 25 discs to
+    /// fit in two rows.
+    nonisolated static let minWidth = 660.0
+    nonisolated static let margin = 20.0
+
+    let phase: Phase
+    /// Music's playlists in library order.
+    let library: [Playlist]
+    /// The stations on the wheel, in order.
+    let stations: [Playlist]
+    let logos: [String: CGImage]
+    let songCounts: [String: Int]
+    @Binding var search: String
+    var ringColor = Color.accentColor
+    var rim = defaultRim
+    var setOn: (Bool, String) -> Void = { _, _ in }
+    var move: (String, Int) -> Void = { _, _ in }
+    var requestLogo: (String) -> Void = { _ in }
+    var cancelLogo: (String) -> Void = { _ in }
+    var retry: () -> Void = {}
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            header
+                .padding(.horizontal, Self.margin)
+                .padding(.top, Self.margin)
+                .padding(.bottom, 12)
+            // Each state fills the rest of the window. Left to its own size, a
+            // ContentUnavailableView sat in the top left corner.
+            switch phase {
+            case .loading:
+                ProgressView("Loading your playlists from Music…")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .denied:
+                denied
+            case .failed(let message):
+                ContentUnavailableView {
+                    Label("Couldn't Load Your Playlists", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text(message)
+                } actions: {
+                    Button("Try Again", action: retry)
                 }
-                .onMove { stations.move(fromOffsets: $0, toOffset: $1) }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .ready where library.isEmpty:
+                ContentUnavailableView {
+                    Label("No Playlists in Music", systemImage: "music.note.list")
+                } description: {
+                    Text("Your stations are Music playlists. Make one in Music, then check again.")
+                } actions: {
+                    Button("Check Again", action: retry)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            case .ready:
+                picker
             }
-            Text("\(onWheel) of \(RadioWheelModel.maxStations) stations on the wheel")
-                .font(.callout)
-                .foregroundStyle(.secondary)
+        }
+        .frame(minWidth: Self.minWidth, idealWidth: 720, maxWidth: .infinity, minHeight: 480, idealHeight: 600, maxHeight: .infinity, alignment: .top)
+    }
+
+    private var isFull: Bool {
+        stations.count >= RadioWheelModel.maxStations
+    }
+
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text("Stations")
+                .font(.title2.weight(.semibold))
+            Spacer()
+            if phase == .ready, !library.isEmpty {
+                Text("\(stations.count) of \(RadioWheelModel.maxStations) on the wheel")
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 
-    private func placeholder(_ text: String, loading: Bool = false) -> some View {
-        VStack(spacing: 8) {
-            if loading { ProgressView().controlSize(.small) }
-            Text(text).foregroundStyle(.secondary)
+    private var denied: some View {
+        ContentUnavailableView {
+            Label("Free Roam Can't Control Music", systemImage: "music.note")
+        } description: {
+            Text("Free Roam needs to control Music to list your playlists. Switch it on in Privacy & Security under Automation, then try again.")
+        } actions: {
+            Button("Open Privacy & Security…") { PrivacyPane.automation.open() }
+                .keyboardShortcut(.defaultAction)
+            Button("Try Again", action: retry)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var picker: some View {
+        let matches = StationList.matching(search, in: library)
+        let slots = Dictionary(stations.enumerated().map { ($1.id, $0 + 1) }, uniquingKeysWith: { first, _ in first })
+        return VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("On the wheel · drag to reorder")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                WheelStrip(
+                    stations: stations,
+                    logos: logos,
+                    ringColor: ringColor,
+                    rim: rim,
+                    remove: { id in animated { setOn(false, id) } },
+                    move: { id, index in animated { move(id, index) } },
+                    requestLogo: requestLogo
+                )
+            }
+            .padding(.horizontal, Self.margin)
+            .padding(.bottom, 16)
+
+            Divider()
+
+            HStack(spacing: 12) {
+                SearchField(text: $search, prompt: "Search playlists")
+                    .frame(maxWidth: 260)
+                Spacer(minLength: 0)
+                if isFull {
+                    Text("The wheel holds 25. Remove a station to add another.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+            .padding(.horizontal, Self.margin)
+            .padding(.vertical, 12)
+
+            if matches.isEmpty {
+                ContentUnavailableView.search(text: search)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                PlaylistGrid(
+                    playlists: matches,
+                    slots: slots,
+                    logos: logos,
+                    songCounts: songCounts,
+                    isFull: isFull,
+                    ringColor: ringColor,
+                    toggle: { playlist in animated { setOn(slots[playlist.id] == nil, playlist.id) } },
+                    requestLogo: requestLogo,
+                    cancelLogo: cancelLogo
+                )
+            }
+        }
+    }
+
+    private func animated(_ change: () -> Void) {
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.25), change)
     }
 }
