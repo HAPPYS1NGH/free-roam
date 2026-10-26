@@ -1,0 +1,31 @@
+.production-wheel-stage {
+  --font-caption: "Sofia Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  position: relative;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 1;
+  margin: 24px auto;
+}
+
+.production-wheel-render {
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform-origin: top left;
+}
+
+.production-station-target {
+  position: absolute;
+  translate: -50% -50%;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+}
+
+.production-station-target:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+
+.brand-logo { display: block; width: 60px; height: 60px; object-fit: contain; }

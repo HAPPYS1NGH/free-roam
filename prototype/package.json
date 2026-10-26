@@ -4,12 +4,16 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "dev": "node scripts/prepare-public.mjs && vite",
+    "studio": "vite --mode studio --open /studio.html",
+    "build": "node scripts/prepare-public.mjs && tsc --noEmit && vite build && node scripts/prerender.mjs && node scripts/check-release.mjs",
+    "test": "node --test scripts/*.test.mjs",
+    "check:release": "node scripts/check-release.mjs",
     "typecheck": "tsc --noEmit",
     "sounds": "node scripts/make-sounds.mjs",
     "library": "node scripts/export-library.mjs",
-    "wallpaper": "node scripts/export-wallpaper.mjs"
+    "wallpaper": "node scripts/export-wallpaper.mjs",
+    "build:release": "node scripts/release.mjs"
   },
   "dependencies": {
     "dialkit": "2.0.2",

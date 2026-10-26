@@ -21,6 +21,7 @@ type Options = {
   dwellMs: number
   holdDelayMs: number
   keepOpen: boolean
+  ignoreSelector?: string
   sounds: { pack: SoundPack; retuneTake: SoundName; retuneVolumeDb: number; uiVolumeDb: number; hoverVolumeDb: number }
 }
 
@@ -33,10 +34,6 @@ const PEEK_MS = 1200
 function isTextField(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false
   return /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable
-}
-
-function isHarnessChrome(target: EventTarget | null) {
-  return target instanceof Element && !!target.closest(".dialkit-root")
 }
 
 export function useWheel(options: Options) {
@@ -55,6 +52,14 @@ export function useWheel(options: Options) {
   const cursor = useRef({ x: 0, y: 0 })
   const dwellTimer = useRef(0)
   const holdTimer = useRef(0)
+  const switchTimer = useRef(0)
+  const peekTimer = useRef(0)
+  const pressed = useRef(false)
+
+  const isIgnoredTarget = (target: EventTarget | null) => {
+    const selector = settings.current.ignoreSelector
+    return !!selector && target instanceof Element && !!target.closest(selector)
+  }
 
   const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolumeDb, settings.current.sounds.pack)
 
@@ -72,7 +77,8 @@ export function useWheel(options: Options) {
     const { pack, retuneTake, retuneVolumeDb } = settings.current.sounds
     playSound(retuneTake, retuneVolumeDb, pack)
     playingRef.current = nextId
-    window.setTimeout(() => setPlayingId(nextId), SWITCH_DELAY_MS)
+    window.clearTimeout(switchTimer.current)
+    switchTimer.current = window.setTimeout(() => setPlayingId(nextId), SWITCH_DELAY_MS)
   }
 
   // GTA retunes live as you pass over stations. Waiting for the highlight to
@@ -90,6 +96,7 @@ export function useWheel(options: Options) {
 
   const show = () => {
     if (openRef.current) return
+    unlockAudio()
     openRef.current = true
     cursor.current = { x: 0, y: 0 }
     // The wheel opens on whatever is playing, like GTA.
@@ -138,7 +145,9 @@ export function useWheel(options: Options) {
       if (isTextField(e.target)) return
       if (e.code === "KeyQ" && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault()
-        if (e.repeat || openRef.current) return
+        if (e.repeat || pressed.current) return
+        pressed.current = true
+        if (openRef.current) return
         unlockAudio()
         // Holding opens the wheel; releasing before the delay counts as a tap.
         holdTimer.current = window.setTimeout(() => {
@@ -147,14 +156,23 @@ export function useWheel(options: Options) {
         }, settings.current.holdDelayMs)
         return
       }
+      if (e.key === "Escape") {
+        window.clearTimeout(holdTimer.current)
+        holdTimer.current = 0
+        pressed.current = false
+        if (openRef.current) hide()
+        return
+      }
       if (!openRef.current) return
-      if (e.key === "Escape") hide()
-      else if (e.key === "ArrowRight" || e.key === "ArrowDown") step(1)
-      else if (e.key === "ArrowLeft" || e.key === "ArrowUp") step(-1)
+      if (["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp"].includes(e.key)) {
+        e.preventDefault()
+        step(e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : -1)
+      }
     }
 
     const onKeyUp = (e: KeyboardEvent) => {
-      if (e.code !== "KeyQ") return
+      if (e.code !== "KeyQ" || !pressed.current) return
+      pressed.current = false
       if (holdTimer.current) {
         window.clearTimeout(holdTimer.current)
         holdTimer.current = 0
@@ -165,7 +183,7 @@ export function useWheel(options: Options) {
     }
 
     const onMouseMove = (e: MouseEvent) => {
-      if (!openRef.current || isHarnessChrome(e.target)) return
+      if (!openRef.current || isIgnoredTarget(e.target)) return
       const c = cursor.current
       c.x += e.movementX
       c.y += e.movementY
@@ -181,7 +199,7 @@ export function useWheel(options: Options) {
     }
 
     const onWheel = (e: WheelEvent) => {
-      if (!openRef.current || isHarnessChrome(e.target)) return
+      if (!openRef.current || isIgnoredTarget(e.target)) return
       e.preventDefault()
       const unit =
         e.deltaMode === WheelEvent.DOM_DELTA_LINE ? LINE_HEIGHT : e.deltaMode === WheelEvent.DOM_DELTA_PAGE ? window.innerHeight : 1
@@ -209,11 +227,12 @@ export function useWheel(options: Options) {
 
     // Only "keep open" mode commits on click; normally releasing Q commits.
     const onClick = (e: MouseEvent) => {
-      if (settings.current.keepOpen && !isHarnessChrome(e.target)) tune(highlightRef.current)
+      if (settings.current.keepOpen && !isIgnoredTarget(e.target)) tune(highlightRef.current)
     }
 
     // Switching windows mid-hold means the keyup never arrives.
     const onBlur = () => {
+      pressed.current = false
       window.clearTimeout(holdTimer.current)
       holdTimer.current = 0
       if (openRef.current && !settings.current.keepOpen) hide()
@@ -226,6 +245,7 @@ export function useWheel(options: Options) {
     window.addEventListener("click", onClick)
     window.addEventListener("blur", onBlur)
     return () => {
+      for (const timer of [holdTimer, dwellTimer, switchTimer, peekTimer]) window.clearTimeout(timer.current)
       window.removeEventListener("keydown", onKeyDown, true)
       window.removeEventListener("keyup", onKeyUp)
       window.removeEventListener("mousemove", onMouseMove)
@@ -251,10 +271,19 @@ export function useWheel(options: Options) {
     if (openRef.current) return
     unlockAudio()
     show()
-    window.setTimeout(() => {
+    peekTimer.current = window.setTimeout(() => {
       if (!settings.current.keepOpen) hide()
     }, PEEK_MS)
   }, [])
 
-  return { open, highlighted, playingId, peek }
+  const choose = (index: number) => {
+    if (!settings.current.slots[index]) return
+    unlockAudio()
+    highlightRef.current = index
+    setHighlighted(index)
+    tune(index)
+    hide()
+  }
+
+  return { open, highlighted, playingId, peek, show, hide, choose }
 }

@@ -1,0 +1,93 @@
+{
+  "source": "the synthesised sounds in prototype/public/sounds/ (scripts/make-sounds.mjs), which a release build of the app ships",
+  "sounds": {
+    "open": "16021cb3053bfabf3c74163ca3a060772133edfd3541adcd957576494aec3a6c",
+    "close": "eb0a74d63c26271e32ec58fbcda31f34ac7f6c1c55f2ce44729d330285722ea3",
+    "hover": "dfffe4798ee534547f76b15cd1fb5e21b71740bc69018b56b2452abbd71554fa",
+    "retune": "ad50d1a5787f47a9c045c9e8154928dacd21eed60b5b11d423eef0fbd281e226"
+  },
+  "settings": {
+    "app": "Static",
+    "name": "Radio wheel",
+    "exportedAt": "2026-10-22T05:46:14.020Z",
+    "animations": {
+      "open": {
+        "duration": 0.14,
+        "bezier": [
+          0.23,
+          1,
+          0.32,
+          1
+        ]
+      },
+      "close": {
+        "duration": 0.1,
+        "bezier": [
+          0.23,
+          1,
+          0.32,
+          1
+        ]
+      },
+      "filterIn": {
+        "duration": 0.15,
+        "bezier": [
+          0.4,
+          0,
+          0.6,
+          1
+        ]
+      },
+      "filterOut": {
+        "duration": 0.45,
+        "bezier": [
+          0.4,
+          0,
+          0.6,
+          1
+        ]
+      }
+    },
+    "sizes": {
+      "openScale": 0.96,
+      "iconSize": 8.8,
+      "maxIconSize": 10.5,
+      "iconPitch": 9.15,
+      "minRadius": 22,
+      "maxRadius": 30.5,
+      "raise": 4.3,
+      "rim": 0.05,
+      "selectedRim": 0.01,
+      "ringWidth": 0.55,
+      "selectedScale": 1,
+      "idleOpacity": 0.4,
+      "captionSize": 2.6,
+      "stationSize": 3.4,
+      "captionPitch": 3.4,
+      "captionRaise": 5
+    },
+    "colors": {
+      "ringPreset": "Blue",
+      "ringColor": "#65B4D4"
+    },
+    "flags": {
+      "selectedInColour": true
+    },
+    "behaviour": {
+      "holdDelayMs": 150,
+      "deadzone": 1.5,
+      "pickRadius": 60,
+      "scrollStep": 12,
+      "dwellMs": 1000,
+      "backdropBlurPx": 0,
+      "backdropSaturation": 0.45,
+      "backdropBrightness": 1.04,
+      "vignette": 1,
+      "duckVolume": 0.4,
+      "retuneTake": "retune",
+      "retuneVolumeDb": -4.5,
+      "uiVolumeDb": -2,
+      "hoverVolumeDb": -2
+    }
+  }
+}

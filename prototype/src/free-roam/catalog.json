@@ -1,0 +1,507 @@
+[
+  {
+    "id": "gods-favorite",
+    "name": "God's Favorite",
+    "album": null,
+    "tracks": [
+      {
+        "title": "Refugee",
+        "artist": "Jordan Sandhu, Kaptaan & ABY",
+        "duration": 148.645004272461
+      },
+      {
+        "title": "Public Holiday",
+        "artist": "Jordan Sandhu, Kaptaan & ABY",
+        "duration": 178.723007202148
+      },
+      {
+        "title": "100 Times",
+        "artist": "Jordan Sandhu, Kaptaan & ABY",
+        "duration": 189.130004882812
+      },
+      {
+        "title": "God’s Favorite (feat. Sultaan)",
+        "artist": "Jordan Sandhu, Sultaan, Kaptaan & Avvy Sra",
+        "duration": 174.065994262695
+      },
+      {
+        "title": "Heart Code",
+        "artist": "Jordan Sandhu, Karan Thabal & ABY",
+        "duration": 170
+      },
+      {
+        "title": "Panga (feat. Jasmeen Akhtar)",
+        "artist": "Jordan Sandhu, Jasmine Akhtar, Rav Hanjra & The Kidd",
+        "duration": 186.121994018555
+      },
+      {
+        "title": "Written Beautifully",
+        "artist": "Jordan Sandhu, Mandeep Maavi & MXRCI",
+        "duration": 186.833999633789
+      },
+      {
+        "title": "Call Text",
+        "artist": "Jordan Sandhu, Kaptaan & ABY",
+        "duration": 144.667007446289
+      },
+      {
+        "title": "Concrete Dreams (feat. Rawme Hooda)",
+        "artist": "Jordan Sandhu, Rawme Hooda, Kaptaan & ABY",
+        "duration": 253.332992553711
+      },
+      {
+        "title": "Good Day",
+        "artist": "Jordan Sandhu, Kaptaan & ABY",
+        "duration": 126.741996765137
+      },
+      {
+        "title": "Haseen Khaab",
+        "artist": "Jordan Sandhu, Rav Hanjra & Jay Trak",
+        "duration": 185.639007568359
+      },
+      {
+        "title": "Badi Badi",
+        "artist": "Jordan Sandhu, Kaptaan & N. Vee",
+        "duration": 174.544998168945
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/gods-favorite-0.jpg"
+    ],
+    "sourceUrl": null,
+    "artworkSource": null,
+    "provenance": "owner-approved-playlist"
+  },
+  {
+    "id": "gym",
+    "name": "gym",
+    "album": null,
+    "tracks": [
+      {
+        "title": "Wake Up",
+        "artist": "Gurinder Gill",
+        "duration": 153.175003051758
+      },
+      {
+        "title": "Supreme",
+        "artist": "Shubh",
+        "duration": 178.311004638672
+      },
+      {
+        "title": "Cheques",
+        "artist": "Shubh",
+        "duration": 183.75700378418
+      },
+      {
+        "title": "Balenci",
+        "artist": "Shubh",
+        "duration": 182.281997680664
+      },
+      {
+        "title": "Courtside",
+        "artist": "Karan Aujla & Signature by SB",
+        "duration": 168.125
+      },
+      {
+        "title": "MF Gabhru!",
+        "artist": "Karan Aujla & Ikky",
+        "duration": 200.386001586914
+      },
+      {
+        "title": "Winning Speech",
+        "artist": "Karan Aujla & MXRCI",
+        "duration": 227.442001342773
+      },
+      {
+        "title": "Wavy",
+        "artist": "Karan Aujla & Jay Trak",
+        "duration": 161
+      },
+      {
+        "title": "Big Things",
+        "artist": "Jordan Sandhu, Gur Sidhu & Kaptaan",
+        "duration": 138
+      },
+      {
+        "title": "God's Grace (feat. Gurlej Akhtar)",
+        "artist": "Jordan Sandhu, Gur Sidhu & Kaptaan",
+        "duration": 162.309005737305
+      },
+      {
+        "title": "Schedule",
+        "artist": "Tegi Pannu & Manni Sandhu",
+        "duration": 148.376998901367
+      },
+      {
+        "title": "Paper Before Money",
+        "artist": "Navaan Sandhu",
+        "duration": 198.414001464844
+      },
+      {
+        "title": "Levels & Graphs",
+        "artist": "Navaan Sandhu",
+        "duration": 262.501007080078
+      },
+      {
+        "title": "Blackia",
+        "artist": "Prem Dhillon",
+        "duration": 221.408004760742
+      },
+      {
+        "title": "Hood Famous",
+        "artist": "Navaan Sandhu",
+        "duration": 176.169998168945
+      },
+      {
+        "title": "Banda Bamb",
+        "artist": "Jordan Sandhu, Gur Sidhu & Kaptaan",
+        "duration": 174.72900390625
+      },
+      {
+        "title": "Famous Enough",
+        "artist": "Navaan Sandhu, Gurlej Akhtar & Rxtro",
+        "duration": 240
+      },
+      {
+        "title": "Navior",
+        "artist": "Navaan Sandhu",
+        "duration": 225.710006713867
+      },
+      {
+        "title": "Dealer",
+        "artist": "Diljit Dosanjh",
+        "duration": 110.125
+      },
+      {
+        "title": "Cartier",
+        "artist": "Navaan Sandhu",
+        "duration": 170.667007446289
+      },
+      {
+        "title": "Dead Mangde",
+        "artist": "Navaan Sandhu",
+        "duration": 207.639999389648
+      },
+      {
+        "title": "Top Fella",
+        "artist": "Karan Aujla & MXRCI",
+        "duration": 201.080993652344
+      },
+      {
+        "title": "52 Bars",
+        "artist": "Karan Aujla & Ikky",
+        "duration": 214.024002075195
+      },
+      {
+        "title": "Levels",
+        "artist": "Sidhu Moose Wala & Sunny Malton",
+        "duration": 228.705993652344
+      },
+      {
+        "title": "Outlaw",
+        "artist": "Sidhu Moose Wala",
+        "duration": 180.889007568359
+      },
+      {
+        "title": "TOP DAWG",
+        "artist": "Prem Dhillon",
+        "duration": 169.875
+      },
+      {
+        "title": "ASTARR",
+        "artist": "Prem Dhillon",
+        "duration": 195
+      },
+      {
+        "title": "Headliner",
+        "artist": "Navaan Sandhu & Haakam",
+        "duration": 308.803985595703
+      },
+      {
+        "title": "Jawani",
+        "artist": "Arjan Dhillon",
+        "duration": 151.218994140625
+      },
+      {
+        "title": "Black Jays (feat. Fateh Doe)",
+        "artist": "Himmat Sandhu",
+        "duration": 168.570999145508
+      },
+      {
+        "title": "Hot Shit",
+        "artist": "Arjan Dhillon",
+        "duration": 163.29899597168
+      },
+      {
+        "title": "Salute",
+        "artist": "Arjan Dhillon",
+        "duration": 203.466003417969
+      },
+      {
+        "title": "God’s Favorite (feat. Sultaan)",
+        "artist": "Jordan Sandhu, Sultaan, Kaptaan & Avvy Sra",
+        "duration": 174.065994262695
+      },
+      {
+        "title": "Refugee",
+        "artist": "Jordan Sandhu, Kaptaan & ABY",
+        "duration": 148.645004272461
+      },
+      {
+        "title": "Devil",
+        "artist": "Diljit Dosanjh & Intense",
+        "duration": 152.147003173828
+      },
+      {
+        "title": "Gears",
+        "artist": "Arjan Dhillon & MXRCI",
+        "duration": 150.912994384766
+      },
+      {
+        "title": "Majha Block",
+        "artist": "Prem Dhillon",
+        "duration": 248.503997802734
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/gym-0.jpg",
+      "/free-roam/albums/gym-1.jpg",
+      "/free-roam/albums/gym-2.jpg",
+      "/free-roam/albums/gym-3.jpg"
+    ],
+    "sourceUrl": null,
+    "artworkSource": null,
+    "provenance": "owner-approved-playlist"
+  },
+  {
+    "id": "plow",
+    "name": "PLow",
+    "album": null,
+    "tracks": [
+      {
+        "title": "One Love",
+        "artist": "Shubh",
+        "duration": 159.22200012207
+      },
+      {
+        "title": "Attraction",
+        "artist": "Sukha & prodGK",
+        "duration": 183.169998168945
+      },
+      {
+        "title": "Leekan (From \"Ashke\" Soundtrack) [with Jatinder Shah]",
+        "artist": "Amrinder Gill",
+        "duration": 215.604995727539
+      },
+      {
+        "title": "High On You",
+        "artist": "Jind Universe",
+        "duration": 140.25
+      },
+      {
+        "title": "Mi Amor",
+        "artist": "Sharn & THE Paul",
+        "duration": 203.04899597168
+      },
+      {
+        "title": "I Really Do...",
+        "artist": "Karan Aujla & Ikky",
+        "duration": 193.841995239258
+      },
+      {
+        "title": "Surmedani",
+        "artist": "Avvy Sra, Harmanjit, Jyotica Tangri & Noor Chahal",
+        "duration": 206.451995849609
+      },
+      {
+        "title": "Noormahal",
+        "artist": "Chani Nattan, Inderpal Moga & J-Statik",
+        "duration": 160
+      },
+      {
+        "title": "Sahiba (feat. Simiran Kaur Dhadli)",
+        "artist": "Intense",
+        "duration": 238.707992553711
+      },
+      {
+        "title": "Rooh",
+        "artist": "Tej Gill",
+        "duration": 208.576995849609
+      },
+      {
+        "title": "Gani (feat. Akhil)",
+        "artist": "Manni Sandhu",
+        "duration": 266.5
+      },
+      {
+        "title": "Asi Gabru Punjabi",
+        "artist": "Amrinder Gill",
+        "duration": 228.49299621582
+      },
+      {
+        "title": "Kafka (feat. Gurlej Akhtar)",
+        "artist": "Amrinder Gill, Raj Ranjodh & Dr Zeus",
+        "duration": 192.194000244141
+      },
+      {
+        "title": "RETRO TALE (MERA NARAM KAALJA)",
+        "artist": "G.SIDHU MUSIC",
+        "duration": 187.199996948242
+      },
+      {
+        "title": "RYDE OR DIE (feat. Karam Brar)",
+        "artist": "Chinna & Manni Sandhu",
+        "duration": 135.177001953125
+      },
+      {
+        "title": "Facetime",
+        "artist": "Chani Nattan, Inderpal Moga & Miss Pooja",
+        "duration": 144.923004150391
+      },
+      {
+        "title": "Ranjhé",
+        "artist": "Ikky",
+        "duration": 216.856994628906
+      },
+      {
+        "title": "Oscar",
+        "artist": "Prateek Bachan, Jaani, Gippy Grewal & Badshah",
+        "duration": 218.824005126953
+      },
+      {
+        "title": "Poh Di Raat",
+        "artist": "Diljit Dosanjh",
+        "duration": 224.783996582031
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/plow-0.jpg",
+      "/free-roam/albums/plow-1.jpg",
+      "/free-roam/albums/plow-2.jpg",
+      "/free-roam/albums/plow-3.jpg"
+    ],
+    "sourceUrl": null,
+    "artworkSource": null,
+    "provenance": "owner-approved-playlist"
+  },
+  {
+    "id": "morning",
+    "name": "Morning Playlist",
+    "album": null,
+    "tracks": [
+      {
+        "title": "Dawood",
+        "artist": "Sidhu Moose Wala",
+        "duration": 197.102996826172
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/morning-0.jpg"
+    ],
+    "sourceUrl": null,
+    "artworkSource": null,
+    "provenance": "owner-approved-playlist"
+  },
+  {
+    "id": "night",
+    "name": "Night Drive",
+    "album": "After Hours",
+    "tracks": [
+      {
+        "title": "Blinding Lights",
+        "artist": "The Weeknd",
+        "duration": 200
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/night.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/blinding-lights/1499385848?i=1499386265&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/2b/b9/fe/2bb9fef5-d7f3-8345-25a9-db0e79fde4e4/20UMGIM11048.rgb.jpg/600x600bb.jpg"
+  },
+  {
+    "id": "indie",
+    "name": "Indie Radio",
+    "album": "AM",
+    "tracks": [
+      {
+        "title": "Do I Wanna Know?",
+        "artist": "Arctic Monkeys",
+        "duration": 272
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/indie.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/do-i-wanna-know/663097964?i=663097965&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/69/9c/b5/699cb5d6-115c-ff73-9d26-e57ea4350d72/887828031795.png/600x600bb.jpg"
+  },
+  {
+    "id": "rap",
+    "name": "Rap Rotation",
+    "album": "DAMN.",
+    "tracks": [
+      {
+        "title": "HUMBLE.",
+        "artist": "Kendrick Lamar",
+        "duration": 177
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/rap.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/humble/1440881722?i=1440882165&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/ab/16/ef/ab16efe9-e7f1-66ec-021c-5592a23f0f9e/17UMGIM88793.rgb.jpg/600x600bb.jpg"
+  },
+  {
+    "id": "punjabi",
+    "name": "Punjabi Hits",
+    "album": "G.O.A.T.",
+    "tracks": [
+      {
+        "title": "G.O.A.T.",
+        "artist": "Diljit Dosanjh",
+        "duration": 224
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/punjabi.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/g-o-a-t/1523520901?i=1523521149&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/d2/89/ac/d289ac98-749e-3822-6b6e-b06aa4815715/859740651597_cover.jpg/600x600bb.jpg"
+  },
+  {
+    "id": "electronic",
+    "name": "After Dark",
+    "album": "Hurry Up, We're Dreaming",
+    "tracks": [
+      {
+        "title": "Midnight City",
+        "artist": "M83",
+        "duration": 241
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/electronic.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/midnight-city/828259375?i=828259377&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/cb/7b/a9/cb7ba903-b5f1-cc21-90db-7a81b7aa0997/724596951057.jpg/600x600bb.jpg"
+  },
+  {
+    "id": "road",
+    "name": "Road Trip",
+    "album": "Parachutes",
+    "tracks": [
+      {
+        "title": "Yellow",
+        "artist": "Coldplay",
+        "duration": 269
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/road.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/yellow/1122782080?i=1122782283&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f5/93/8c/f5938c49-964c-31d1-4b33-78b634f71fb7/190295978075.jpg/600x600bb.jpg"
+  }
+]
