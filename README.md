@@ -1,4 +1,4 @@
-# Static
+# Free Roam
 
 Hold ⌥Q and a radio wheel pops up over whatever you're doing. Flick the mouse toward a station, let go, and Apple Music switches playlist with a burst of radio static.
 
@@ -13,7 +13,7 @@ It's a macOS menu bar app inspired by the radio and weapon wheels in open-world 
 
 The full plan is in [docs/PLAN.md](docs/PLAN.md).
 
-## Try Free Roam
+## Try the web demo
 
 The website uses the After Hours design. The full-screen demo shares the original wheel renderer, saved tokens, and interaction controller.
 
@@ -55,7 +55,7 @@ npm run studio    # opens /studio.html with DialKit
 
 This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries, wallpapers, and `public/sounds/local/` remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
 
-The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. It is used in the website header and favicon. The native app is still named Static, and its icon has not been replaced. Logo prompts are saved in `output/branding/free-roam/`.
+The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. The website uses it in the header and as the favicon. The Mac app doesn't use it yet: it has no app icon, and its menu bar item is a radio symbol. Logo prompts are saved in `output/branding/free-roam/`.
 
 Design decisions and verification are in [docs/free-roam-design.md](docs/free-roam-design.md).
 
@@ -65,13 +65,13 @@ The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, wit
 
 ```sh
 scripts/make-signing-cert.sh   # once per Mac
-scripts/bundle.sh --run        # builds dist/Static.app and opens it
+scripts/bundle.sh --run        # builds "dist/Free Roam.app" and opens it
 swift test
 ```
 
 If `prototype/public/sounds/local/` has sounds in it, `bundle.sh` uses them instead of the synthesised ones with the same name, as the prototype's Local pack does. That's only for builds on your own Mac.
 
-macOS asks once to let Static control Music. Screen Recording, which desaturating the screen needs, is optional: Static asks for it only when you choose Allow Screen Recording… in the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
+macOS asks once to let Free Roam control Music. Screen Recording, which desaturating the screen needs, is optional: Free Roam asks for it only when you choose Allow Screen Recording… in the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
 
 ## Requirements
 

@@ -2,7 +2,7 @@
 
 **Not yet published.** The web release candidate passes local checks. The production domain and hosting destination are still needed to generate final canonical and social URLs and deploy it. No known blocking web defect remains after this pass.
 
-Scope: the After Hours landing page at `/free-roam/` and full-screen demo at `/`. Both import the same approved playlist catalog, wheel renderer, interaction controller, and Static sound hook. Native signing, notarization, installation, and renaming Static are separate work. The website accurately offers source-build instructions.
+Scope: the After Hours landing page at `/free-roam/` and full-screen demo at `/`. Both import the same approved playlist catalog, wheel renderer, interaction controller, and sound hook. Native signing, notarization and installation are separate work. The website accurately offers source-build instructions.
 
 ## A. Accessibility
 
@@ -60,7 +60,7 @@ God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshot
 | --- | --- | --- | --- | --- |
 | Should fix | No canonical URLs or crawl metadata | Validated `SITE_URL` generates canonicals, absolute social URLs, robots, and sitemap in `prototype/scripts/site-metadata.mjs:4` | Avoids broken or ambiguous launch links | Code fixed; final domain pending |
 
-`build:release` requires the chosen HTTPS origin and runs tests before building. Release checks also verify every catalog station appears in prerendered landing markup. GitHub confirms `HAPPYS1NGH/static` is public. The CTA remains Build for Mac, not an unavailable download.
+`build:release` requires the chosen HTTPS origin and runs tests before building. Release checks also verify every catalog station appears in prerendered landing markup. GitHub confirmed the repository was public before it was renamed `HAPPYS1NGH/free-roam`. The CTA remains Build for Mac, not an unavailable download.
 
 ## Needs a device
 

@@ -1,12 +1,12 @@
-# Static: plan
+# Free Roam: plan
 
-Hold a key, a wheel like GTA's radio wheel appears, flick the mouse, and Apple Music switches playlist with a burst of radio static. Static is a native macOS menu bar app and it's open source.
+Hold a key, a wheel like GTA's radio wheel appears, flick the mouse, and Apple Music switches playlist with a burst of radio static. Free Roam is a native macOS menu bar app and it's open source.
 
 ## Decisions
 
 | Topic | Decision |
 |---|---|
-| Name | Static (`HAPPYS1NGH/static`, bundle ID `com.happys1ngh.static`) |
+| Name | Free Roam (`HAPPYS1NGH/free-roam`, bundle ID `com.happys1ngh.freeroam`) |
 | UI | Native SwiftUI wheel; AppKit for the overlay window and hotkeys |
 | Music | Apple Music only, controlled through AppleScript |
 | Radio wheel | A faithful copy of GTA V's: one station per playlist (up to 25) plus Radio Off. Hold ⌥Q to open, tap for the next station. Numbers in [DECISIONS.md](DECISIONS.md) |
@@ -24,9 +24,9 @@ Hold a key, a wheel like GTA's radio wheel appears, flick the mouse, and Apple M
 Checked on this Mac or known limits of macOS:
 
 - `swift build` works with the Command Line Tools. Tests and universal (Intel + Apple Silicon) builds need full Xcode, so install it before Phase 2.
-- Static can't desaturate other apps' windows without Screen Recording permission. The vignette and cool tint are plain overlays and need no permission; only the desaturation needs a screen capture.
+- Free Roam can't desaturate other apps' windows without Screen Recording permission. The vignette and cool tint are plain overlays and need no permission; only the desaturation needs a screen capture.
 - Apple Music doesn't expose energy or tempo, so weapon stats come from your library: plays, length, track count and last played.
-- The app is unsigned, so each user clicks "Open Anyway" once in System Settings and approves "Static wants to control Music" once.
+- The app is unsigned, so each user clicks "Open Anyway" once in System Settings and approves "Free Roam wants to control Music" once.
 - Ad-hoc signed builds lose Screen Recording permission on every rebuild, though Music permission survives. Development builds are signed with a self-signed certificate so both stick; see [DECISIONS.md](DECISIONS.md).
 
 ## How it works
@@ -59,7 +59,7 @@ Checked on this Mac or known limits of macOS:
 
 - [x] Project folder, git, `.gitignore`, plan
 - [x] MIT `LICENSE`, README stub
-- [x] Create public repo `HAPPYS1NGH/static` and push
+- [x] Create the public repo and push (now `HAPPYS1NGH/free-roam`)
 - [x] You: install Xcode from the App Store (needed before Phase 2)
 
 ## Phase 1: HTML prototype (`prototype/`)
@@ -78,13 +78,13 @@ The goal is to settle how the wheel looks and moves, down to the exact numbers, 
 ## Phase 2: Mac app with the radio wheel (MVP)
 
 ```text
-static/
+free-roam/
 ├── Package.swift
-├── Sources/Static/
-│   ├── StaticApp.swift          # entry point, menu bar icon, app delegate
+├── Sources/FreeRoam/
+│   ├── FreeRoamApp.swift        # entry point, menu bar icon, app delegate
 │   ├── StatusMenu.swift         # the menu bar menu
 │   ├── PermissionProbe.swift    # debug builds: `--probe` prints what macOS allows
-│   ├── Info.plist               # copied into Static.app by scripts/bundle.sh
+│   ├── Info.plist               # copied into Free Roam.app by scripts/bundle.sh
 │   ├── Hotkey.swift             # global press and release (Carbon, no permission)
 │   ├── OverlayPanel.swift       # borderless panel, all Spaces, over full-screen apps
 │   ├── Wheel/
@@ -109,9 +109,9 @@ static/
 │   │   ├── StationList.swift    # the stations on the wheel, saved by persistent ID
 │   │   └── StationsSettingsView.swift # tick and drag playlists onto the wheel
 │   └── Resources/               # the caption font and its OFL licence
-├── Tests/StaticTests/
+├── Tests/FreeRoamTests/
 └── scripts/
-    ├── bundle.sh                # builds and signs Static.app
+    ├── bundle.sh                # builds and signs Free Roam.app
     └── make-signing-cert.sh     # self-signed certificate for development, once per Mac
 ```
 
@@ -123,12 +123,12 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
 - [x] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font. The pointer hides while the wheel is open
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
-- [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Static to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Static's Settings window is active
+- [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Free Roam to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Free Roam's Settings window is active
 - [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle goes off and repeat on, and the caption follows the track Music is actually playing
 - [ ] The recording for the first X post, with the local sound pack
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
-- Menu bar menu: Settings… and Quit, plus "Allow Static to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing. Static asks for Screen Recording only from that item, never at launch.
+- Menu bar menu: Settings… and Quit, plus "Allow Free Roam to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing. Free Roam asks for Screen Recording only from that item, never at launch.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
   - play track N of a playlist (by persistent ID), with shuffle off and repeat on, and set `player position`, for mid-song tune-in
@@ -199,5 +199,5 @@ Nothing has been posted yet. The prototype clip planned for the end of Phase 1 d
 
 ## Rules
 
-- No GTA, Rockstar or Take-Two names, logos, fonts, station names or sounds anywhere. Static is "inspired by".
+- No GTA, Rockstar or Take-Two names, logos, fonts, station names or sounds anywhere, including the app's name and icon. Free Roam is "inspired by".
 - Plain Q and Tab are never captured globally; only ⌥Q and ⌥Tab are.
