@@ -26,5 +26,18 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Free Roam switches playlists and sets the volume in Music.</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.happys1ngh.freeroam.station</string>
+			<key>UTTypeDescription</key>
+			<string>Free Roam station</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

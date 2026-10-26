@@ -156,6 +156,28 @@ struct StationPickerTests {
         #expect(FlowLayout.rows(widths: [200, 30], in: 100, spacing: 10) == [0..<1, 1..<2])
     }
 
+    @Test(arguments: [
+        (CGPoint(x: 5, y: 5), 0),
+        (CGPoint(x: 40, y: 5), 1),
+        (CGPoint(x: 33, y: 5), 0),
+        (CGPoint(x: 95, y: 70), 5),
+        (CGPoint(x: 500, y: 5), 2),
+        (CGPoint(x: 5, y: 500), 6),
+        (CGPoint(x: 500, y: 500), 6),
+        (CGPoint(x: -20, y: -20), 0),
+    ])
+    func findsTheDiscUnderThePointer(point: CGPoint, expected: Int) {
+        // Three 30 × 50 discs to a 110 pt row, 10 apart: 0 1 2 / 3 4 5 / 6.
+        let index = FlowLayout.index(
+            at: point, count: 7, itemSize: CGSize(width: 30, height: 50), width: 110, spacing: 10, rowSpacing: 10
+        )
+        #expect(index == expected)
+    }
+
+    @Test func findsNoDiscInAnEmptyStrip() {
+        #expect(FlowLayout.index(at: .zero, count: 0, itemSize: CGSize(width: 30, height: 50), width: 110, spacing: 10, rowSpacing: 10) == nil)
+    }
+
     /// So the grid keeps its room when the wheel is full.
     @Test func twentyFiveStationsFitInTwoRowsAtTheNarrowestWindow() {
         let width = StationPicker.minWidth - 2 * StationPicker.margin - 2 * WheelStrip.padding
