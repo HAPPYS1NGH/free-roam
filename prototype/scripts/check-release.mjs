@@ -1,15 +1,28 @@
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { existsSync, readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { siteOrigin } from './site-metadata.mjs'
 import { listFiles, publicAssets } from './public-assets.mjs'
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url))
 const files = listFiles(dist)
+const sha256 = path => createHash('sha256').update(readFileSync(path)).digest('hex')
+// Gitignored files on this Mac that must never ship, even copied under another name.
+const publicDir = fileURLToPath(new URL('../public/', import.meta.url))
+const privateCopies = new Map()
+for (const folder of ['sounds/local', 'wallpaper']) {
+  const root = join(publicDir, folder)
+  if (!existsSync(root)) continue
+  for (const file of listFiles(root)) privateCopies.set(sha256(join(root, file)), `${folder}/${file}`)
+}
 const origin = siteOrigin(process.env.SITE_URL, process.env.RELEASE_BUILD === '1')
 const allowed = new Set([...publicAssets, 'index.html', 'free-roam/index.html', ...(origin ? ['robots.txt', 'sitemap.xml'] : [])])
 for (const file of files) {
   assert.ok(allowed.has(file) || /^assets\/[^/]+\.(js|css)$/.test(file), `Unexpected release file: ${file}`)
+  const original = privateCopies.get(sha256(join(dist, file)))
+  assert.ok(!original, `${file} is a copy of the gitignored public/${original}`)
   if (/\.(js|html|css)$/.test(file)) {
     const content = readFileSync(`${dist}/${file}`, 'utf8')
     for (const privateMarker of ['library/library.json', '/sounds/local/', '/wallpaper/', 'dialkit-root', 'Prototype variants', 'mini-player']) {

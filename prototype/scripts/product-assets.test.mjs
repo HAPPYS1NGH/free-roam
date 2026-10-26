@@ -2,13 +2,20 @@ import assert from 'node:assert/strict'
 import { createHash } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
+import { publicAssets } from './public-assets.mjs'
 
 const reference = JSON.parse(readFileSync(new URL('./product-reference.json', import.meta.url), 'utf8'))
 const catalog = JSON.parse(readFileSync(new URL('../src/free-roam/catalog.json', import.meta.url), 'utf8'))
 
-test('public sound effects match the installed Static app byte for byte', () => {
+// The release app ships prototype/public/sounds/{open,close,hover,<retune take>}.wav.
+// The local pack only overrides them in builds on your own Mac, so it never counts.
+test('the demo publishes the synthesised sounds a release build ships, byte for byte', () => {
+  const tokens = JSON.parse(readFileSync(new URL('../tokens.json', import.meta.url), 'utf8'))
+  const shipped = ['open', 'close', 'hover', tokens.behaviour.retuneTake]
+  assert.deepEqual(publicAssets.filter(asset => asset.startsWith('sounds/')), shipped.map(name => `sounds/${name}.wav`))
+  assert.deepEqual(Object.keys(reference.sounds), shipped)
   for (const [name, expectedHash] of Object.entries(reference.sounds)) {
-    const bytes = readFileSync(new URL(`../public/sounds/static/${name}.wav`, import.meta.url))
+    const bytes = readFileSync(new URL(`../public/sounds/${name}.wav`, import.meta.url))
     assert.equal(createHash('sha256').update(bytes).digest('hex'), expectedHash, name)
   }
 })

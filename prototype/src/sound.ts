@@ -37,12 +37,13 @@ function loadInto(decoder: BaseAudioContext, buffers: Map<SoundName, AudioBuffer
   )
 }
 
-// These four approved files are byte-identical to the installed Static bundle.
+// The synthesised sounds a release of the app ships. Never the local pack:
+// the public site may only play sounds we can redistribute.
 export function preloadProductSounds(): Promise<void> {
   if (productPreloading) return productPreloading
   const decoder = new OfflineAudioContext(1, 1, 44100)
   productPreloading = Promise.all((["open", "close", "hover", "retune"] as const).map(async name => {
-    const buffer = await load(decoder, `/sounds/static/${name}.wav`)
+    const buffer = await load(decoder, `/sounds/${name}.wav`)
     if (!buffer) throw new Error(`Tuning sound unavailable: ${name}`)
     productBuffers.set(name, buffer)
   })).then(() => undefined).catch(error => {

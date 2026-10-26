@@ -1,10 +1,10 @@
 {
-  "source": "Static.app build 96",
+  "source": "the synthesised sounds in prototype/public/sounds/ (scripts/make-sounds.mjs), which a release build of the app ships",
   "sounds": {
-    "open": "e8a2623c85afa7ff92a866ce0894495708508ce75ac50d5c488f86d4a59d8292",
-    "close": "e8a2623c85afa7ff92a866ce0894495708508ce75ac50d5c488f86d4a59d8292",
-    "hover": "b9599a080db7a9c4243c56179c4e6a1052fb35231c076c05fcde4918c4e8dd1c",
-    "retune": "f8b6061933cc8a376b37055ca24aef3bed934946218b703947632d3e85205a31"
+    "open": "16021cb3053bfabf3c74163ca3a060772133edfd3541adcd957576494aec3a6c",
+    "close": "eb0a74d63c26271e32ec58fbcda31f34ac7f6c1c55f2ce44729d330285722ea3",
+    "hover": "dfffe4798ee534547f76b15cd1fb5e21b71740bc69018b56b2452abbd71554fa",
+    "retune": "ad50d1a5787f47a9c045c9e8154928dacd21eed60b5b11d423eef0fbd281e226"
   },
   "settings": {
     "app": "Static",

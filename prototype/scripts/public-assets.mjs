@@ -8,7 +8,7 @@ export const publicAssets = [
   'free-roam/coast.jpg',
   'free-roam/app-icon.png',
   ...['night', 'indie', 'rap', 'punjabi', 'electronic', 'road', 'gods-favorite-0', 'gym-0', 'gym-1', 'gym-2', 'gym-3', 'plow-0', 'plow-1', 'plow-2', 'plow-3', 'morning-0'].map(name => `free-roam/albums/${name}.jpg`),
-  ...['open', 'close', 'hover', 'retune'].map(name => `sounds/static/${name}.wav`),
+  ...['open', 'close', 'hover', 'retune'].map(name => `sounds/${name}.wav`),
 ]
 
 // A new file in public/ must never become public merely because it exists.

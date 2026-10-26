@@ -25,7 +25,7 @@ npm run dev
 
 Open `/free-roam/` for the website or `/` for the full-screen demo. Hold **Q**, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Choose a station, use the arrow keys and Enter, or tap a station. Radio Off clears the selection. Escape closes the wheel.
 
-The public demo includes four explicitly approved playlists: God's Favorite, gym, PLow, and Morning Playlist, alongside six public-catalog selections. Only their approved track metadata and artwork are copied into the demo; it never loads the full Music export or streams songs. Open, close, hover, and retune effects are copied from Static build 96 and are enabled on the first interaction. The sound control mutes them. Personal wallpapers and unapproved local sound files remain excluded.
+The public demo includes four explicitly approved playlists: God's Favorite, gym, PLow, and Morning Playlist, alongside six public-catalog selections. Only their approved track metadata and artwork are copied into the demo; it never loads the full Music export or streams songs. The open, close, hover and retune sounds are the synthesised ones a release of the app ships. They start on your first interaction, and the sound control mutes them. Your wallpaper and the local sound pack never reach the build: the release check fails if any built file matches one in `public/sounds/local/` or `public/wallpaper/`.
 
 ```sh
 npm test      # playlist, audio, prerender, privacy, and metadata tests

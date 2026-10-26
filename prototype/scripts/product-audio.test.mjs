@@ -46,9 +46,9 @@ test('cold-load first gesture plays the product clip at its configured gain; mut
   await loading
   await Promise.resolve()
   assert.equal(started.length, 1)
-  assert.equal(started[0].bytes, 10628)
+  assert.equal(started[0].bytes, 12392)
   assert.ok(Math.abs(gains[0].gain.value - 10 ** (-2 / 20)) < 1e-9)
   playSound('close', SILENT_DB, 'Product')
   assert.equal(started.length, 1)
-  assert.deepEqual(requested.sort(), ['close', 'hover', 'open', 'retune'].map(name => `/sounds/static/${name}.wav`))
+  assert.deepEqual(requested.sort(), ['close', 'hover', 'open', 'retune'].map(name => `/sounds/${name}.wav`))
 })
