@@ -1,4 +1,5 @@
 import AppKit
+import Carbon.HIToolbox
 import OSLog
 import SwiftUI
 
@@ -35,7 +36,7 @@ final class WelcomeWindow: NSObject, NSWindowDelegate {
             // Exactly what the close button does.
             close: { [weak self] in self?.window?.performClose(nil) }
         )
-        let window = NSWindow(contentViewController: NSHostingController(rootView: content))
+        let window = EscapeClosingWindow(contentViewController: NSHostingController(rootView: content))
         window.styleMask = [.titled, .closable]
         window.title = "Welcome to Free Roam"
         window.titleVisibility = .hidden
@@ -43,10 +44,12 @@ final class WelcomeWindow: NSObject, NSWindowDelegate {
         window.isReleasedWhenClosed = false
         window.delegate = self
         window.center()
-        window.makeKeyAndOrderFront(nil)
         // Free Roam has no Dock icon and isn't the active app, so the window
-        // would otherwise open behind the app you're in.
+        // would otherwise open behind the app you're in. macOS can turn the
+        // activation down, so the window comes forward regardless.
         NSApp.activate()
+        window.makeKeyAndOrderFront(nil)
+        window.orderFrontRegardless()
         self.window = window
 
         // Coming back from System Settings makes Free Roam active again.
@@ -75,5 +78,18 @@ final class WelcomeWindow: NSObject, NSWindowDelegate {
         if let activationObserver { NotificationCenter.default.removeObserver(activationObserver) }
         activationObserver = nil
         window = nil
+    }
+}
+
+/// Escape closes it, as Close and the close button do. Neither the window
+/// nor the SwiftUI content turns Escape into `cancelOperation`, so it's
+/// caught as it arrives.
+final class EscapeClosingWindow: NSWindow {
+    override func sendEvent(_ event: NSEvent) {
+        guard event.type == .keyDown, event.keyCode == UInt16(kVK_Escape) else {
+            super.sendEvent(event)
+            return
+        }
+        performClose(nil)
     }
 }

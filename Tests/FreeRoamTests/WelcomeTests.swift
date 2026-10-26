@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import Testing
 @testable import FreeRoam
@@ -53,6 +54,36 @@ struct WelcomeRenderTests {
         #expect(sizes.allSatisfy { $0 == sizes[0] }, "\(sizes)")
         #expect(Double(sizes[0][0]) == WelcomeContent.width)
         #expect(sizes[0][1] < 700)
+    }
+}
+
+@MainActor
+struct WelcomeWindowTests {
+    private final class CloseCounter: NSObject, NSWindowDelegate {
+        var closes = 0
+        func windowWillClose(_ notification: Notification) { closes += 1 }
+    }
+
+    /// The window is never put on screen.
+    @Test func escapeClosesItLikeTheCloseButton() throws {
+        let window = EscapeClosingWindow(
+            contentViewController: NSHostingController(rootView: WelcomeContent(musicAllowed: false, screenRecordingAllowed: false))
+        )
+        window.styleMask = [.titled, .closable]
+        window.isReleasedWhenClosed = false
+        let counter = CloseCounter()
+        window.delegate = counter
+        func keyDown(_ characters: String, keyCode: UInt16) throws -> NSEvent {
+            try #require(NSEvent.keyEvent(
+                with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0, windowNumber: window.windowNumber,
+                context: nil, characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode
+            ))
+        }
+
+        window.sendEvent(try keyDown("a", keyCode: 0))
+        #expect(counter.closes == 0)
+        window.sendEvent(try keyDown("\u{1b}", keyCode: 53))
+        #expect(counter.closes == 1)
     }
 }
 

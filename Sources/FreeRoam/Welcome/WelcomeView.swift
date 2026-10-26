@@ -44,7 +44,7 @@ struct WelcomeContent: View {
             VStack(spacing: 0) {
                 PermissionRow(
                     symbol: "music.note",
-                    title: "Control Music",
+                    name: "Control Music",
                     details: ["Free Roam plays your playlists in the Music app and turns Music down while the wheel is open."],
                     isAllowed: musicAllowed,
                     isAsking: isAskingForMusic,
@@ -53,7 +53,8 @@ struct WelcomeContent: View {
                 Divider().padding(.leading, 52)
                 PermissionRow(
                     symbol: "display",
-                    title: "Screen Recording (optional)",
+                    name: "Screen Recording",
+                    isOptional: true,
                     details: [
                         """
                         Fades the colour from the screen behind the wheel so your stations stand out. \
@@ -88,7 +89,8 @@ struct WelcomeContent: View {
 /// One permission: what it's for, whether it's allowed, and a button to allow it.
 private struct PermissionRow: View {
     let symbol: String
-    let title: String
+    let name: String
+    var isOptional = false
     let details: [String]
     let isAllowed: Bool
     var isAsking = false
@@ -104,7 +106,7 @@ private struct PermissionRow: View {
                 // The status shares the title's line, so the text below keeps
                 // its width, and the window its size, whatever the state.
                 HStack(spacing: 10) {
-                    Text(title).font(.headline)
+                    Text(isOptional ? "\(name) (optional)" : name).font(.headline)
                     Spacer(minLength: 0)
                     if isAllowed {
                         Label("Allowed", systemImage: "checkmark.circle.fill")
@@ -113,6 +115,8 @@ private struct PermissionRow: View {
                         Text("Not yet").foregroundStyle(.secondary)
                         Button("Allow…", action: allow)
                             .disabled(isAsking)
+                            // Both rows' buttons read "Allow…".
+                            .accessibilityLabel("Allow \(name)")
                     }
                 }
                 .frame(height: Self.titleHeight)
