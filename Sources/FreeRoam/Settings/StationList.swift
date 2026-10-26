@@ -85,9 +85,15 @@ final class StationList {
         load(launchingMusic: true)
     }
 
-    /// The wheel holds 25 stations.
+    /// The wheel holds 25 stations, counting ones Music didn't list.
     var isFull: Bool {
         Self.stationCount(allEntries) >= RadioWheelModel.maxStations
+    }
+
+    /// Stations Music didn't list last time, which keep their places on the
+    /// wheel in case they come back.
+    var missingStationCount: Int {
+        allEntries.count { $0.isOn && $0.isMissing }
     }
 
     /// Puts a playlist on the end of the wheel, or takes it off. A 26th
@@ -98,6 +104,15 @@ final class StationList {
         onChange(onWheel)
         let name = changed.first { $0.id == id }?.name ?? id
         log.notice("Switched \(name, privacy: .public) \(isOn ? "on" : "off", privacy: .public)")
+    }
+
+    /// Takes the stations Music didn't list off the wheel, for playlists that
+    /// were really deleted. They stay off if they come back.
+    func removeMissingStations() {
+        guard let changed = Self.removingMissingStations(from: allEntries) else { return }
+        save(changed)
+        onChange(onWheel)
+        log.notice("Took the stations missing from Music off the wheel")
     }
 
     /// Moves a station to `index` in the wheel's order.
@@ -129,8 +144,21 @@ final class StationList {
         onChange(onWheel)
     }
 
+    /// Every station counts toward the 25, including ones Music didn't list
+    /// last time. Otherwise a short list made room that their return
+    /// overfilled.
     nonisolated static func stationCount(_ entries: [Entry]) -> Int {
-        entries.count { $0.isOn && !$0.isMissing }
+        entries.count(where: \.isOn)
+    }
+
+    /// Nil when no station is missing.
+    nonisolated static func removingMissingStations(from entries: [Entry]) -> [Entry]? {
+        guard entries.contains(where: { $0.isOn && $0.isMissing }) else { return nil }
+        return entries.map { entry in
+            var entry = entry
+            if entry.isMissing { entry.isOn = false }
+            return entry
+        }
     }
 
     /// A station going off keeps its place among the entries, and one going
@@ -193,13 +221,24 @@ final class StationList {
             return entry
         }
         let known = Set(choice.map(\.id))
-        var stations = stationCount(merged)
         for playlist in library where !known.contains(playlist.id) {
-            let isOn = stations < RadioWheelModel.maxStations
-            if isOn { stations += 1 }
-            merged.append(Entry(id: playlist.id, name: playlist.name, isOn: isOn))
+            merged.append(Entry(id: playlist.id, name: playlist.name, isOn: true))
         }
-        return merged
+        return capped(merged)
+    }
+
+    /// Turns off every station after the 25th, in wheel order. New
+    /// playlists come last, so they're the first to stay off, and a choice
+    /// saved with too many, as an earlier build could, comes back to 25.
+    nonisolated static func capped(_ entries: [Entry]) -> [Entry] {
+        var stations = 0
+        return entries.map { entry in
+            guard entry.isOn else { return entry }
+            stations += 1
+            var entry = entry
+            entry.isOn = stations <= RadioWheelModel.maxStations
+            return entry
+        }
     }
 
     private func load(launchingMusic: Bool) {

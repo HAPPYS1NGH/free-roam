@@ -14,6 +14,7 @@ struct StationsSettingsView: View {
             phase: phase,
             library: stations.library ?? [],
             stations: stations.library == nil ? [] : stations.onWheel,
+            missingStationCount: stations.missingStationCount,
             logos: details.logos,
             songCounts: details.songCounts,
             search: $search,
@@ -21,6 +22,7 @@ struct StationsSettingsView: View {
             rim: style?.sizes.rim ?? StationPicker.defaultRim,
             setOn: stations.setOn,
             move: stations.moveStation,
+            removeMissing: stations.removeMissingStations,
             requestLogo: details.requestLogo,
             cancelLogo: details.cancelLogo,
             retry: stations.loadLaunchingMusic
@@ -62,6 +64,8 @@ struct StationPicker: View {
     let library: [Playlist]
     /// The stations on the wheel, in order.
     let stations: [Playlist]
+    /// Stations Music didn't list, which still hold their places.
+    var missingStationCount = 0
     let logos: [String: CGImage]
     let songCounts: [String: Int]
     @Binding var search: String
@@ -69,6 +73,7 @@ struct StationPicker: View {
     var rim = defaultRim
     var setOn: (Bool, String) -> Void = { _, _ in }
     var move: (String, Int) -> Void = { _, _ in }
+    var removeMissing: () -> Void = {}
     var requestLogo: (String) -> Void = { _ in }
     var cancelLogo: (String) -> Void = { _ in }
     var retry: () -> Void = {}
@@ -115,7 +120,7 @@ struct StationPicker: View {
     }
 
     private var isFull: Bool {
-        stations.count >= RadioWheelModel.maxStations
+        stations.count + missingStationCount >= RadioWheelModel.maxStations
     }
 
     private var header: some View {
@@ -124,11 +129,24 @@ struct StationPicker: View {
                 .font(.title2.weight(.semibold))
             Spacer()
             if phase == .ready, !library.isEmpty {
-                Text("\(stations.count) of \(RadioWheelModel.maxStations) on the wheel")
+                Text(Self.countText(stations: stations.count, missing: missingStationCount))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
+                if missingStationCount > 0 {
+                    Button("Remove", action: { animated(removeMissing) })
+                        .buttonStyle(.link)
+                        .help("Music didn't list these playlists. If you deleted them, remove them to free their places.")
+                        .accessibilityLabel("Remove the stations not found in Music")
+                }
             }
         }
+    }
+
+    /// "23 of 25 on the wheel · 2 not found in Music". Missing stations
+    /// count toward the 25, because they come back in their places.
+    nonisolated static func countText(stations: Int, missing: Int) -> String {
+        let onWheel = "\(stations) of \(RadioWheelModel.maxStations) on the wheel"
+        return missing > 0 ? "\(onWheel) · \(missing) not found in Music" : onWheel
     }
 
     private var denied: some View {

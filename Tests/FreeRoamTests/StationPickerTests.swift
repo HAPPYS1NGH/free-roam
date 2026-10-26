@@ -44,9 +44,33 @@ struct StationPickerTests {
         #expect(StationList.stationCount(full) == 25)
         #expect(StationList.setting(true, id: id(26), in: full) == nil)
 
-        // A missing station doesn't count, because it's off the wheel.
+        // A missing station still counts, because it comes back in its place.
         let withMissing = (1...24).map { entry($0) } + [entry(25, missing: true), entry(26, on: false)]
-        #expect(wheel(StationList.setting(true, id: id(26), in: withMissing)) == Array(1...24) + [26])
+        #expect(StationList.stationCount(withMissing) == 25)
+        #expect(StationList.setting(true, id: id(26), in: withMissing) == nil)
+    }
+
+    @Test func mergingNeverLeavesMoreThanTwentyFiveOn() {
+        // Saved by an earlier build that let the wheel overfill.
+        let overfull = (1...27).map { entry($0) }
+        let library = (1...28).map { Playlist(id: id($0), name: "Playlist \($0)") }
+        let merged = StationList.merge(overfull, with: library)
+        #expect(StationList.stationCount(merged) == 25)
+        #expect(wheel(merged) == Array(1...25))
+        #expect(merged.last == entry(28, on: false))
+    }
+
+    @Test func takesMissingStationsOffTheWheel() throws {
+        let entries = [entry(1), entry(2, missing: true), entry(3, on: false, missing: true), entry(4)]
+        let removed = try #require(StationList.removingMissingStations(from: entries))
+        #expect(removed.map(\.isOn) == [true, false, false, true])
+        #expect(removed.map(\.isMissing) == entries.map(\.isMissing))
+        #expect(StationList.removingMissingStations(from: [entry(1), entry(2, on: false, missing: true)]) == nil)
+    }
+
+    @Test func saysHowManyStationsMusicDidNotList() {
+        #expect(StationPicker.countText(stations: 12, missing: 0) == "12 of 25 on the wheel")
+        #expect(StationPicker.countText(stations: 23, missing: 2) == "23 of 25 on the wheel · 2 not found in Music")
     }
 
     // MARK: Reordering
@@ -162,6 +186,41 @@ struct StationListPickerTests {
         let expected = [library(3)[1], library(3)[2], library(3)[0]]
         #expect(stations.onWheel == expected)
         #expect(StationList(defaults: defaults).onWheel == expected)
+    }
+
+    /// A partial read hid 2 of 25, which made room for 2 more, and the wheel
+    /// went to 27 when they came back.
+    @Test func aShortListDoesNotMakeRoomOnTheWheel() {
+        let stations = StationList(defaults: defaults)
+        stations.update(library: library(27))
+        stations.moveStation(library(27)[0].id, to: 1)
+        stations.update(library: Array(library(27).dropFirst(2)))
+        #expect(stations.onWheel.count == 23)
+        #expect(stations.missingStationCount == 2)
+        #expect(stations.isFull)
+
+        stations.setOn(true, id: library(27)[25].id)
+        #expect(stations.onWheel.count == 23)
+
+        stations.update(library: library(27))
+        #expect(stations.onWheel.count == 25)
+        #expect(stations.missingStationCount == 0)
+    }
+
+    @Test func removingMissingStationsMakesRoom() {
+        let stations = StationList(defaults: defaults)
+        stations.update(library: library(26))
+        stations.moveStation(library(26)[0].id, to: 1)
+        stations.update(library: Array(library(26).dropFirst()))
+        stations.removeMissingStations()
+        #expect(stations.missingStationCount == 0)
+        #expect(!stations.isFull)
+
+        stations.setOn(true, id: library(26)[25].id)
+        #expect(stations.onWheel.count == 25)
+        // Back in Music, but taken off, so it stays off.
+        stations.update(library: library(26))
+        #expect(!stations.onWheel.contains(library(26)[0]))
     }
 
     @Test func isFullAtTwentyFiveStations() {
