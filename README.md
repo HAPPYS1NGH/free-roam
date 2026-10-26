@@ -69,6 +69,15 @@ scripts/bundle.sh --run        # builds "dist/Free Roam.app" and opens it
 swift test
 ```
 
+The app was called Static until 2026-10-26. If you built it then, clean up once before the first Free Roam build. A running Static still registers ⌥Q, so both apps would answer the hotkey. Quit Static from its menu bar menu, then remove the old build:
+
+```sh
+rm -rf dist/Static.app
+# Optional: forget Static's permissions and saved stations
+tccutil reset All com.happys1ngh.static
+defaults delete com.happys1ngh.static
+```
+
 If `prototype/public/sounds/local/` has sounds in it, `bundle.sh` uses them instead of the synthesised ones with the same name, as the prototype's Local pack does. That's only for builds on your own Mac.
 
 macOS asks once to let Free Roam control Music. Screen Recording, which desaturating the screen needs, is optional: Free Roam asks for it only when you choose Allow Screen Recording… in the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.

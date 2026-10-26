@@ -61,6 +61,7 @@ Checked on this Mac or known limits of macOS:
 - [x] MIT `LICENSE`, README stub
 - [x] Create the public repo and push (now `HAPPYS1NGH/free-roam`)
 - [x] You: install Xcode from the App Store (needed before Phase 2)
+- [ ] You, once after the rename from Static: quit Static, run `rm -rf dist/Static.app`, and optionally `tccutil reset All com.happys1ngh.static` and `defaults delete com.happys1ngh.static`. Then run `scripts/make-signing-cert.sh` for the "Free Roam Development" certificate
 
 ## Phase 1: HTML prototype (`prototype/`)
 
