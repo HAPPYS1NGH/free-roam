@@ -33,6 +33,9 @@ struct MusicBridgeTests {
         await #expect(throws: MusicBridgeError.self) {
             try await MusicBridge.artwork(playlistID: "\"; beep", track: 1)
         }
+        await #expect(throws: MusicBridgeError.self) {
+            try await MusicBridge.trackCountAndAlbums(playlistID: "\"; beep")
+        }
     }
 
     @Test func retriesWhileMusicIsStarting() async throws {
@@ -160,6 +163,29 @@ struct MusicBridgeTests {
 
     @Test func parsesAnEmptyPlaylist() {
         #expect(MusicBridge.parseDurations(.list()).isEmpty)
+    }
+
+    @Test func parsesATrackCountAndAlbums() {
+        let missing = NSAppleEventDescriptor(typeCode: OSType(cMissingValue))
+        let albums = list(["Blonde", "Blonde"])
+        albums.insert(missing, at: 3)
+        let result = NSAppleEventDescriptor.list()
+        result.insert(NSAppleEventDescriptor(int32: 4312), at: 1)
+        result.insert(albums, at: 2)
+
+        let parsed = MusicBridge.parseTrackCountAndAlbums(result)
+        #expect(parsed.trackCount == 4312)
+        #expect(parsed.albums == ["Blonde", "Blonde", ""])
+    }
+
+    @Test func parsesTheCountAndAlbumsOfAnEmptyPlaylist() {
+        let result = NSAppleEventDescriptor.list()
+        result.insert(NSAppleEventDescriptor(int32: 0), at: 1)
+        result.insert(.list(), at: 2)
+
+        let parsed = MusicBridge.parseTrackCountAndAlbums(result)
+        #expect(parsed.trackCount == 0)
+        #expect(parsed.albums.isEmpty)
     }
 
     @Test func parsesTheTracksOfAnEmptyPlaylist() {

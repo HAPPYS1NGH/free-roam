@@ -23,9 +23,8 @@ final class RadioWheelModel {
     private static let seekAttempts = 30
     /// How long after a tune that launched Music it's checked for playing.
     private static let launchSettle = Duration.seconds(2)
-    /// How long the wheel counts as in use after ⌥Q comes up or a tune ends:
-    /// long enough for a tap's tune, which waits for Music to say what it's
-    /// playing, and for the 450 ms volume restore.
+    /// How long the wheel counts as in use after it closes, ⌥Q comes up or a
+    /// tune ends: long enough for the 450 ms volume restore.
     private static let quietAfterUse = Duration.seconds(1)
 
     let style: WheelStyle
@@ -43,11 +42,12 @@ final class RadioWheelModel {
     let details: StationDetails
     var slotCount: Int { stations.count + 1 }
 
-    /// ⌥Q is down, the wheel is open, a tune hasn't reached Music, or one of
-    /// those ended within the last second. Settings' cover reads wait
-    /// meanwhile, so they never hold up the wheel's scripts.
+    /// ⌥Q is down, the wheel is open, a tap is waiting to tune, a tune hasn't
+    /// reached Music, or one of those ended within the last second. Settings'
+    /// cover reads wait meanwhile, so they never hold up the wheel's scripts.
     var isInUse: Bool {
-        isOpen || holdTimer != nil || tunesInFlight > 0 || ContinuousClock.now - lastUsed < Self.quietAfterUse
+        isOpen || holdTimer != nil || tapsWaiting > 0 || tunesInFlight > 0
+            || ContinuousClock.now - lastUsed < Self.quietAfterUse
     }
 
     @ObservationIgnored private let stationList: StationList
@@ -90,6 +90,9 @@ final class RadioWheelModel {
     /// ⌥ to come up never launches Music for a station you've left.
     @ObservationIgnored private var tuning: Task<Void, Never>?
     @ObservationIgnored private var lastUsed = ContinuousClock.now - quietAfterUse
+    /// Taps whose tune waits for Music to say what it's playing, which can
+    /// take longer than the quiet second when Music is slow.
+    @ObservationIgnored private var tapsWaiting = 0
 
     init(style: WheelStyle, stations: StationList, details: StationDetails) {
         self.style = style
@@ -211,6 +214,7 @@ final class RadioWheelModel {
     }
 
     private func close() {
+        lastUsed = .now
         dwellTimer?.cancel()
         // Too late to show, if it hasn't landed yet.
         capture?.cancel()
@@ -338,10 +342,14 @@ final class RadioWheelModel {
 
     private func tapNext() {
         stations = Array(stationList.onWheel.prefix(Self.maxStations))
+        tapsWaiting += 1
         Task { [weak self] in
             // The tap is relative to what's playing, which this press asked for.
             await self?.playingRead?.value
             guard let self else { return }
+            // `tune` counts the tune in flight before anything can wait.
+            tapsWaiting -= 1
+            lastUsed = .now
             guard let next = WheelGeometry.nextStation(after: tunedSlot, count: slotCount) else {
                 log.notice("Tapped ⌥Q with no stations to skip to")
                 refreshStations()

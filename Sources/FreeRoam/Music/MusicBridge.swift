@@ -182,6 +182,27 @@ enum MusicBridge {
             """, parse: parseTracks)
     }
 
+    /// How many tracks Settings reads the albums of, to pick a playlist's
+    /// covers. Four albums almost always turn up well within it.
+    static let coverAlbumTracks = 100
+
+    /// For Settings: how many tracks a playlist has, and the albums of its
+    /// first `coverAlbumTracks`, enough to pick its covers. Unlike
+    /// `tracks(playlistID:)`, which reads every track and took seconds for a
+    /// smart playlist of thousands, it costs about the same for any size.
+    static func trackCountAndAlbums(playlistID: String) async throws -> (trackCount: Int, albums: [String]) {
+        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        // Music can't get tracks of an empty playlist (-1728), so it's counted first.
+        return try await run("""
+            set thePlaylist to first user playlist whose persistent ID is "\(playlistID)"
+            set songTotal to count of tracks of thePlaylist
+            if songTotal is 0 then return {0, {}}
+            set lastIndex to songTotal
+            if lastIndex > \(coverAlbumTracks) then set lastIndex to \(coverAlbumTracks)
+            return {songTotal, album of tracks 1 thru lastIndex of thePlaylist}
+            """, parse: parseTrackCountAndAlbums)
+    }
+
     /// The image data of a track's first artwork, usually a 600–1200 px JPEG,
     /// or nil when it has none. Playlists themselves report no artwork.
     static func artwork(playlistID: String, track: Int) async throws -> Data? {
@@ -343,6 +364,12 @@ enum MusicBridge {
             try await Task.sleep(for: interval)
         }
         return clock.now - started
+    }
+
+    /// Reads the `{track count, albums}` pair returned by `trackCountAndAlbums(playlistID:)`.
+    static func parseTrackCountAndAlbums(_ result: NSAppleEventDescriptor) -> (trackCount: Int, albums: [String]) {
+        let trackCount = Int(result.atIndex(1)?.int32Value ?? 0)
+        return (max(trackCount, 0), strings(in: result.atIndex(2)))
     }
 
     /// Reads the `{ids, names}` pair returned by `playlists()`.

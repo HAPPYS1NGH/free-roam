@@ -13,6 +13,7 @@ struct WheelStrip: View {
     let remove: (String) -> Void
     let move: (String, Int) -> Void
     let requestLogo: (String) -> Void
+    let cancelLogo: (String) -> Void
 
     nonisolated static let discSize = 36.0
     /// The wheel's accent ring, which marks the disc under the pointer or
@@ -102,6 +103,7 @@ struct WheelStrip: View {
         .accessibilityAction(named: "Move Earlier") { move(station.id, index - 1) }
         .accessibilityAction(named: "Move Later") { move(station.id, index + 1) }
         .onAppear { requestLogo(station.id) }
+        .onDisappear { cancelLogo(station.id) }
     }
 
     private func removeButton(_ station: Playlist) -> some View {

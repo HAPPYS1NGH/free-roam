@@ -20,6 +20,20 @@ struct StationDetailsTests {
         #expect(StationDetails.coverTracks([]).isEmpty)
     }
 
+    @Test func picksCoversFromAlbumsAlone() {
+        #expect(StationDetails.coverTracks(albums: ["A", "A", "B", "C", "B", "D", "E"]) == [1, 3, 4, 6])
+        #expect(StationDetails.coverTracks(albums: []).isEmpty)
+    }
+
+    @Test func dropsTheLongestUnseenLogosBeyondTheLimit() {
+        let order = ["a", "b", "c", "d", "e"]
+        #expect(StationDetails.logosToDrop(order, onScreen: [], limit: 5).isEmpty)
+        #expect(StationDetails.logosToDrop(order, onScreen: [], limit: 3) == ["a", "b"])
+        // Never one on screen, even when that leaves the cache over its limit.
+        #expect(StationDetails.logosToDrop(order, onScreen: ["a"], limit: 3) == ["b", "c"])
+        #expect(StationDetails.logosToDrop(order, onScreen: Set(order), limit: 3).isEmpty)
+    }
+
     @Test func tilesFourCoversLeftToRightTopToBottom() async throws {
         let colours: [(UInt8, UInt8, UInt8)] = [(255, 0, 0), (0, 255, 0), (0, 0, 255), (255, 255, 255)]
         let logo = try #require(await StationDetails.logo(from: colours.map(png)))

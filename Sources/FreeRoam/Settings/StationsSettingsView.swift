@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Settings' only pane: the stations on the wheel, in order, above every
@@ -29,8 +30,11 @@ struct StationsSettingsView: View {
         )
         // Listing every playlist needs Music, so it opens in the background.
         .onAppear { stations.loadLaunchingMusic() }
-        // A closed window reads no more covers.
-        .onDisappear { details.cancelLogoRequests() }
+        // A closed window reads no more covers and lets go of the ones that
+        // aren't stations. The window closing is the sure sign, and leaving
+        // the window covers anything else that takes the pane away.
+        .onDisappear { details.settingsClosed() }
+        .background(WindowCloseObserver { details.settingsClosed() })
     }
 
     private var phase: StationPicker.Phase {
@@ -177,7 +181,8 @@ struct StationPicker: View {
                     rim: rim,
                     remove: { id in animated { setOn(false, id) } },
                     move: { id, index in animated { move(id, index) } },
-                    requestLogo: requestLogo
+                    requestLogo: requestLogo,
+                    cancelLogo: cancelLogo
                 )
             }
             .padding(.horizontal, Self.margin)
@@ -220,5 +225,35 @@ struct StationPicker: View {
 
     private func animated(_ change: () -> Void) {
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.25), change)
+    }
+}
+
+/// Calls `onClose` when the window holding it closes.
+private struct WindowCloseObserver: NSViewRepresentable {
+    let onClose: () -> Void
+
+    func makeNSView(context: Context) -> ObservingView {
+        ObservingView()
+    }
+
+    func updateNSView(_ view: ObservingView, context: Context) {
+        view.onClose = onClose
+    }
+
+    final class ObservingView: NSView {
+        var onClose: () -> Void = {}
+        private var observer: (any NSObjectProtocol)?
+
+        override func viewDidMoveToWindow() {
+            super.viewDidMoveToWindow()
+            if let observer { NotificationCenter.default.removeObserver(observer) }
+            observer = nil
+            guard let window else { return }
+            observer = NotificationCenter.default.addObserver(
+                forName: NSWindow.willCloseNotification, object: window, queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.onClose() }
+            }
+        }
     }
 }
