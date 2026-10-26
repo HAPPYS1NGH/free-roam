@@ -84,6 +84,7 @@ free-roam/
 ├── Sources/FreeRoam/
 │   ├── FreeRoamApp.swift        # entry point, menu bar icon, app delegate
 │   ├── StatusMenu.swift         # the menu bar menu
+│   ├── PrivacyPane.swift        # opens a permission's list in System Settings
 │   ├── PermissionProbe.swift    # debug builds: `--probe` prints what macOS allows
 │   ├── Info.plist               # copied into Free Roam.app by scripts/bundle.sh
 │   ├── Hotkey.swift             # global press and release (Carbon, no permission)
@@ -109,6 +110,10 @@ free-roam/
 │   ├── Settings/
 │   │   ├── StationList.swift    # the stations on the wheel, saved by persistent ID
 │   │   └── StationsSettingsView.swift # tick and drag playlists onto the wheel
+│   ├── Welcome/
+│   │   ├── WelcomeModel.swift   # both permissions, their Allow buttons and when to show
+│   │   ├── WelcomeView.swift    # the window's text and rows
+│   │   └── WelcomeWindow.swift  # the window at launch
 │   └── Resources/               # the caption font and its OFL licence
 ├── Tests/FreeRoamTests/
 └── scripts/
@@ -126,10 +131,12 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
 - [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Free Roam to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Free Roam's Settings window is active
 - [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle goes off and repeat on, and the caption follows the track Music is actually playing
+- [ ] Welcome window: explains both permissions at launch, with an Allow button for each. Built, needs a hand test
 - [ ] The recording for the first X post, with the local sound pack
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
-- Menu bar menu: Settings… and Quit, plus "Allow Free Roam to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing. Free Roam asks for Screen Recording only from that item, never at launch.
+- Menu bar menu: Settings… and Quit, plus "Allow Free Roam to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing.
+- Welcome window: at launch, a small window explains Control Music and Screen Recording, each with its status and an Allow button. It stops showing once you choose Don't Show This Again or both are allowed. Closing it any other way saves nothing, so it shows again at the next launch. Free Roam asks for Screen Recording only when you choose Allow, in the window or the menu, never by itself. macOS still asks about Music the first time Free Roam sends it a command.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
   - play track N of a playlist (by persistent ID), with shuffle off and repeat on, and set `player position`, for mid-song tune-in

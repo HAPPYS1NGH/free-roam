@@ -277,3 +277,25 @@ Rejected:
 
 - Keeping Static: a quick web search found a radio brand that already uses the name (`output/branding/2026-10-24/prompts.json`).
 - Moving Static's saved stations and permissions across: it never shipped, so there's nothing to move.
+
+## 2026-10-26: A welcome window explains the permissions
+
+Built from the user's brief. Not hand-tested yet: the window, the Music prompt and coming back from System Settings all need checking in the bundled app.
+
+- At launch Free Roam shows a small window that explains its two permissions, Control Music and Screen Recording. Each has a status, Allowed or Not yet, and an Allow button. Below them it says "You can change these later in System Settings.", then come Don't Show This Again and Close.
+- It stops showing once you choose Don't Show This Again, saved as `welcomeDontShowAgain` in `UserDefaults`, or once both permissions are allowed. `WelcomeModel.shouldShow` is the rule, and tests cover it. Closing the window with its close button or Close saves nothing, so it shows again at the next launch, and nothing else nags. People often open an app, close it straight away and come back later, so closing the window doesn't count as saying no.
+- Until now Free Roam asked for Screen Recording only from Allow Screen Recording… in the menu. That was easy to miss, and you had never seen the desaturated backdrop. This replaces "Free Roam now asks only from Allow Screen Recording…" in the Settings entry above. The menu items stay, and Free Roam still never asks for Screen Recording by itself: only an Allow button, in the menu or the window, asks. macOS still asks about Music the first time Free Roam sends it a command, with or without the window.
+- macOS only answers for a running Music. So Allow for Control Music opens Music hidden with `MusicBridge.launch()`, as Settings does, then calls `AEDeterminePermissionToAutomateTarget` with `askUserIfNeeded`. That call blocks until you answer, so it runs on a dispatch thread. Launching ends with a `get version` script, which may bring up the prompt first, and the request then waits for the same answer. Once you've said no, Allow opens Privacy & Security > Automation, as the menu does. Once you've said yes, the playlists load, so the wheel has stations even if Music was closed at launch.
+- Music's last answer is saved as `musicControlAllowed`, because macOS returns `procNotFound` while Music is closed. Without it, the window would come back at every launch with Music closed. The cost: if you switch the permission off in System Settings while Music is closed, the window trusts the old answer until Music runs.
+- The Screen Recording text was checked against the code. The first draft said Free Roam only looks at the screen while the wheel is open, and that isn't true. Free Roam captures the screen with the mouse when ⌥Q goes down, 150 ms before the wheel opens, and throws a tap's capture away. It also captures each display once at launch, and again when one is connected, to warm up, and drops that capture straight away. The still on screen goes once the backdrop has faded, 450 ms after the wheel closes. Nothing in the app writes a file or uses the network, and Core Image keeps no intermediates. So the window says when Free Roam captures, that it keeps captures in memory only until the wheel closes, and that it never saves or sends them.
+- Both statuses are checked again whenever Free Roam becomes active, as when you come back from System Settings. Screen Recording can still read Not yet until Free Roam is reopened, and the window says macOS may ask for that.
+- Rendering the view with `ImageRenderer` in each state found two problems. With the status and button in a column of their own, the text wrapped differently when the button changed, so the window would have changed size while asking. The status and button now share the title's line, and a test checks that every state renders at the same size, 480 pt wide. `ImageRenderer` also can't draw a spinner, and the narrower spinner was what had changed the text's width, so Allow is now disabled while Free Roam asks instead.
+- The window is an `NSWindow` with an `NSHostingController`, not a SwiftUI `Window` scene, because it opens from the app delegate at launch, where `openWindow` isn't available.
+- The window's text names no game.
+
+Rejected:
+
+- Showing the window on the first launch only: closing it straight away would lose it for good.
+- Counting the close button as Don't Show This Again.
+- Keeping the menu items as the only way in: they were easy to miss.
+- A spinner in place of Allow while Free Roam asks: the row's text changed width with it.
