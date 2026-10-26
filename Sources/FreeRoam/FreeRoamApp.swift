@@ -27,6 +27,10 @@ struct FreeRoamApp: App {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     let menu = StatusMenuModel()
     let stations = StationList()
+    /// Shared by the wheel and Settings, which show the same logos.
+    let details = StationDetails()
+    /// Nil when tokens.json is missing, which turns the wheel off.
+    let style = AppDelegate.loadStyle()
     private var wheel: RadioWheelModel?
     private lazy var welcome = WelcomeWindow(stations: stations)
 
@@ -34,15 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         CaptionFont.register()
         stations.reload()
         welcome.showIfNeeded()
-        let style: WheelStyle
-        do {
-            style = try WheelStyle.bundled()
-        } catch {
-            log.error("Couldn't load tokens.json, so the wheel is off: \(String(describing: error), privacy: .public)")
-            return
-        }
-        log.notice("Loaded tokens.json: hold ⌥Q for \(Int(style.behaviour.holdDelayMs)) ms to open the wheel")
-        let wheel = RadioWheelModel(style: style, stations: stations)
+        guard let style else { return }
+        let wheel = RadioWheelModel(style: style, stations: stations, details: details)
+        details.isWheelInUse = { [weak wheel] in wheel?.isInUse ?? false }
         stations.onChange = { [weak wheel] in wheel?.loadDetails(for: $0) }
         // Your saved stations, before Music's playlists have loaded.
         wheel.loadDetails(for: stations.onWheel)
@@ -52,5 +50,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         wheel?.restoreVolumeNow()
+    }
+
+    nonisolated private static func loadStyle() -> WheelStyle? {
+        do {
+            let style = try WheelStyle.bundled()
+            log.notice("Loaded tokens.json: hold ⌥Q for \(Int(style.behaviour.holdDelayMs)) ms to open the wheel")
+            return style
+        } catch {
+            log.error("Couldn't load tokens.json, so the wheel is off: \(String(describing: error), privacy: .public)")
+            return nil
+        }
     }
 }

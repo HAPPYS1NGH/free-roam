@@ -8,10 +8,22 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "statio
 /// Each station's tracks, for the caption's on-air line, and its logo: a 2×2
 /// mosaic of covers from the playlist's first four albums. Music's scripting
 /// interface reports no playlist artwork, so the covers come from tracks.
+/// Settings asks for the logos of playlists that aren't on the wheel too.
 ///
 /// Everything loads in the background and the wheel draws whatever has
 /// arrived, so opening it never waits for Music. Scripts run one at a time,
 /// so a tune queued behind the loader waits for one script at most.
+///
+/// Settings' logos must never hold up a tune, and each one costs a tracks
+/// read and up to four 30–50 ms cover reads on that same queue. So they come
+/// after any station waiting to load, one script at a time, and each script
+/// waits while the wheel is in use: held, open, tuning, or just after. A
+/// cover read already running when ⌥Q goes down still finishes first, so the
+/// press's read of what Music is playing, and a tap's tune after it, can
+/// wait for that one script, about 50 ms. Settings only asks for the tiles
+/// on screen, and drops a tile's request when it scrolls away or the window
+/// closes, so a closed window reads nothing. Logos stay cached for as long
+/// as Free Roam runs.
 @MainActor @Observable
 final class StationDetails {
     nonisolated static let coversPerLogo = 4
@@ -20,10 +32,17 @@ final class StationDetails {
     nonisolated static let logoPixels = 320
 
     private(set) var tracks: [String: [Track]] = [:]
-    /// Missing for a station with no artwork, or whose covers are still loading.
+    /// Missing for a playlist with no artwork, or whose covers are still loading.
     private(set) var logos: [String: CGImage] = [:]
+    /// How many tracks each playlist had when its tracks were last read, for
+    /// Settings. Unknown until then.
+    private(set) var songCounts: [String: Int] = [:]
+    /// Whether the wheel is held, open or tuning, set by the wheel.
+    @ObservationIgnored var isWheelInUse: () -> Bool = { false }
 
     @ObservationIgnored private var queued: [String] = []
+    /// Playlists whose Settings tile is on screen without a logo, oldest first.
+    @ObservationIgnored private var requested: [String] = []
     @ObservationIgnored private var loading: Task<Void, Never>?
 
     /// Loads stations that haven't loaded yet. Nothing loads while Music
@@ -41,18 +60,57 @@ final class StationDetails {
         enqueue([id])
     }
 
+    /// For a Settings tile on screen: loads the playlist's logo and song
+    /// count, unless they've loaded already.
+    func requestLogo(_ id: String) {
+        guard songCounts[id] == nil, !requested.contains(id) else { return }
+        requested.append(id)
+        startLoading()
+    }
+
+    /// The tile scrolled away, so its logo can wait until it's back.
+    func cancelLogo(_ id: String) {
+        requested.removeAll { $0 == id }
+    }
+
+    /// Settings closed.
+    func cancelLogoRequests() {
+        requested.removeAll()
+    }
+
     private func enqueue(_ ids: [String]) {
         queued.append(contentsOf: ids.filter { !queued.contains($0) })
-        guard loading == nil, !queued.isEmpty, MusicBridge.isRunning else { return }
+        startLoading()
+    }
+
+    private func startLoading() {
+        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicBridge.isRunning else { return }
         loading = Task {
             await loadQueued()
             loading = nil
         }
     }
 
+    /// Stations first, then the logos Settings asked for.
+    private func loadQueued() async {
+        while MusicBridge.isRunning {
+            if !queued.isEmpty {
+                await loadStations()
+            } else if let id = requested.first {
+                if songCounts[id] == nil {
+                    await loadRequestedLogo(id)
+                } else {
+                    requested.removeFirst()
+                }
+            } else {
+                return
+            }
+        }
+    }
+
     /// Tracks for every station first, because they're quick and the caption
     /// needs them, then the covers.
-    private func loadQueued() async {
+    private func loadStations() async {
         let clock = ContinuousClock()
         while !queued.isEmpty {
             let started = clock.now
@@ -64,6 +122,7 @@ final class StationDetails {
                     // An empty playlist isn't kept, so it's read again on the
                     // next open in case it has tracks by then.
                     tracks[id] = stationTracks.isEmpty ? nil : stationTracks
+                    songCounts[id] = stationTracks.count
                     if stationTracks.isEmpty { logos[id] = nil }
                 } catch {
                     log.error("Couldn't read the tracks of \(id, privacy: .public): \(String(describing: error), privacy: .public)")
@@ -73,7 +132,7 @@ final class StationDetails {
             var covers = 0
             for id in batch {
                 guard MusicBridge.isRunning, let stationTracks = tracks[id] else { continue }
-                let data = await coverData(id, stationTracks)
+                let data = await coverData(id, tracks: Self.coverTracks(stationTracks))
                 covers += data.count
                 logos[id] = await Self.logo(from: data)
             }
@@ -85,9 +144,43 @@ final class StationDetails {
         }
     }
 
-    private func coverData(_ id: String, _ stationTracks: [Track]) async -> [Data] {
+    /// Stops when the tile scrolls away, a station needs loading or Music
+    /// quits, and the playlist starts again from its tracks next time.
+    private func loadRequestedLogo(_ id: String) async {
+        guard await mayRead(for: id) else { return }
+        let playlistTracks: [Track]
+        do {
+            playlistTracks = try await MusicBridge.tracks(playlistID: id)
+        } catch {
+            log.error("Couldn't read the tracks of \(id, privacy: .public) for Settings: \(String(describing: error), privacy: .public)")
+            // Tried again when its tile next comes on screen.
+            requested.removeAll { $0 == id }
+            return
+        }
         var covers: [Data] = []
-        for track in Self.coverTracks(stationTracks) {
+        for track in Self.coverTracks(playlistTracks) {
+            guard await mayRead(for: id) else { return }
+            covers += await coverData(id, tracks: [track])
+        }
+        logos[id] = await Self.logo(from: covers)
+        songCounts[id] = playlistTracks.count
+        requested.removeAll { $0 == id }
+    }
+
+    /// Waits while the wheel is in use, polling because the wheel's scripts
+    /// come and go within a second. False once the tile's request is gone,
+    /// a station is waiting, which goes first, or Music has quit.
+    private func mayRead(for id: String) async -> Bool {
+        while isWheelInUse(), queued.isEmpty, requested.contains(id) {
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+        return queued.isEmpty && requested.contains(id) && MusicBridge.isRunning
+    }
+
+    /// The covers of the given 1-based tracks that have one.
+    private func coverData(_ id: String, tracks picks: [Int]) async -> [Data] {
+        var covers: [Data] = []
+        for track in picks {
             do {
                 if let data = try await MusicBridge.artwork(playlistID: id, track: track) { covers.append(data) }
             } catch {

@@ -23,6 +23,10 @@ final class RadioWheelModel {
     private static let seekAttempts = 30
     /// How long after a tune that launched Music it's checked for playing.
     private static let launchSettle = Duration.seconds(2)
+    /// How long the wheel counts as in use after ⌥Q comes up or a tune ends:
+    /// long enough for a tap's tune, which waits for Music to say what it's
+    /// playing, and for the 450 ms volume restore.
+    private static let quietAfterUse = Duration.seconds(1)
 
     let style: WheelStyle
     /// Slot 0 is Radio Off, so station `i` is in slot `i + 1`.
@@ -36,8 +40,15 @@ final class RadioWheelModel {
     /// permission, and until the capture lands or if it failed.
     var still: CGImage? { stills.shown }
     private var stills = StillHandoff()
-    let details = StationDetails()
+    let details: StationDetails
     var slotCount: Int { stations.count + 1 }
+
+    /// ⌥Q is down, the wheel is open, a tune hasn't reached Music, or one of
+    /// those ended within the last second. Settings' cover reads wait
+    /// meanwhile, so they never hold up the wheel's scripts.
+    var isInUse: Bool {
+        isOpen || holdTimer != nil || tunesInFlight > 0 || ContinuousClock.now - lastUsed < Self.quietAfterUse
+    }
 
     @ObservationIgnored private let stationList: StationList
     @ObservationIgnored private let hotkey = Hotkey(keyCode: kVK_ANSI_Q, modifiers: .option)
@@ -78,10 +89,12 @@ final class RadioWheelModel {
     /// The latest tune. The next pick cancels it, so a tune still waiting for
     /// ⌥ to come up never launches Music for a station you've left.
     @ObservationIgnored private var tuning: Task<Void, Never>?
+    @ObservationIgnored private var lastUsed = ContinuousClock.now - quietAfterUse
 
-    init(style: WheelStyle, stations: StationList) {
+    init(style: WheelStyle, stations: StationList, details: StationDetails) {
         self.style = style
         stationList = stations
+        self.details = details
         volumeDip = VolumeDip(
             fraction: style.behaviour.duckVolume,
             lowerSeconds: style.animations.filterIn.duration,
@@ -126,6 +139,7 @@ final class RadioWheelModel {
 
     private func press() {
         guard !isOpen, holdTimer == nil else { return }
+        lastUsed = .now
         readPlaying()
         // Both a hold and a tap end in a sound.
         sounds.prepare()
@@ -140,6 +154,7 @@ final class RadioWheelModel {
     }
 
     private func release(optionFirst: Bool) {
+        lastUsed = .now
         if optionFirst { log.notice("⌥ came up before Q, which ends the hold") }
         if let holdTimer {
             holdTimer.cancel()
@@ -350,6 +365,7 @@ final class RadioWheelModel {
         tuning = Task { [weak self] in
             await self?.playOnAir(id)
             self?.tunesInFlight -= 1
+            self?.lastUsed = .now
             self?.refreshStations()
         }
     }
