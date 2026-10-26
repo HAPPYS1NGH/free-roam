@@ -55,3 +55,34 @@ struct WelcomeRenderTests {
         #expect(sizes[0][1] < 700)
     }
 }
+
+struct MusicPermissionMemoryTests {
+    /// A throwaway defaults domain, so nothing touches the app's own.
+    private let defaults: UserDefaults
+
+    init() throws {
+        let suite = "MusicPermissionMemoryTests.\(UUID().uuidString)"
+        defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    @Test func keepsEachAnswerMusicGives() {
+        #expect(!MusicPermissionMemory.lastAnswer(in: defaults))
+        MusicPermissionMemory.record(.allowed, in: defaults)
+        #expect(MusicPermissionMemory.lastAnswer(in: defaults))
+        MusicPermissionMemory.record(.denied, in: defaults)
+        #expect(!MusicPermissionMemory.lastAnswer(in: defaults))
+        // A script that ran says yes, and one Music refused says no.
+        MusicPermissionMemory.record(allowed: true, in: defaults)
+        #expect(MusicPermissionMemory.lastAnswer(in: defaults))
+        MusicPermissionMemory.record(.notAsked, in: defaults)
+        #expect(!MusicPermissionMemory.lastAnswer(in: defaults))
+    }
+
+    @Test func ignoresChecksThatCouldntReachMusic() {
+        MusicPermissionMemory.record(.allowed, in: defaults)
+        MusicPermissionMemory.record(.musicNotRunning, in: defaults)
+        MusicPermissionMemory.record(.unknown(-1), in: defaults)
+        #expect(MusicPermissionMemory.lastAnswer(in: defaults))
+    }
+}

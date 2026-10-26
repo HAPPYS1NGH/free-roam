@@ -22,8 +22,6 @@ final class WelcomeModel {
 
     /// Set by Don't Show This Again.
     nonisolated static let dontShowAgainKey = "welcomeDontShowAgain"
-    /// Whether Music last said Free Roam may control it.
-    nonisolated static let musicAllowedKey = "musicControlAllowed"
 
     init(stations: StationList) {
         self.stations = stations
@@ -40,11 +38,7 @@ final class WelcomeModel {
     /// so otherwise its last answer stands. Without that, the window would
     /// come back at every launch with Music closed.
     nonisolated static func isMusicAllowed(_ permission: MusicPermission, lastAnswer: Bool) -> Bool {
-        switch permission {
-        case .allowed: true
-        case .denied, .notAsked: false
-        case .musicNotRunning, .unknown: lastAnswer
-        }
+        permission.isAllowed ?? lastAnswer
     }
 
     var shouldShow: Bool {
@@ -98,8 +92,8 @@ final class WelcomeModel {
 
     private func update(music permission: MusicPermission) {
         musicPermission = permission
-        let allowed = Self.isMusicAllowed(permission, lastAnswer: defaults.bool(forKey: Self.musicAllowedKey))
-        defaults.set(allowed, forKey: Self.musicAllowedKey)
+        // `MusicBridge` has already recorded the answer, if Music gave one.
+        let allowed = Self.isMusicAllowed(permission, lastAnswer: MusicPermissionMemory.lastAnswer())
         guard allowed != musicAllowed else { return }
         musicAllowed = allowed
         log.notice("Control Music is \(allowed ? "allowed" : "not allowed", privacy: .public) (\(permission.label, privacy: .public))")

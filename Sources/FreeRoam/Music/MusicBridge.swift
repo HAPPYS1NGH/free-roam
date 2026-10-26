@@ -38,6 +38,15 @@ enum MusicPermission: Equatable, Sendable {
     case musicNotRunning
     case unknown(OSStatus)
 
+    /// Nil when Music couldn't say, because it isn't running.
+    var isAllowed: Bool? {
+        switch self {
+        case .allowed: true
+        case .denied, .notAsked: false
+        case .musicNotRunning, .unknown: nil
+        }
+    }
+
     var label: String {
         switch self {
         case .allowed: "allowed"
@@ -134,13 +143,15 @@ enum MusicBridge {
         let status = AEDeterminePermissionToAutomateTarget(
             music.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), askingIfNeeded
         )
-        switch Int(status) {
-        case Int(noErr): return .allowed
-        case errAEEventNotPermitted: return .denied
-        case errAEEventWouldRequireUserConsent: return .notAsked
-        case procNotFound: return .musicNotRunning
-        default: return .unknown(status)
+        let permission: MusicPermission = switch Int(status) {
+        case Int(noErr): .allowed
+        case errAEEventNotPermitted: .denied
+        case errAEEventWouldRequireUserConsent: .notAsked
+        case procNotFound: .musicNotRunning
+        default: .unknown(status)
         }
+        MusicPermissionMemory.record(permission)
+        return permission
     }
 
     /// User playlists in library order, without folders or Music's own lists.
@@ -449,7 +460,14 @@ enum MusicBridge {
     private static func execute(_ body: String) throws -> NSAppleEventDescriptor {
         let music = NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).first { !$0.isTerminated }
         guard let music else { throw MusicBridgeError.notRunning }
-        return try execute(body, terms: bundleID, in: music.processIdentifier)
+        do {
+            let result = try execute(body, terms: bundleID, in: music.processIdentifier)
+            MusicPermissionMemory.record(allowed: true)
+            return result
+        } catch MusicBridgeError.notPermitted {
+            MusicPermissionMemory.record(allowed: false)
+            throw MusicBridgeError.notPermitted
+        }
     }
 
     /// Runs `body` with the terms of `appID`, sending every Apple Event it
