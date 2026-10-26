@@ -299,3 +299,26 @@ Rejected:
 - Counting the close button as Don't Show This Again.
 - Keeping the menu items as the only way in: they were easy to miss.
 - A spinner in place of Allow while Free Roam asks: the row's text changed width with it.
+
+## 2026-10-26: Settings picks stations from a grid of covers
+
+Built from the user's brief, to replace the list of checkboxes. Not hand-tested yet. This replaces the single list in the Settings entry of 2026-10-23.
+
+- The pane has the wheel's stations at the top, in wheel order, as the wheel's own discs (`StationDisc` and the same 2×2 mosaic), each with its place. Below them are a search field and a grid of every playlist in Music, in library order. Each tile is a square cover with the name and song count. Clicking a tile puts it on the end of the wheel or takes it off. A station's tile gets the wheel's accent ring and a badge with a check and its place. At 25, the other tiles grey out and a line says the wheel holds 25.
+- Drag a disc to move it. It takes each place as the pointer reaches it, and every move is saved, as before. Its × on hover, or Delete once it has focus, takes it off. With focus, ← and → move it. The discs wrap into rows, because dragging to a place scrolled out of view needs autoscroll. At 36 pt, all 25 fit in two rows down to the window's 660 pt minimum width, and a test pins that.
+- Turning a playlist on now moves it to the end of the wheel. Before, a ticked playlist went wherever it sat in the list. A move works in wheel order: the station goes before the one in its new place. Playlists that are off or missing keep their places among the saved entries. Saving by persistent ID, hiding missing playlists, and new playlists joining the end while there's room all work as before. The existing tests keep their checks and only call the new move. The rules are pure functions on `StationList`, with tests: turning on and off, the 25 cap, moving and the search.
+- The search matches every word of it, in any order, ignoring case and accents.
+- States: loading while Music opens in the background, no playlists, Music permission denied, any other error, and a search with no results. The denied state opens Privacy & Security > Automation through `PrivacyPane` and has Try Again, because coming back from System Settings doesn't reopen the window.
+- Only stations loaded their covers until now. `StationDetails` now reads the covers of other playlists when Settings asks, as their tiles come on screen, and keeps them while Free Roam runs, about 400 KB each. Each playlist costs a tracks read, about 40 ms, and up to four 30–50 ms cover reads, on the same one-at-a-time queue as tunes. So these reads come after any station waiting to load, run one script at a time, and each script waits while the wheel is in use. That covers ⌥Q being down, the wheel being open, a tune that hasn't reached Music, and the second after any of those. The second covers a tap, whose tune waits for Music to say what it's playing, and the 450 ms volume restore. A tile drops its request when it scrolls away, and closing the window drops them all. A cover read already running when ⌥Q goes down still finishes first, so a tap can wait for that one script, as it could behind the station loader.
+- The song count comes from that same tracks read, so it costs nothing extra. Until a playlist's tracks have been read, its tile leaves the count blank.
+- The wheel and Settings share one `StationDetails`, which the app delegate owns. tokens.json now loads when the app delegate is made, so Settings can use the ring colour and the disc's rim. Without tokens.json, Settings falls back to the system accent colour.
+- VoiceOver reads tiles and discs as buttons, such as "Gym, on the wheel, slot 3", with the song count as a tile's value. A disc's default action takes it off, and it has Move Earlier and Move Later actions. The search field takes focus when the grid appears, so you can type straight away. With Keyboard navigation on in System Settings, Tab reaches every tile and Space clicks it.
+- The window opens at about 720×600 and resizes from 660×480. It's SwiftUI, with AppKit's own search field for the native look and Escape to clear, and no new dependencies.
+- `ImageRenderer` draws a text field, a scroll view and a spinner as placeholders on macOS, so the picker was checked by snapshotting an `NSHostingView` in an offscreen window instead. That turned up two problems. `ContentUnavailableView` sat in the top left corner until it got a full-size frame. And with 40 pt discs and room kept for the ring, 25 stations took three rows and left the grid less than one row at the minimum height, so the discs shrank and the ring now draws into the gap. The snapshot doesn't draw Core Animation filters, so the greyed-out tiles showed faded but not grey.
+
+Rejected:
+
+- A horizontal strip that scrolls: dragging a station to a place out of view needs autoscroll.
+- Clicking a disc to take it off: it's too easy to do when starting a drag.
+- Reading song counts with the playlist list: Music has no track count for a playlist, so it would mean a script per playlist on every read, and the list is read after every wheel close.
+- A second, lower priority inside `MusicBridge`'s queue: the wheel already knows when it's busy, as the playlist read after a close does.

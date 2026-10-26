@@ -109,7 +109,10 @@ free-roam/
 │   │   └── VolumeDip.swift      # Music quieter while the wheel is open
 │   ├── Settings/
 │   │   ├── StationList.swift    # the stations on the wheel, saved by persistent ID
-│   │   └── StationsSettingsView.swift # tick and drag playlists onto the wheel
+│   │   ├── StationsSettingsView.swift # the Stations pane and its states
+│   │   ├── WheelStrip.swift     # the stations as discs, dragged into order
+│   │   ├── PlaylistGrid.swift   # every playlist's cover, clicked on or off the wheel
+│   │   └── SearchField.swift    # AppKit's search field
 │   ├── Welcome/
 │   │   ├── WelcomeModel.swift   # both permissions, their Allow buttons and when to show
 │   │   ├── WelcomeView.swift    # the window's text and rows
@@ -132,6 +135,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Free Roam to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Free Roam's Settings window is active
 - [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle goes off and repeat on, and the caption follows the track Music is actually playing
 - [ ] Welcome window: explains both permissions at launch, with an Allow button for each. Built, needs a hand test
+- [ ] Stations picker: the stations as discs above a grid of every playlist's cover, with search. Built, needs a hand test
 - [ ] The recording for the first X post, with the local sound pack
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
@@ -147,7 +151,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
   - check whether Music is running
 - Playlists are always addressed by persistent ID and names are escaped, so a playlist called `"; do shell script …` can't inject AppleScript.
 - Volume dip: ramp to 40% when the wheel opens. Restore it when the wheel closes and when the app quits.
-- Settings: choose which playlists appear and in what order, saved in `UserDefaults` by persistent ID. Until you change anything, the wheel follows library order. After that, new playlists join the end while the wheel has room, and ones you switched off stay off. Opening Settings launches Music hidden if it's closed.
+- Settings: the stations as the wheel's discs, in order, above a searchable grid of every playlist's cover. Drag a disc to move it. Click a cover to put it on the end of the wheel or take it off. Choices are saved in `UserDefaults` by persistent ID. Until you change anything, the wheel follows library order. After that, new playlists join the end while the wheel has room, and ones you switched off stay off. Opening Settings launches Music hidden if it's closed. Covers of playlists that aren't stations load as their tiles come on screen, only while the wheel is idle.
 - Backdrop: desaturate other apps through a screen capture, as decided in [DECISIONS.md](DECISIONS.md). That needs Screen Recording permission. If it's denied, show the vignette and tint only, which need none.
 - Edge cases:
   - Music isn't running: don't launch it just to show the wheel; launch it when a station is picked.
