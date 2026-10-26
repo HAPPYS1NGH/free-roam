@@ -9,13 +9,19 @@ import { listFiles, publicAssets } from './public-assets.mjs'
 const dist = fileURLToPath(new URL('../dist/', import.meta.url))
 const files = listFiles(dist)
 const sha256 = path => createHash('sha256').update(readFileSync(path)).digest('hex')
-// Gitignored files on this Mac that must never ship, even copied under another name.
+// Gitignored files on the building Mac that must never ship, even under another
+// name. A host's checkout has neither folder, so there it can only report a skip.
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url))
 const privateCopies = new Map()
 for (const folder of ['sounds/local', 'wallpaper']) {
   const root = join(publicDir, folder)
-  if (!existsSync(root)) continue
-  for (const file of listFiles(root)) privateCopies.set(sha256(join(root, file)), `${folder}/${file}`)
+  const privateFiles = existsSync(root) ? listFiles(root) : []
+  if (privateFiles.length === 0) {
+    console.log(`Copy check: skipped public/${folder}/, which is missing or empty.`)
+    continue
+  }
+  for (const file of privateFiles) privateCopies.set(sha256(join(root, file)), `${folder}/${file}`)
+  console.log(`Copy check: looking for byte-identical copies of the ${privateFiles.length} files in public/${folder}/.`)
 }
 const origin = siteOrigin(process.env.SITE_URL, process.env.RELEASE_BUILD === '1')
 const allowed = new Set([...publicAssets, 'index.html', 'free-roam/index.html', ...(origin ? ['robots.txt', 'sitemap.xml'] : [])])
