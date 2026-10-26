@@ -35,7 +35,7 @@ function MenuBar({ wheelOpen }: { wheelOpen: boolean }) {
         <span>Help</span>
       </div>
       <div className="menubar-group">
-        <span className="menubar-static" data-active={wheelOpen || undefined}>
+        <span className="menubar-free-roam" data-active={wheelOpen || undefined}>
           <RadioIcon />
         </span>
         <span>100%</span>
@@ -70,7 +70,7 @@ const Editor = memo(function Editor() {
           <span />
           <span />
         </span>
-        MusicBridge.swift — static
+        MusicBridge.swift — free-roam
       </div>
       <pre>
         {code.map((tokens, line) => (

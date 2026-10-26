@@ -1,7 +1,7 @@
 #!/bin/bash
-# Builds dist/Static.app from the Swift package and signs it.
+# Builds dist/Free Roam.app from the Swift package and signs it.
 #
-#   scripts/bundle.sh          build dist/Static.app
+#   scripts/bundle.sh          build dist/Free Roam.app
 #   scripts/bundle.sh --run    build, quit the running copy and open the new one
 #
 # BUILD_NUMBER overrides CFBundleVersion, which defaults to the commit count.
@@ -9,17 +9,17 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-APP="$PWD/dist/Static.app"
+APP="$PWD/dist/Free Roam.app"
 BUILD_NUMBER="${BUILD_NUMBER:-$(git rev-list --count HEAD)}"
-SIGN_IDENTITY="Static Development"
+SIGN_IDENTITY="Free Roam Development"
 
-swift build --product Static
+swift build --product FreeRoam
 BIN_DIR="$(swift build --show-bin-path)"
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp "$BIN_DIR/Static" "$APP/Contents/MacOS/Static"
-cp Sources/Static/Info.plist "$APP/Contents/Info.plist"
+cp "$BIN_DIR/FreeRoam" "$APP/Contents/MacOS/FreeRoam"
+cp Sources/FreeRoam/Info.plist "$APP/Contents/Info.plist"
 
 # Resources go in Contents/Resources and are read through Bundle.main. SwiftPM
 # resource bundles expect to sit next to Contents, where codesign rejects them.
@@ -38,7 +38,7 @@ for sound in open close hover "$RETUNE_TAKE"; do
   cp "$source" "$APP/Contents/Resources/$sound.wav"
 done
 # The caption font and its licence (SIL OFL), which has to travel with it.
-cp Sources/Static/Resources/SofiaSansExtraCondensed-SemiBold.ttf Sources/Static/Resources/OFL.txt "$APP/Contents/Resources/"
+cp Sources/FreeRoam/Resources/SofiaSansExtraCondensed-SemiBold.ttf Sources/FreeRoam/Resources/OFL.txt "$APP/Contents/Resources/"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"
 
 # Ad-hoc signatures change with every build, and macOS drops Screen Recording
@@ -54,8 +54,8 @@ fi
 echo "Built $APP (build $BUILD_NUMBER)"
 
 if [[ "${1:-}" == "--run" ]]; then
-  # Matching the full path leaves any other process called Static alone.
-  pkill -f "$APP/Contents/MacOS/Static" || true
-  while pgrep -f "$APP/Contents/MacOS/Static" >/dev/null; do sleep 0.1; done
+  # Matching the full path leaves any other process called FreeRoam alone.
+  pkill -f "$APP/Contents/MacOS/FreeRoam" || true
+  while pgrep -f "$APP/Contents/MacOS/FreeRoam" >/dev/null; do sleep 0.1; done
   open "$APP"
 fi

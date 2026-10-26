@@ -23,5 +23,5 @@ test('landing prerender stays identical across broadcast times and includes appr
   for (const name of ['God&#x27;s Favorite', 'gym', 'PLow', 'Morning Playlist']) {
     assert.ok(built.includes(`Tune to ${name}`), name)
   }
-  assert.ok(built.includes('sound effects from Static'))
+  assert.ok(built.includes('sound effects from the Mac app'))
 })

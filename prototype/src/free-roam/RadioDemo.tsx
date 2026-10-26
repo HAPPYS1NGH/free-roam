@@ -35,6 +35,6 @@ export function RadioDemo() {
     <WheelFace highlighted={wheel.open ? wheel.highlighted : selected} onChoose={wheel.choose} />
     <p className="demo-instruction">Tap a station, or hold <kbd>Q</kbd> and move or scroll. Let go to choose.</p>
     <div className="demo-options"><button className="inline-off" onClick={() => wheel.choose(0)}>Radio Off</button><AudioToggle audio={audio} /></div>
-    <p className="demo-disclaimer">Personal playlists & popular picks · sound effects from Static</p>
+    <p className="demo-disclaimer">Personal playlists & popular picks · sound effects from the Mac app</p>
   </section>
 }

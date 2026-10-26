@@ -1,13 +1,13 @@
 #!/bin/bash
-# Creates a self-signed code signing certificate called "Static Development"
+# Creates a self-signed code signing certificate called "Free Roam Development"
 # in your login keychain, for scripts/bundle.sh to sign with.
 #
-# An ad-hoc signature changes with every build, and macOS drops Static's
+# An ad-hoc signature changes with every build, and macOS drops Free Roam's
 # Screen Recording permission whenever it does. A certificate gives every
 # build the same identity, so the permission sticks. Run it once per Mac.
 set -euo pipefail
 
-NAME="Static Development"
+NAME="Free Roam Development"
 KEYCHAIN="$HOME/Library/Keychains/login.keychain-db"
 
 if security find-identity -p codesigning "$KEYCHAIN" | grep -q "\"$NAME\""; then

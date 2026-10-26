@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "Static",
+    name: "FreeRoam",
     platforms: [.macOS(.v14)],
     targets: [
-        // scripts/bundle.sh copies Info.plist and Resources into Static.app.
-        .executableTarget(name: "Static", path: "Sources/Static", exclude: ["Info.plist", "Resources"]),
-        .testTarget(name: "StaticTests", dependencies: ["Static"], path: "Tests/StaticTests"),
+        // scripts/bundle.sh copies Info.plist and Resources into Free Roam.app.
+        .executableTarget(name: "FreeRoam", path: "Sources/FreeRoam", exclude: ["Info.plist", "Resources"]),
+        .testTarget(name: "FreeRoamTests", dependencies: ["FreeRoam"], path: "Tests/FreeRoamTests"),
     ]
 )

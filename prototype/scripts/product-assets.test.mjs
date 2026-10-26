@@ -20,7 +20,7 @@ test('the demo publishes the synthesised sounds a release build ships, byte for 
   }
 })
 
-test('web wheel settings match the installed Static app', () => {
+test('web wheel settings match the Mac app', () => {
   const tokens = JSON.parse(readFileSync(new URL('../tokens.json', import.meta.url), 'utf8'))
   for (const section of ['animations', 'sizes', 'colors', 'flags', 'behaviour']) {
     assert.deepEqual(tokens[section], reference.settings[section], section)

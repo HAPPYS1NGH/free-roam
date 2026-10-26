@@ -29,7 +29,7 @@ export function buildTokens(name: string, values: Record<string, unknown>, behav
     }
   }
 
-  return { app: "Static", name, exportedAt: new Date().toISOString(), animations, sizes, colors, flags, behaviour }
+  return { app: "Free Roam", name, exportedAt: new Date().toISOString(), animations, sizes, colors, flags, behaviour }
 }
 
 export function downloadJson(filename: string, data: unknown) {
