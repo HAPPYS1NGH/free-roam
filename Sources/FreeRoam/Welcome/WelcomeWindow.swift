@@ -68,6 +68,7 @@ final class WelcomeWindow: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
+        model.stopAskingForMusic()
         if !model.dontShowAgain {
             log.notice("Closed the welcome window, so it shows again at the next launch")
         }

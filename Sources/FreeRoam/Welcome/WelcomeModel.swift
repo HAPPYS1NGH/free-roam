@@ -17,6 +17,7 @@ final class WelcomeModel {
     }
 
     @ObservationIgnored private var musicPermission = MusicPermission.notAsked
+    @ObservationIgnored private var askingForMusic: Task<Void, Never>?
     @ObservationIgnored private let stations: StationList
     @ObservationIgnored private let defaults = UserDefaults.standard
 
@@ -56,33 +57,56 @@ final class WelcomeModel {
         }
     }
 
-    /// Opens Music hidden if it's closed, as Settings does, because macOS
-    /// only asks about a running app, then shows macOS's prompt. Once you've
-    /// said no, only System Settings can change it.
     func allowMusic() {
         guard musicPermission != .denied else {
             PrivacyPane.automation.open()
             return
         }
-        guard !isAskingForMusic else { return }
+        guard askingForMusic == nil else { return }
         isAskingForMusic = true
-        Task {
-            defer { isAskingForMusic = false }
-            if !MusicBridge.isRunning {
-                do {
-                    try await MusicBridge.launch()
-                } catch {
-                    // Launching ends with a script, which can bring up the prompt
-                    // and time out or fail while it's up, so the request below
-                    // still gets the answer.
-                    log.error("Launching Music to ask for permission ended with: \(String(describing: error), privacy: .public)")
-                }
+        askingForMusic = Task {
+            defer {
+                isAskingForMusic = false
+                askingForMusic = nil
             }
-            update(music: await MusicBridge.requestPermission())
-            // The wheel can now list the playlists, which it couldn't at launch
-            // with Music closed.
-            if musicAllowed { stations.reload() }
+            do {
+                try await askForMusic()
+            } catch is CancellationError {
+                log.notice("Stopped asking about Music: the welcome window closed")
+            } catch {
+                log.error("Couldn't ask about Music: \(String(describing: error), privacy: .public)")
+            }
         }
+    }
+
+    /// For when the window closes, so a wait for ⌥ can't open Music later.
+    func stopAskingForMusic() {
+        askingForMusic?.cancel()
+    }
+
+    /// Opens Music hidden if it's closed, as Settings does, because macOS
+    /// only answers for a running app. The first check never prompts, so a
+    /// no from before can be told apart from one you give in the prompt. Only
+    /// System Settings can change an earlier no, so that opens instead.
+    private func askForMusic() async throws {
+        if !MusicBridge.isRunning { try await MusicBridge.openHidden() }
+        update(music: try await MusicBridge.permissionOnceStarted())
+        try Task.checkCancellation()
+        switch musicPermission {
+        case .denied:
+            PrivacyPane.automation.open()
+            return
+        case .notAsked:
+            update(music: await MusicBridge.requestPermission())
+            try Task.checkCancellation()
+        default:
+            break
+        }
+        guard musicPermission == .allowed else { return }
+        // The wheel can now list the playlists, which it couldn't at launch
+        // with Music closed, once Music takes scripts.
+        try await MusicBridge.waitUntilAnswering()
+        stations.reload()
     }
 
     func allowScreenRecording() {

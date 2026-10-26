@@ -154,6 +154,21 @@ enum MusicBridge {
         return permission
     }
 
+    /// Never prompts. A Music that has only just started may not be ready to
+    /// be asked, so this waits for it as scripts do. Throws `notRunning` if
+    /// Music quits meanwhile.
+    static func permissionOnceStarted() async throws -> MusicPermission {
+        var answer = MusicPermission.musicNotRunning
+        try await retryWhileStarting(for: .seconds(15)) {
+            guard isRunning else { throw MusicBridgeError.notRunning }
+            answer = permission()
+            if answer == .musicNotRunning {
+                throw MusicBridgeError.script(code: Int(procNotFound), message: "Music can't be asked yet")
+            }
+        }
+        return answer
+    }
+
     /// User playlists in library order, without folders or Music's own lists.
     static func playlists() async throws -> [Playlist] {
         // Variable names have to avoid Music's own terms: `names` is one of
@@ -310,10 +325,17 @@ enum MusicBridge {
     }
 
     /// Opens Music hidden, so the app you're in stays active and in front,
-    /// and waits until it answers scripts. This is the only way Free Roam starts
-    /// Music: every script throws `notRunning` instead. Cancelling the task
-    /// while it waits for ⌥ leaves Music closed.
+    /// and waits until it answers scripts. With `openHidden()`, this is the
+    /// only way Free Roam starts Music: every script throws `notRunning`
+    /// instead. Cancelling the task while it waits for ⌥ leaves Music closed.
     static func launch() async throws {
+        try await openHidden()
+        try await waitUntilAnswering()
+    }
+
+    /// Opens Music hidden without waiting for it to answer scripts.
+    /// Cancelling the task while it waits for ⌥ leaves Music closed.
+    static func openHidden() async throws {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
             throw MusicBridgeError.notInstalled
         }
@@ -331,6 +353,12 @@ enum MusicBridge {
         configuration.activates = false
         configuration.hides = true
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
+    }
+
+    /// Music is listed as running before it takes scripts, so this waits
+    /// until it answers one. The script raises macOS's prompt if Free Roam
+    /// hasn't been allowed or refused yet.
+    static func waitUntilAnswering() async throws {
         try await retryWhileStarting(for: .seconds(15)) {
             try await run("get version") { _ in }
         }
