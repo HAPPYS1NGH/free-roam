@@ -40,12 +40,12 @@ struct StatusMenu: View {
             Divider()
         }
         if model.musicPermission == .denied {
-            Button("Allow Free Roam to Control Music…") { openPrivacySettings("Privacy_Automation") }
+            Button("Allow Free Roam to Control Music…") { PrivacyPane.automation.open() }
         }
         if !model.screenRecordingAllowed {
             Button("Allow Screen Recording…") {
                 ScreenCapture.requestAccess()
-                openPrivacySettings("Privacy_ScreenCapture")
+                PrivacyPane.screenRecording.open()
             }
             // macOS keeps showing the switch on for an earlier build it no
             // longer recognises, so a switch that's on can still mean no.
@@ -55,10 +55,5 @@ struct StatusMenu: View {
         Divider()
         Button("Quit Free Roam") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
-    }
-
-    private func openPrivacySettings(_ pane: String) {
-        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?\(pane)") else { return }
-        NSWorkspace.shared.open(url)
     }
 }

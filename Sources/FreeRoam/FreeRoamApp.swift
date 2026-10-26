@@ -28,10 +28,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let menu = StatusMenuModel()
     let stations = StationList()
     private var wheel: RadioWheelModel?
+    private lazy var welcome = WelcomeWindow(stations: stations)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         CaptionFont.register()
         stations.reload()
+        welcome.showIfNeeded()
         let style: WheelStyle
         do {
             style = try WheelStyle.bundled()

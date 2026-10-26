@@ -113,9 +113,26 @@ enum MusicBridge {
 
     /// Never prompts. Music has to be running for macOS to answer.
     static func permission() -> MusicPermission {
+        permission(askingIfNeeded: false)
+    }
+
+    /// Shows macOS's prompt to let Free Roam control Music if you haven't
+    /// answered it yet, and waits for your answer. Music has to be running.
+    static func requestPermission() async -> MusicPermission {
+        // The check blocks its thread for as long as the prompt is up, so it
+        // runs on a dispatch thread rather than one of Swift's few
+        // concurrency threads or the main thread.
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: permission(askingIfNeeded: true))
+            }
+        }
+    }
+
+    private static func permission(askingIfNeeded: Bool) -> MusicPermission {
         let music = NSAppleEventDescriptor(bundleIdentifier: bundleID)
         let status = AEDeterminePermissionToAutomateTarget(
-            music.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), false
+            music.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), askingIfNeeded
         )
         switch Int(status) {
         case Int(noErr): return .allowed
