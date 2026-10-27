@@ -178,6 +178,8 @@ v1 ships the radio wheel only; see [DECISIONS.md](DECISIONS.md). The earlier des
 
 ## Phase 4: Release v1.0
 
+The launch assets, what to upload by hand and what's still blocking are in [launch-checklist.md](launch-checklist.md).
+
 - `scripts/bundle.sh --release`: universal build, ad-hoc signed, packed into a DMG with `hdiutil`. It must skip `prototype/public/sounds/local/`, which development builds use when it's there.
 - Synthesised sounds that match the local pack, since only synthesised sounds can ship.
 - GitHub Release with the DMG and a checksum.
