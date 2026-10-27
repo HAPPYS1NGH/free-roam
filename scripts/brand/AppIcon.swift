@@ -55,53 +55,28 @@ enum AppIcon {
 }
 
 extension AppIcon {
-    /// Radii in pixels at the final size.
-    private struct SmallLayout {
-        let disc: CGFloat, ringOuter: CGFloat, ringInner: CGFloat, lettering: CGFloat, notch: CGFloat
-    }
-
-    /// 16 and 32 px. Scaled down as it is, the badge's thin cyan ring blends
-    /// into the black and the lettering fills the whole disc, so it reads as
-    /// a grey blob. These sizes keep the badge's own lettering but redraw its
-    /// ring a whole pixel or two wide, and set the lettering a little smaller
-    /// inside it so black shows between them. At 32 px the ring keeps the
-    /// badge's gaps at 12, 3, 6 and 9 o'clock; at 16 px they'd be noise.
+    /// 16 and 32 px, with the ring redrawn so it survives; see `Badge.drawSmall`.
     static func small(_ badge: Badge, size: Int) -> CGImage {
         let layout = size <= 16
-            ? SmallLayout(disc: 6, ringOuter: 5.5, ringInner: 4.5, lettering: 4.2, notch: 0)
-            : SmallLayout(disc: 12, ringOuter: 11, ringInner: 9, lettering: 8.5, notch: 1)
-        // Drawn at 1024 and scaled down; `k` turns final pixels into 1024ths.
-        let k = 1024 / CGFloat(size)
-        let centre = CGPoint(x: plateRect.midX, y: plateRect.midY)
-        func circle(_ radius: CGFloat) -> CGRect {
-            CGRect(x: centre.x - radius * k, y: centre.y - radius * k, width: 2 * radius * k, height: 2 * radius * k)
-        }
+            ? Badge.SmallLayout(disc: 6, ringOuter: 5.5, ringInner: 4.5, lettering: 4.2, notch: 0)
+            : Badge.SmallLayout(disc: 12, ringOuter: 11, ringInner: 9, lettering: 8.5, notch: 1)
         let large = render(1024, 1024) { context in
             drawPlate(context, scale: 1)
-            context.setFillColor(rgb(0x000000))
-            context.fillEllipse(in: circle(layout.disc))
-
-            context.saveGState()
-            if layout.notch > 0 {
-                let gaps = CGMutablePath()
-                gaps.addRect(CGRect(x: 0, y: 0, width: 1024, height: 1024))
-                gaps.addRect(CGRect(x: centre.x - layout.notch * k / 2, y: 0, width: layout.notch * k, height: 1024))
-                gaps.addRect(CGRect(x: 0, y: centre.y - layout.notch * k / 2, width: 1024, height: layout.notch * k))
-                context.addPath(gaps)
-                context.clip(using: .evenOdd)
-            }
-            context.addEllipse(in: circle(layout.ringOuter))
-            context.addEllipse(in: circle(layout.ringInner))
-            context.setFillColor(rgb(Badge.cyan))
-            context.fillPath(using: .evenOdd)
-            context.restoreGState()
-
-            // The badge's lettering, without its own ring.
-            context.addEllipse(in: circle(layout.lettering))
-            context.clip()
-            badge.draw(in: context, center: centre, diameter: layout.lettering * k * badge.disc.width / Badge.ringInnerRadius)
+            badge.drawSmall(in: context, center: CGPoint(x: plateRect.midX, y: plateRect.midY), layout: layout, scale: 1024 / CGFloat(size))
         }
         return resized(large, to: size)
+    }
+
+    /// iOS's home screen icon for the website: the plate full bleed, since
+    /// iOS rounds the corners itself and turns transparency black.
+    static func touchIcon(_ badge: Badge, size: Int) -> CGImage {
+        let full = render(1024, 1024) { context in
+            let top = rgb(plateTop), bottom = rgb(plateBottom)
+            let gradient = CGGradient(colorsSpace: sRGB, colors: [top, bottom] as CFArray, locations: [0, 1])!
+            context.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 1024), end: .zero, options: [])
+            badge.draw(in: context, center: CGPoint(x: 512, y: 512), diameter: 1024 * 0.78)
+        }
+        return resized(full, to: size)
     }
 
     /// Every image an .iconset holds, by file name.

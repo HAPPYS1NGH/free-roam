@@ -363,3 +363,10 @@ Rejected:
 
 - The badge sits above the title at 56 pt, from `FreeRoamBadge.png` (112 px) in `Sources/FreeRoam/Resources`, which `bundle.sh` copies. VoiceOver skips it.
 - Its space is a fixed 56 pt square whether or not the image loads, so the window keeps one size in every state, 480 by about 550 pt. Without the bundle, as in `swift run`, the square stays empty. The same-size test renders every state with the real badge from the source tree, and once without it.
+
+## 2026-10-27: The website's icons and social card
+
+- The header and footer showed the 1 MB badge PNG at 60 px. They now use `free-roam/badge.png`, 240 px and 48 KB, and the site no longer publishes the source.
+- `favicon.ico` at the site's root holds 16 and 32 px badges, drawn like the app icon's small sizes with the ring redrawn, and filling the square. Browsers ask for `/favicon.ico` on their own, and the pages link it too. `apple-touch-icon.png` (180 px) has the icon's plate full bleed, because iOS rounds the corners itself and turns transparency black.
+- There's no SVG favicon. The lettering only exists as a raster, so an SVG would either wrap the PNG, which gains nothing, or need the lettering traced into paths, which is redrawing it.
+- `free-roam/og-image.jpg` is the social card for both pages, 1200 × 630: the hero's headline on the left and the wheel on the right, over the coast photo. The wheel's station art is cut from the coast photo, because the demo's album covers are approved for the demo only. `site-metadata.mjs` turns its path into an absolute URL for `og:image` and `twitter:image`, and a test checks it's published at 1200 × 630.

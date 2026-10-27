@@ -13,9 +13,12 @@ export function siteOrigin(value, required = false) {
   return url.origin
 }
 
+// The Open Graph and X card, 1200 × 630, from scripts/make-brand-assets.sh.
+export const socialImage = '/free-roam/og-image.jpg'
+
 export function applySiteMetadata(html, canonical) {
-  const image = new URL('/free-roam/coast.jpg', canonical).href
-  return html.replace('content="/free-roam/coast.jpg"', `content="${image}"`)
+  const image = new URL(socialImage, canonical).href
+  return html.replace(`content="${socialImage}"`, `content="${image}"`)
     .replace('</head>', `    <link rel="canonical" href="${canonical}" />\n    <meta property="og:url" content="${canonical}" />\n    <meta name="twitter:image" content="${image}" />\n  </head>`)
 }
 

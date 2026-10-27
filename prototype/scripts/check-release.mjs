@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { siteOrigin } from './site-metadata.mjs'
+import { siteOrigin, socialImage } from './site-metadata.mjs'
 import { listFiles, publicAssets } from './public-assets.mjs'
 
 const dist = fileURLToPath(new URL('../dist/', import.meta.url))
@@ -49,7 +49,7 @@ if (origin) {
   for (const route of ['/', '/free-roam/']) {
     const html = readFileSync(`${dist}${route}index.html`, 'utf8')
     assert.ok(html.includes(`rel="canonical" href="${origin}${route}"`), `Missing canonical: ${route}`)
-    assert.ok(html.includes(`content="${origin}/free-roam/coast.jpg"`), `Missing social image: ${route}`)
+    assert.ok(html.includes(`content="${origin}${socialImage}"`), `Missing social image: ${route}`)
   }
 }
 console.log(`Release check passed: ${files.length} files, no private exports or studio controls.`)

@@ -14,7 +14,7 @@ Controls have accessible names, visible focus, and native button/link semantics.
 
 ## B. Performance
 
-The landing page is prerendered, font and hero assets are preloaded, and wheel geometry reserves space for artwork. The shared JavaScript chunk is 374.52 kB, 119.72 kB gzip. The 1 MB raster badge remains a possible optimization; no asset redesign was done during launch prep.
+The landing page is prerendered, font and hero assets are preloaded, and wheel geometry reserves space for artwork. The shared JavaScript chunk is 374.52 kB, 119.72 kB gzip. The header badge was the 1 MB source PNG. It's now a 240 px copy of 48 KB with its generation noise cleaned up, which looks the same at the 60 px it's shown at. The site no longer publishes the source PNG.
 
 ## C. Mobile
 
@@ -59,6 +59,7 @@ God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshot
 | Severity | Before | After | Why | Status |
 | --- | --- | --- | --- | --- |
 | Should fix | No canonical URLs or crawl metadata | Validated `SITE_URL` generates canonicals, absolute social URLs, robots, and sitemap in `prototype/scripts/site-metadata.mjs:4` | Avoids broken or ambiguous launch links | Code fixed; final domain pending |
+| Should fix | The social card was the raw coast photo, and the favicon the 1 MB badge | A 1200 × 630 card with the headline and wheel (`prototype/public/free-roam/og-image.jpg`), `favicon.ico` with 16 and 32 px badges, and a 180 px `apple-touch-icon.png` | Link previews say what the app is; tabs show a readable badge | Fixed; check the previews on the deployed domain |
 
 `build:release` requires the chosen HTTPS origin and runs tests before building. Release checks also verify every catalog station appears in prerendered landing markup. GitHub confirmed the repository was public before it was renamed `HAPPYS1NGH/free-roam`. The CTA remains Build for Mac, not an unavailable download.
 
@@ -76,9 +77,9 @@ God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshot
 
 ## Verification
 
-- `npm --prefix prototype test`: `tests 8`, `pass 8`, `fail 0`.
-- `npm --prefix prototype run build`: TypeScript, Vite, prerender, and release check pass. `Release check passed: 32 files, no private exports or studio controls.`
-- `SITE_URL=https://release-check.example.test npm --prefix prototype run build:release`: tested with an explicitly non-production fixture origin. `Release check passed: 34 files, no private exports or studio controls.` The final local preview was rebuilt without that fixture origin.
+- `npm --prefix prototype test`: `tests 9`, `pass 9`, `fail 0`.
+- `npm --prefix prototype run build`: TypeScript, Vite, prerender, and release check pass. `Release check passed: 35 files, no private exports or studio controls.`
+- `SITE_URL=https://release-check.example.test npm --prefix prototype run build:release`: tested with an explicitly non-production fixture origin. `Release check passed: 37 files, no private exports or studio controls.` The final local preview was rebuilt without that fixture origin.
 - Production browser: approved playlist labels and covers, PLow and Morning Playlist selection, mute/unmute, keyboard navigation, Radio Off, and landing-to-demo navigation. No console warnings or errors observed.
 - The four built WAV files are the synthesised sounds a release build ships, byte for byte. When `public/sounds/local/` or `public/wallpaper/` exists on the building Mac, the release check also fails on any built file that's a byte-identical copy of a file in it, and it prints which folders it checked or skipped.
 - No lint or formatter command exists. Native code was untouched; native tests were not rerun.

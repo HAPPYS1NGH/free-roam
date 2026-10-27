@@ -21,3 +21,14 @@ write(MenuBarGlyph.image(badge, scale: 2), to: path("Sources/FreeRoam/Resources/
 
 // The welcome window's badge, shown at 56 pt: 2x pixels.
 write(badge.trimmed(size: 112), to: path("Sources/FreeRoam/Resources/FreeRoamBadge.png"))
+
+// The website's badge and icons, under prototype/public/. The build only
+// publishes files listed in prototype/scripts/public-assets.mjs.
+write(WebAssets.pageBadge(badge), to: path("prototype/public/free-roam/badge.png"))
+write(WebAssets.ico([WebAssets.favicon(badge, size: 16), WebAssets.favicon(badge, size: 32)]), to: path("prototype/public/favicon.ico"))
+write(AppIcon.touchIcon(badge, size: 180), to: path("prototype/public/apple-touch-icon.png"))
+
+// The website's social card.
+registerFont(path("Sources/FreeRoam/Resources/SofiaSansExtraCondensed-SemiBold.ttf"))
+let launch = LaunchImages(badge: badge, coast: loadImage(path("prototype/public/free-roam/coast.jpg")))
+write(launch.socialCard(), to: path("prototype/public/free-roam/og-image.jpg"), jpegQuality: 0.82)

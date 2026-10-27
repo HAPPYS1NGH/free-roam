@@ -65,16 +65,30 @@ func drawCover(_ context: CGContext, _ image: CGImage, in rect: CGRect, focus: C
     context.restoreGState()
 }
 
-func write(_ image: CGImage, to url: URL, jpegQuality: CGFloat? = nil) {
-    try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+func encoded(_ image: CGImage, jpegQuality: CGFloat? = nil) -> Data {
+    let data = NSMutableData()
     let type = jpegQuality == nil ? UTType.png : UTType.jpeg
-    guard let destination = CGImageDestinationCreateWithURL(url as CFURL, type.identifier as CFString, 1, nil) else {
-        fatalError("Couldn't write \(url.path)")
-    }
+    let destination = CGImageDestinationCreateWithData(data as CFMutableData, type.identifier as CFString, 1, nil)!
     var options: [CFString: Any] = [:]
     if let jpegQuality { options[kCGImageDestinationLossyCompressionQuality] = jpegQuality }
     CGImageDestinationAddImage(destination, image, options as CFDictionary)
-    guard CGImageDestinationFinalize(destination) else { fatalError("Couldn't write \(url.path)") }
+    guard CGImageDestinationFinalize(destination) else { fatalError("Couldn't encode an image") }
+    return data as Data
+}
+
+func pngData(_ image: CGImage) -> Data { encoded(image) }
+
+func write(_ data: Data, to url: URL) {
+    do {
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try data.write(to: url)
+    } catch {
+        fatalError("Couldn't write \(url.path): \(error)")
+    }
+}
+
+func write(_ image: CGImage, to url: URL, jpegQuality: CGFloat? = nil) {
+    write(encoded(image, jpegQuality: jpegQuality), to: url)
 }
 
 // MARK: - Text

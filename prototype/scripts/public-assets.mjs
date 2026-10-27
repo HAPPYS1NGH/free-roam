@@ -5,8 +5,11 @@ export const publicAssets = [
   'fonts/sofia-sans-extra-condensed/latin-600.woff2',
   'fonts/sofia-sans-extra-condensed/latin-ext-600.woff2',
   'fonts/sofia-sans-extra-condensed/OFL.txt',
+  'favicon.ico',
+  'apple-touch-icon.png',
   'free-roam/coast.jpg',
-  'free-roam/app-icon.png',
+  'free-roam/badge.png',
+  'free-roam/og-image.jpg',
   ...['night', 'indie', 'rap', 'punjabi', 'electronic', 'road', 'gods-favorite-0', 'gym-0', 'gym-1', 'gym-2', 'gym-3', 'plow-0', 'plow-1', 'plow-2', 'plow-3', 'morning-0'].map(name => `free-roam/albums/${name}.jpg`),
   ...['open', 'close', 'hover', 'retune'].map(name => `sounds/${name}.wav`),
 ]

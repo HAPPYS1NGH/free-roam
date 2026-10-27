@@ -64,3 +64,46 @@ struct Badge {
         resized(render(1024, 1024) { draw(in: $0, center: CGPoint(x: 512, y: 512), diameter: 1024) }, to: size)
     }
 }
+
+extension Badge {
+    /// Radii in pixels at the final size.
+    struct SmallLayout {
+        let disc: CGFloat, ringOuter: CGFloat, ringInner: CGFloat, lettering: CGFloat, notch: CGFloat
+    }
+
+    /// The badge for 16 and 32 px. Scaled down as it is, its thin cyan ring
+    /// blends into the black and the lettering fills the whole disc, so it
+    /// reads as a grey blob. This keeps the badge's own lettering, set a
+    /// little smaller, and redraws the ring a whole pixel or two wide so
+    /// black shows between them. A notch of 0 leaves out the ring's gaps at
+    /// 12, 3, 6 and 9 o'clock, which are noise at 16 px.
+    /// `scale` turns final pixels into the context's: draw at 1024 and scale down.
+    func drawSmall(in context: CGContext, center: CGPoint, layout: SmallLayout, scale k: CGFloat) {
+        func circle(_ radius: CGFloat) -> CGRect {
+            CGRect(x: center.x - radius * k, y: center.y - radius * k, width: 2 * radius * k, height: 2 * radius * k)
+        }
+        context.saveGState()
+        context.setFillColor(rgb(0x000000))
+        context.fillEllipse(in: circle(layout.disc))
+        if layout.notch > 0 {
+            let gaps = CGMutablePath()
+            gaps.addRect(context.boundingBoxOfClipPath)
+            gaps.addRect(CGRect(x: center.x - layout.notch * k / 2, y: center.y - layout.disc * k, width: layout.notch * k, height: 2 * layout.disc * k))
+            gaps.addRect(CGRect(x: center.x - layout.disc * k, y: center.y - layout.notch * k / 2, width: 2 * layout.disc * k, height: layout.notch * k))
+            context.addPath(gaps)
+            context.clip(using: .evenOdd)
+        }
+        context.addEllipse(in: circle(layout.ringOuter))
+        context.addEllipse(in: circle(layout.ringInner))
+        context.setFillColor(rgb(Badge.cyan))
+        context.fillPath(using: .evenOdd)
+        context.restoreGState()
+
+        // The badge's lettering, without its own ring.
+        context.saveGState()
+        context.addEllipse(in: circle(layout.lettering))
+        context.clip()
+        draw(in: context, center: center, diameter: layout.lettering * k * disc.width / Badge.ringInnerRadius)
+        context.restoreGState()
+    }
+}

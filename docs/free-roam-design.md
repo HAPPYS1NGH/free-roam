@@ -2,7 +2,7 @@
 
 After Hours is the selected website direction. Keep the coastal car photograph and the native wheel's layout, cyan selection ring, and condensed captions. The product is a radio for your favorite music: change the mood or choose quiet without leaving your work.
 
-The brand badge follows the supplied circular reference, with only FREE ROAM in stacked ivory lettering inside a cyan ring. It has no FM suffix, road illustration, or italic racing lettering. The transparent PNG is used on the website; native app packaging remains a separate release task.
+The brand badge follows the supplied circular reference, with only FREE ROAM in stacked ivory lettering inside a cyan ring. It has no FM suffix, road illustration, or italic racing lettering. Everything else is made from that PNG by `scripts/make-brand-assets.sh`: the page's 240 px copy, the favicon, the home screen icon, the 1200 × 630 social card, and the Mac app's icon and menu bar glyph.
 
 ## Public experience
 
@@ -26,4 +26,4 @@ Public stations include the four requested playlists, God's Favorite, gym, PLow,
 
 The original browser prototype and its interaction controller were inspected directly, alongside the Swift model's tap, hold, dwell, and Radio Off paths. The installed native overlay was not visually reverified in this pass. No native playback or installed-app behavior was changed.
 
-The website and full-screen demo were checked against the production build. Both use the same approved playlists and sound controller. Eight tests pass: private-asset exclusion, source audio checksums, product-token parity, catalog assets, cold-cache first-gesture audio with mute, deterministic landing-page prerendering, production-origin validation, and generated metadata. TypeScript, Vite, prerendering, and generated-output checks pass. See [the release review](free-roam-release-review.md) for the remaining launch checks.
+The website and full-screen demo were checked against the production build. Both use the same approved playlists and sound controller. Nine tests pass: private-asset exclusion, source audio checksums, product-token parity, catalog assets, cold-cache first-gesture audio with mute, deterministic landing-page prerendering, production-origin validation, generated metadata, and the social card's size. TypeScript, Vite, prerendering, and generated-output checks pass. See [the release review](free-roam-release-review.md) for the remaining launch checks.

@@ -2,7 +2,7 @@ import { sourceUrl } from "./content"
 
 export function Brand({ href = "#top" }: { href?: string }) {
   return <a className="brand" href={href} aria-label="Free Roam home">
-    <img className="brand-logo" src="/free-roam/app-icon.png" alt="" width="1254" height="1254" />
+    <img className="brand-logo" src="/free-roam/badge.png" alt="" width="240" height="240" />
     <span className="brand-wordmark">Free Roam</span>
   </a>
 }
