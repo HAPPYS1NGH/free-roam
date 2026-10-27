@@ -244,13 +244,16 @@ enum MusicBridge {
     /// goes off and repeat covers the whole playlist, so the station plays in
     /// the broadcast clock's order and loops as the clock does, and both stay
     /// that way. Returns whether either was set otherwise, and the track Music
-    /// got to, or 0 when it can't say.
+    /// got to, or 0 when it can't say or stepping failed.
     ///
     /// Music only queues the rest of a playlist when it plays the playlist
     /// itself. `play track N of` the playlist queued that one track, so a
     /// station stopped after it, and with repeat on played it again forever.
     /// So this plays the playlist from its first track, pauses, and steps on
-    /// to `track` with `next track`, then plays.
+    /// to `track` with `next track`, then plays. The on-air track is half the
+    /// playlist in on average, so a playlist of a few hundred tracks or more
+    /// will often use up the 2 s `stepOn` allows, and plays on from where
+    /// Music got to.
     static func play(playlistID: String, track: Int) async throws -> (orderChanged: Bool, track: Int) {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
         let stepping = track > 1
@@ -271,42 +274,63 @@ enum MusicBridge {
             """) { result in
             (orderChanged: result.atIndex(1)?.booleanValue ?? false, track: Int(result.atIndex(2)?.int32Value ?? 0))
         }
-        guard stepping else { return started }
+        // `play` of the playlist starts on track 1, even when Music can't say so.
+        guard stepping else { return (started.orderChanged, started.track > 0 ? started.track : 1) }
         let clock = ContinuousClock()
         let steppingStarted = clock.now
-        let reached = try await stepOn(from: started.track, to: track) { count in
-            try await skip(count, playlistID: playlistID)
-        } playOn: {
-            log.notice("Music didn't move on while paused, so it steps while playing")
-            _ = try await resume()
+        let reached: Int
+        do {
+            reached = try await stepOn(from: started.track, to: track) { count, stop in
+                try await skip(count, stoppingAt: stop, playlistID: playlistID)
+            } playOn: {
+                log.notice("Music didn't move on while paused, so it steps while playing")
+                _ = try await resume()
+            }
+            log.notice("""
+                Stepped Music from track \(started.track) to \(reached) of playlist \(playlistID, privacy: .public) \
+                in \((clock.now - steppingStarted) / .milliseconds(1), format: .fixed(precision: 0)) ms
+                """)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            // Music is paused, so it plays on from wherever it got to rather
+            // than stay silent.
+            log.error("""
+                Couldn't step Music to track \(track) of playlist \(playlistID, privacy: .public): \
+                \(String(describing: error), privacy: .public)
+                """)
+            reached = 0
         }
+        // A newer pick has Music now: playing on would undo Radio Off's pause,
+        // or play this station for a moment before the next.
+        try Task.checkCancellation()
         _ = try await resume()
-        log.notice("""
-            Stepped Music from track \(started.track) to \(reached) of playlist \(playlistID, privacy: .public) \
-            in \((clock.now - steppingStarted) / .milliseconds(1), format: .fixed(precision: 0)) ms
-            """)
         return (started.orderChanged, reached)
     }
 
     /// Steps Music on from track `start` to track `target` of the playlist
     /// it's playing, at most `chunk` tracks per script, so the volume dip and
-    /// a newer pick's cancel get a turn in between. `skip(n)` moves Music on
-    /// `n` tracks and returns the track it's on then, or 0 when it can't say.
+    /// a newer pick's cancel get a turn in between. `skip(n, stop)` moves
+    /// Music on `n` tracks, or until it's on track `stop` or past it when
+    /// `stop` isn't nil, and returns the track it's on then, or 0 when it
+    /// can't say. The last script gets `target` as its `stop`, because Music
+    /// skips a track it can't play, and the steps would carry it past.
     ///
     /// Whether a paused Music moves on isn't known, so the first time it
     /// doesn't, `playOn` runs and stepping carries on while it plays. After
     /// that, a try that doesn't move waits `interval`, in case Music ignores
     /// `next track` while a track loads. It stops at `target`, or past it when
-    /// Music skips a track it can't play. It also stops once `limit` has
-    /// passed, and when Music goes back or can't say. Returns the track Music
-    /// reached.
+    /// Music skips that track itself. It also stops once `limit` has passed,
+    /// and when Music goes back or can't say. Returns the track Music reached,
+    /// and throws `CancellationError` once cancelled, even after the last
+    /// step, so the caller doesn't play on for a pick that's been replaced.
     static func stepOn(
         from start: Int,
         to target: Int,
         chunk: Int = 10,
         within limit: Duration = .seconds(2),
         every interval: Duration = .milliseconds(100),
-        skip: (Int) async throws -> Int,
+        skip: (_ count: Int, _ stop: Int?) async throws -> Int,
         playOn: () async throws -> Void
     ) async throws -> Int {
         let deadline = ContinuousClock.now + limit
@@ -314,7 +338,10 @@ enum MusicBridge {
         var playedOn = false
         while reached > 0, reached < target, ContinuousClock.now < deadline {
             try Task.checkCancellation()
-            let current = try await skip(min(target - reached, chunk))
+            let count = min(target - reached, chunk)
+            let current = try await skip(count, count == target - reached ? target : nil)
+            // The cancel may have come while Music stepped.
+            try Task.checkCancellation()
             if current > reached {
                 reached = current
             } else if current < reached {
@@ -329,12 +356,14 @@ enum MusicBridge {
         return reached
     }
 
-    /// Moves Music on `count` tracks and returns the track it's on then, or 0
-    /// when it can't say.
-    private static func skip(_ count: Int, playlistID: String) async throws -> Int {
-        try await run("""
+    /// Moves Music on `count` tracks, or until it's on track `stop` or past
+    /// it, and returns the track it's on then, or 0 when it can't say.
+    private static func skip(_ count: Int, stoppingAt stop: Int?, playlistID: String) async throws -> Int {
+        let stopCheck = stop.map { "if index of current track ≥ \($0) then exit repeat" } ?? ""
+        return try await run("""
             repeat \(count) times
                 next track
+                \(stopCheck)
             end repeat
             \(trackIndexScript(playlistID: playlistID))
             return trackIndex

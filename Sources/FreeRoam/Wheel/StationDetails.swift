@@ -12,7 +12,8 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "statio
 ///
 /// Everything loads in the background and the wheel draws whatever has
 /// arrived, so opening it never waits for Music. Scripts run one at a time,
-/// so a tune queued behind the loader waits for one script at most.
+/// so each of a tune's scripts can wait for one of the loader's, and a tune
+/// that steps through its playlist runs several.
 ///
 /// Settings' logos must never hold up a tune, and they share that queue. Each
 /// costs one light read of the track count and the first 100 tracks'

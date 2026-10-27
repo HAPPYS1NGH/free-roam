@@ -50,7 +50,7 @@ Checked on this Mac or known limits of macOS:
       BackdropView fades out over 450 ms, then the panel leaves the screen
     if the pick moved
       play retune.wav
-      Broadcast.onAir → MusicBridge.play(playlist) with shuffle off and repeat on, paused while next track steps to track N, then seek(to: on-air position)
+      Broadcast.onAir → MusicBridge.play(playlist) with shuffle off and repeat on, paused while next track steps to track N, then seek(to: on-air position), skipped if the steps fall short
     VolumeDip.restore()
     StationList.reload()                 once any tune has reached Music, for playlists added or deleted
 ```

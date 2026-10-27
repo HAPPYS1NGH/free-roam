@@ -399,13 +399,13 @@ final class RadioWheelModel {
             let launching = !MusicBridge.isRunning
             if launching { try await MusicBridge.launch() }
             let durations = try await MusicBridge.trackDurations(playlistID: id)
-            details.reloadIfChanged(id, trackCount: durations.count)
             // Superseded by a later tune while the durations were on their way.
             guard tunedID == id else { return }
             let clockedAt = ContinuousClock.now
             // A station with nothing to play is dead air, like Radio Off.
             guard let onAir = Broadcast.onAir(durations: durations, at: .now) else {
                 try await MusicBridge.pause()
+                details.reloadIfChanged(id, trackCount: durations.count)
                 log.notice("Playlist \(id, privacy: .public) has no tracks to play, so Music is paused")
                 return
             }
@@ -422,6 +422,9 @@ final class RadioWheelModel {
                     instead of track \(onAir.index + 1), so the station plays on from there without a seek
                     """)
             }
+            // Only now, because an edited playlist's track and cover reads
+            // would take turns with the steps and the seek.
+            details.reloadIfChanged(id, trackCount: durations.count)
             if launching { try await keepPlayingAfterLaunch(id) }
         } catch is CancellationError {
             log.notice("A newer pick replaced the tune to \(id ?? "Radio Off", privacy: .public)")
