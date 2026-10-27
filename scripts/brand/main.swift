@@ -18,3 +18,6 @@ write(iconset.last!.1, to: path("output/branding/free-roam/macos-app-icon-1024.p
 // The menu bar glyph. NSImage(named:) loads both files as one template image.
 write(MenuBarGlyph.image(badge, scale: 1), to: path("Sources/FreeRoam/Resources/MenuBarIconTemplate.png"))
 write(MenuBarGlyph.image(badge, scale: 2), to: path("Sources/FreeRoam/Resources/MenuBarIconTemplate@2x.png"))
+
+// The welcome window's badge, shown at 56 pt: 2x pixels.
+write(badge.trimmed(size: 112), to: path("Sources/FreeRoam/Resources/FreeRoamBadge.png"))

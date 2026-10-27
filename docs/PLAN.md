@@ -117,7 +117,7 @@ free-roam/
 │   │   ├── WelcomeModel.swift   # both permissions, their Allow buttons and when to show
 │   │   ├── WelcomeView.swift    # the window's text and rows
 │   │   └── WelcomeWindow.swift  # the window at launch
-│   └── Resources/               # the caption font and its OFL licence, the app icon and menu bar glyph
+│   └── Resources/               # the caption font and its OFL licence, the app icon, menu bar glyph and welcome badge
 ├── Tests/FreeRoamTests/
 └── scripts/
     ├── bundle.sh                # builds and signs Free Roam.app

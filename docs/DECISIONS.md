@@ -358,3 +358,8 @@ Rejected:
 - A filled disc with the lettering cut out: much heavier than the symbols around it.
 - Thresholding @1x to solid pixels: the ring went jagged and the lettering broke into specks.
 - `radio` on @1x screens only: a laptop with a second screen would show two different icons.
+
+## 2026-10-27: The welcome window shows the badge
+
+- The badge sits above the title at 56 pt, from `FreeRoamBadge.png` (112 px) in `Sources/FreeRoam/Resources`, which `bundle.sh` copies. VoiceOver skips it.
+- Its space is a fixed 56 pt square whether or not the image loads, so the window keeps one size in every state, 480 by about 550 pt. Without the bundle, as in `swift run`, the square stays empty. The same-size test renders every state with the real badge from the source tree, and once without it.

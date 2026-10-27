@@ -22,7 +22,12 @@ struct WelcomeView: View {
 /// The welcome window drawn from plain values, so a test can render each state.
 struct WelcomeContent: View {
     nonisolated static let width = 480.0
+    /// From Contents/Resources, which scripts/bundle.sh copies in. Without
+    /// the bundle, as in `swift run`, the badge's space stays empty, so the
+    /// window keeps its size.
+    static let bundledBadge = NSImage(named: "FreeRoamBadge")
 
+    var badge = WelcomeContent.bundledBadge
     let musicAllowed: Bool
     let screenRecordingAllowed: Bool
     var isAskingForMusic = false
@@ -34,6 +39,16 @@ struct WelcomeContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
+                Group {
+                    if let badge {
+                        Image(nsImage: badge).resizable().interpolation(.high)
+                    } else {
+                        Color.clear
+                    }
+                }
+                .frame(width: 56, height: 56)
+                .padding(.bottom, 8)
+                .accessibilityHidden(true)
                 Text("Welcome to Free Roam")
                     .font(.title2.weight(.semibold))
                 Text("Hold ⌥Q anywhere to open the radio wheel. Move the mouse towards a station and let go to tune in.")

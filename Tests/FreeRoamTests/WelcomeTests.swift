@@ -38,13 +38,20 @@ struct WelcomeTests {
 @MainActor
 struct WelcomeRenderTests {
     /// The window can't be resized, so the content keeps one size whatever
-    /// is allowed, and fits a small laptop screen.
+    /// is allowed, and fits a small laptop screen. The badge comes from the
+    /// source tree, since tests have no app bundle, and leaving it out
+    /// (as `swift run` does) keeps the same size too.
     @Test func keepsOneSizeInEveryState() throws {
+        let badgeURL = URL(filePath: #filePath)
+            .deletingLastPathComponent()
+            .appending(path: "../../Sources/FreeRoam/Resources/FreeRoamBadge.png")
+        let badge = try #require(NSImage(contentsOf: badgeURL))
         let sizes = try [
-            WelcomeContent(musicAllowed: false, screenRecordingAllowed: false),
-            WelcomeContent(musicAllowed: false, screenRecordingAllowed: false, isAskingForMusic: true),
-            WelcomeContent(musicAllowed: true, screenRecordingAllowed: false),
-            WelcomeContent(musicAllowed: true, screenRecordingAllowed: true),
+            WelcomeContent(badge: badge, musicAllowed: false, screenRecordingAllowed: false),
+            WelcomeContent(badge: badge, musicAllowed: false, screenRecordingAllowed: false, isAskingForMusic: true),
+            WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: false),
+            WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: true),
+            WelcomeContent(badge: nil, musicAllowed: false, screenRecordingAllowed: false),
         ].map { content in
             let renderer = ImageRenderer(content: content)
             renderer.scale = 1
