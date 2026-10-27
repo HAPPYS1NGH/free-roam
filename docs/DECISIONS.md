@@ -379,3 +379,22 @@ Rejected:
   - `video-poster-1920x1080.jpg`: the wheel open over the coast as a desktop picture, faded and vignetted as the app's backdrop is, with ⌥ Q below it.
 - The wheel follows `tokens.json`: ten slots, Radio Off at the bottom, idle discs at 40% in grey, the selected one in colour inside the `#65B4D4` ring, and its name above the centre. Its art is cut from the coast photo, not album covers. A soft dark scrim behind it keeps the faded discs readable over the bright sky.
 - No image names or shows a game, its stations or its fonts.
+
+## 2026-10-27: A station plays on through its playlist
+
+The bug: a station played the song it tuned to over and over. Found from Free Roam's and Static's logs and Music's scripting dictionary on macOS 27.0.1. Not hand-tested yet.
+
+- `play track N of` a playlist queues that one track and nothing after it. Music still gives the playlist as `current playlist` and the track's place in it, so every press looked right. With repeat off, in step 6, Music stopped after the tuned track: 10 s after track 12 of 13 of PUNJABI ONLY ended it was playing nothing, though track 13 runs about 3 minutes, and Download stopped after track 1 of 4. So the step 6 finding that stations stopped at the end of their playlists was this, and so is the 2026-10-22 note that Music played on through the playlist. Since step 7 set repeat to all, the one track loops: Download was still on track 2 of 4 48 s after it ended, and on 2026-10-27 My Playlist #1 was still on track 47 of 67 9 s after it ended.
+- Others have hit the same. Doug Adams found that in iTunes 11, playing one of a playlist's tracks with AppleScript left nothing queued after it, and playing the playlist itself worked ([dougscripts.com](https://dougscripts.com/itunes/2012/11/interesting-play-issue-with-miniplayer/)). His Big Buttons applet (2021) carries on through a playlist from a track by clicking Music's window through Accessibility. On macOS 26.0 even playing a whole playlist from a script played one song, until 26.1 ([Apple Community](https://discussions.apple.com/thread/256158179)), and in Music on macOS 26 a song started with Return plays alone, where a double-click queues the rest ([Apple Community](https://discussions.apple.com/thread/256141208)). Music's dictionary has no way to start a playlist partway in.
+- So a tune now plays the playlist itself, with shuffle off so it starts at track 1, pauses, steps on to the on-air track with `next track`, and plays. The seek works as before, with the clock counting from before the steps. Repeat then loops the whole playlist.
+- Each script steps at most 10 tracks and returns the track Music is on, so a newer pick cancels between scripts and the volume dip gets its turns. Whether a paused Music moves on with `next track` isn't known. If it doesn't, Free Roam plays and steps while playing, and logs "Music didn't move on while paused, so it steps while playing". A try that still doesn't move waits 100 ms. Stepping gives up after 2 s, or when Music skips past the track or can't say where it is. The station then plays on from where Music got to, without a seek, and the log says "Music got to track … instead of track …".
+- The cost is silence while Music steps, after the retune sound. How long a step takes isn't measured yet, so the log says "Stepped Music from track 1 to 47 of playlist … in … ms". A tune on release steps while the volume comes back up, and one from resting on a station steps while it's dipped, but Music is paused either way. Paused, the tracks it passes shouldn't play, count as skips or show in Music's history, which is also unchecked.
+- Shuffle and repeat are now also set after `play`, in case a new queue brings its own. On 2026-10-27 they read as changed on a tune 1 s after one that had set them. The log still reads them before each tune, so the next hand test shows whether anything else changes them.
+
+Rejected:
+
+- Playing track N after playing the playlist: in Doug Adams's test, iTunes played that track and then went back to what was queued, and nothing shows what Music queues next until the song ends.
+- A temporary playlist that starts at track N: it adds playlists to your library, and `current playlist` would no longer be the station.
+- Clicking the track in Music's window: needs Accessibility and Music's window on screen.
+- Stepping while playing from the start: every track it passes would start to play.
+- Stepping back from track 1 for tracks near the end: it isn't documented whether `previous track` goes round to the last track with repeat on.

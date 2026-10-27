@@ -50,7 +50,7 @@ Checked on this Mac or known limits of macOS:
       BackdropView fades out over 450 ms, then the panel leaves the screen
     if the pick moved
       play retune.wav
-      Broadcast.onAir → MusicBridge.play(track N) with shuffle off and repeat on, then seek(to: on-air position)
+      Broadcast.onAir → MusicBridge.play(playlist) with shuffle off and repeat on, paused while next track steps to track N, then seek(to: on-air position)
     VolumeDip.restore()
     StationList.reload()                 once any tune has reached Music, for playlists added or deleted
 ```
@@ -145,7 +145,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - Welcome window: at launch, a small window explains Control Music and Screen Recording, each with its status and an Allow button. It stops showing once you choose Don't Show This Again or both are allowed. Closing it any other way saves nothing, so it shows again at the next launch. Free Roam asks for Screen Recording only when you choose Allow, in the window or the menu, never by itself. macOS still asks about Music the first time Free Roam sends it a command.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
-  - play track N of a playlist (by persistent ID), with shuffle off and repeat on, and set `player position`, for mid-song tune-in
+  - play a playlist (by persistent ID) from track N, with shuffle off and repeat on, and set `player position`, for mid-song tune-in. Music only queues a playlist it plays whole, so this plays it from the top and steps on with `next track`
   - pause, and play on after launching Music
   - the playlist, track number and position Music is playing
   - album artwork of a playlist's first four distinct albums (playlists themselves expose none)

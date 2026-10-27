@@ -402,16 +402,26 @@ final class RadioWheelModel {
             details.reloadIfChanged(id, trackCount: durations.count)
             // Superseded by a later tune while the durations were on their way.
             guard tunedID == id else { return }
+            let clockedAt = ContinuousClock.now
             // A station with nothing to play is dead air, like Radio Off.
             guard let onAir = Broadcast.onAir(durations: durations, at: .now) else {
                 try await MusicBridge.pause()
                 log.notice("Playlist \(id, privacy: .public) has no tracks to play, so Music is paused")
                 return
             }
-            if try await MusicBridge.play(playlistID: id, track: onAir.index + 1) {
+            let played = try await MusicBridge.play(playlistID: id, track: onAir.index + 1)
+            if played.orderChanged {
                 log.notice("Turned Music's shuffle off and repeat on, so stations play in order and loop")
             }
-            try await seek(id, to: onAir, of: durations)
+            if played.track == onAir.index + 1 {
+                try await seek(id, to: onAir, of: durations, since: clockedAt)
+            } else {
+                let reached = played.track > 0 ? "track \(played.track)" : "a track it can't name"
+                log.error("""
+                    Music got to \(reached, privacy: .public) of \(durations.count) in playlist \(id, privacy: .public) \
+                    instead of track \(onAir.index + 1), so the station plays on from there without a seek
+                    """)
+            }
             if launching { try await keepPlayingAfterLaunch(id) }
         } catch is CancellationError {
             log.notice("A newer pick replaced the tune to \(id ?? "Radio Off", privacy: .public)")
@@ -436,16 +446,18 @@ final class RadioWheelModel {
 
     /// Music ignores or refuses a new position until a streamed track has
     /// loaded, so keep setting it, with the target moving on with the clock,
-    /// until Music reports it. Most tracks took a few tries.
-    private func seek(_ id: String, to onAir: Broadcast.OnAir, of durations: [TimeInterval]) async throws {
+    /// until Music reports it. Most tracks took a few tries. The clock moves
+    /// on from `clockedAt`, when `onAir` was worked out, so the time Music
+    /// took to step to the track counts too.
+    private func seek(
+        _ id: String, to onAir: Broadcast.OnAir, of durations: [TimeInterval], since clockedAt: ContinuousClock.Instant
+    ) async throws {
         let duration = durations[onAir.index]
-        let clock = ContinuousClock()
-        let started = clock.now
         var reported: TimeInterval?
         for attempt in 1...Self.seekAttempts {
             // Another tune has the player now, so this position isn't for its track.
             guard tunedID == id else { return }
-            let elapsed = (clock.now - started) / .seconds(1)
+            let elapsed = (ContinuousClock.now - clockedAt) / .seconds(1)
             // Short of the end, or Music would move on to the next track.
             let target = max(min(onAir.position + elapsed, duration - 1), 0)
             reported = try await MusicBridge.seek(to: target)

@@ -240,19 +240,119 @@ enum MusicBridge {
             """) { isMissingValue($0) ? nil : $0.data }
     }
 
-    /// Plays track `track` (1-based) of a playlist from the start. Shuffle
+    /// Plays a playlist on from the start of track `track` (1-based). Shuffle
     /// goes off and repeat covers the whole playlist, so the station plays in
     /// the broadcast clock's order and loops as the clock does, and both stay
-    /// that way. Returns whether either was set otherwise.
-    static func play(playlistID: String, track: Int) async throws -> Bool {
+    /// that way. Returns whether either was set otherwise, and the track Music
+    /// got to, or 0 when it can't say.
+    ///
+    /// Music only queues the rest of a playlist when it plays the playlist
+    /// itself. `play track N of` the playlist queued that one track, so a
+    /// station stopped after it, and with repeat on played it again forever.
+    /// So this plays the playlist from its first track, pauses, and steps on
+    /// to `track` with `next track`, then plays.
+    static func play(playlistID: String, track: Int) async throws -> (orderChanged: Bool, track: Int) {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
-        return try await run("""
+        let stepping = track > 1
+        // Shuffle goes off before `play`, or the playlist would start on a
+        // random track. Both are set again after it, in case the new queue
+        // brings its own: a tune's settings have been found changed a second
+        // later.
+        let started = try await run("""
             set alreadyInOrder to shuffle enabled is false and song repeat is all
             set shuffle enabled to false
             set song repeat to all
-            play track \(track) of (first user playlist whose persistent ID is "\(playlistID)")
-            return not alreadyInOrder
-            """) { $0.booleanValue }
+            play (first user playlist whose persistent ID is "\(playlistID)")
+            \(stepping ? "pause" : "")
+            set shuffle enabled to false
+            set song repeat to all
+            \(trackIndexScript(playlistID: playlistID))
+            return {not alreadyInOrder, trackIndex}
+            """) { result in
+            (orderChanged: result.atIndex(1)?.booleanValue ?? false, track: Int(result.atIndex(2)?.int32Value ?? 0))
+        }
+        guard stepping else { return started }
+        let clock = ContinuousClock()
+        let steppingStarted = clock.now
+        let reached = try await stepOn(from: started.track, to: track) { count in
+            try await skip(count, playlistID: playlistID)
+        } playOn: {
+            log.notice("Music didn't move on while paused, so it steps while playing")
+            _ = try await resume()
+        }
+        _ = try await resume()
+        log.notice("""
+            Stepped Music from track \(started.track) to \(reached) of playlist \(playlistID, privacy: .public) \
+            in \((clock.now - steppingStarted) / .milliseconds(1), format: .fixed(precision: 0)) ms
+            """)
+        return (started.orderChanged, reached)
+    }
+
+    /// Steps Music on from track `start` to track `target` of the playlist
+    /// it's playing, at most `chunk` tracks per script, so the volume dip and
+    /// a newer pick's cancel get a turn in between. `skip(n)` moves Music on
+    /// `n` tracks and returns the track it's on then, or 0 when it can't say.
+    ///
+    /// Whether a paused Music moves on isn't known, so the first time it
+    /// doesn't, `playOn` runs and stepping carries on while it plays. After
+    /// that, a try that doesn't move waits `interval`, in case Music ignores
+    /// `next track` while a track loads. It stops at `target`, or past it when
+    /// Music skips a track it can't play. It also stops once `limit` has
+    /// passed, and when Music goes back or can't say. Returns the track Music
+    /// reached.
+    static func stepOn(
+        from start: Int,
+        to target: Int,
+        chunk: Int = 10,
+        within limit: Duration = .seconds(2),
+        every interval: Duration = .milliseconds(100),
+        skip: (Int) async throws -> Int,
+        playOn: () async throws -> Void
+    ) async throws -> Int {
+        let deadline = ContinuousClock.now + limit
+        var reached = start
+        var playedOn = false
+        while reached > 0, reached < target, ContinuousClock.now < deadline {
+            try Task.checkCancellation()
+            let current = try await skip(min(target - reached, chunk))
+            if current > reached {
+                reached = current
+            } else if current < reached {
+                return current
+            } else if !playedOn {
+                try await playOn()
+                playedOn = true
+            } else {
+                try await Task.sleep(for: interval)
+            }
+        }
+        return reached
+    }
+
+    /// Moves Music on `count` tracks and returns the track it's on then, or 0
+    /// when it can't say.
+    private static func skip(_ count: Int, playlistID: String) async throws -> Int {
+        try await run("""
+            repeat \(count) times
+                next track
+            end repeat
+            \(trackIndexScript(playlistID: playlistID))
+            return trackIndex
+            """) { Int($0.int32Value) }
+    }
+
+    /// Sets `trackIndex` to the current track's place in the playlist, or to
+    /// 0 when Music is playing from somewhere else or can't say. A timeout
+    /// still throws, because Music not answering isn't Music being elsewhere.
+    private static func trackIndexScript(playlistID: String) -> String {
+        """
+        set trackIndex to 0
+        try
+            if persistent ID of current playlist is "\(playlistID)" then set trackIndex to index of current track
+        on error errText number errNumber
+            if errNumber is \(errAETimeout) then error errText number errNumber
+        end try
+        """
     }
 
     /// Moves the current track to `position` seconds and returns where Music
