@@ -1,4 +1,14 @@
-# Free Roam
+<p align="center">
+  <img src="prototype/public/free-roam/badge.png" width="120" height="120" alt="Free Roam">
+</p>
+
+<h1 align="center">Free Roam</h1>
+
+<p align="center">Your Music playlists on a radio wheel. Hold ⌥Q, flick, let go.</p>
+
+<!-- Demo GIF: save the recording as docs/media/demo.gif, then replace this comment with
+<p align="center"><img src="docs/media/demo.gif" width="720" alt="Holding Option-Q opens the radio wheel over the desktop, a flick picks a playlist, and Music switches to it"></p>
+-->
 
 Hold ⌥Q and a radio wheel pops up over whatever you're doing. Flick the mouse toward a station, let go, and Apple Music switches playlist with a burst of radio static.
 
