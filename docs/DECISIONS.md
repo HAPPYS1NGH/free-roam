@@ -344,3 +344,17 @@ Rejected:
 - The bare badge as the icon: macOS 26 and later shrink it into a grey plate.
 - A full-bleed square: macOS 27 masks it to shape, but macOS 14 and 15 would show square corners.
 - A plate in the website's `#101514`: the badge's black disc disappeared into it.
+
+## 2026-10-27: The menu bar glyph
+
+- The status item was the SF Symbol `radio`. It's now a template image made from the badge: its ring, with the four gaps, around the badge's own lettering, 18 pt square. The files are `MenuBarIconTemplate.png` and `MenuBarIconTemplate@2x.png` in `Sources/FreeRoam/Resources`, and `bundle.sh` copies them. `NSImage(named:)` loads them as one template image, so macOS tints it for light and dark menu bars. A build without the bundle, like `swift run`, falls back to `radio`.
+- The ring is 1 pt wide so the lettering inside it can be as large as possible. At @2x it reads FREE ROAM, at about the weight of the Wi-Fi and battery symbols next to it.
+- At @1x the strokes are about a pixel wide and the lettering turns into texture. Its grey pixels made the glyph look like a dimmed item, so the @1x file steepens the alpha to keep it at full strength. There it reads as the badge's shape rather than as words, the one place `radio` was clearer. That only happens on non-Retina screens, so the badge still wins.
+- Not yet seen in the real menu bar: that needs a bundle build.
+
+Rejected:
+
+- A ring with nothing or a dot inside: it reads as a crosshair.
+- A filled disc with the lettering cut out: much heavier than the symbols around it.
+- Thresholding @1x to solid pixels: the ring went jagged and the lettering broke into specks.
+- `radio` on @1x screens only: a laptop with a second screen would show two different icons.

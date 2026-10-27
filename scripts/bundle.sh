@@ -39,8 +39,9 @@ for sound in open close hover "$RETUNE_TAKE"; do
 done
 # The caption font and its licence (SIL OFL), which has to travel with it.
 cp Sources/FreeRoam/Resources/SofiaSansExtraCondensed-SemiBold.ttf Sources/FreeRoam/Resources/OFL.txt "$APP/Contents/Resources/"
-# The app icon, from scripts/make-brand-assets.sh.
-cp Sources/FreeRoam/Resources/AppIcon.icns "$APP/Contents/Resources/"
+# The app icon and menu bar glyph, from scripts/make-brand-assets.sh.
+cp Sources/FreeRoam/Resources/AppIcon.icns Sources/FreeRoam/Resources/MenuBarIconTemplate.png \
+  Sources/FreeRoam/Resources/MenuBarIconTemplate@2x.png "$APP/Contents/Resources/"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"
 
 # Ad-hoc signatures change with every build, and macOS drops Screen Recording

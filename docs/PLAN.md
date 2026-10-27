@@ -117,11 +117,13 @@ free-roam/
 │   │   ├── WelcomeModel.swift   # both permissions, their Allow buttons and when to show
 │   │   ├── WelcomeView.swift    # the window's text and rows
 │   │   └── WelcomeWindow.swift  # the window at launch
-│   └── Resources/               # the caption font and its OFL licence
+│   └── Resources/               # the caption font and its OFL licence, the app icon and menu bar glyph
 ├── Tests/FreeRoamTests/
 └── scripts/
     ├── bundle.sh                # builds and signs Free Roam.app
-    └── make-signing-cert.sh     # self-signed certificate for development, once per Mac
+    ├── make-signing-cert.sh     # self-signed certificate for development, once per Mac
+    ├── make-brand-assets.sh     # regenerates the icon, glyph and launch images from the badge
+    └── brand/                   # the Swift that draws them
 ```
 
 Build order. The riskiest parts come first, and the app works end to end before it looks right:

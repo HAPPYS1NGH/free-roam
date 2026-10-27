@@ -14,13 +14,35 @@ struct FreeRoamApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra("Free Roam", systemImage: "radio") {
+        MenuBarExtra {
             StatusMenu(model: appDelegate.menu)
+        } label: {
+            MenuBarIcon()
         }
         Settings {
             StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style)
         }
         .windowResizability(.contentMinSize)
+    }
+}
+
+/// The badge's ring and lettering from Contents/Resources, which
+/// scripts/bundle.sh copies in. A build run without the bundle, such as
+/// `swift run`, has no resources, so it falls back to the radio symbol.
+struct MenuBarIcon: View {
+    /// NSImage(named:) loads the @1x and @2x files as one image, and the
+    /// Template suffix makes it a template that macOS tints for the menu bar.
+    private static let glyph = NSImage(named: "MenuBarIconTemplate")
+
+    var body: some View {
+        Group {
+            if let glyph = Self.glyph {
+                Image(nsImage: glyph)
+            } else {
+                Image(systemName: "radio")
+            }
+        }
+        .accessibilityLabel("Free Roam")
     }
 }
 
