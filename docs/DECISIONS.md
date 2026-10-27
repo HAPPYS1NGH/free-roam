@@ -329,3 +329,18 @@ Rejected:
 - Clicking a disc to take it off: it's too easy to do when starting a drag.
 - Reading song counts with the playlist list: Music has no track count for a playlist, so it would mean a script per playlist on every read, and the list is read after every wheel close.
 - A second, lower priority inside `MusicBridge`'s queue: the wheel already knows when it's busy, as the playlist read after a close does.
+
+## 2026-10-27: The app icon
+
+- The icon puts the badge, `prototype/public/free-roam/app-icon.png`, on a navy plate drawn to Apple's macOS grid: an 824 px rounded square with continuous corners in a 1024 px canvas, with the template's soft drop shadow. The plate runs from `#22344A` at the top to `#0E1620`, the dusk sky in the website's coast photo. The badge's disc is 80% of the plate's width.
+- Checked on macOS 27.0.1 by asking `NSWorkspace` for the icons of test bundles. An icon on that grid shows at full size, as Apple's do, with no grey plate. A bare circle, like the badge on its own, goes into the grey plate at about 80% size. macOS 14 and 15 show the icon as drawn.
+- At 16 pt and 32 pt @1x, macOS 27 puts every app that ships only an .icns in a grey frame. Cursor, Obsidian and Emdash get it too. Only an Icon Composer icon compiled into `Assets.car` avoids it, and that needs Xcode's `actool` in `bundle.sh`. Retina sizes and the Dock are fine.
+- Scaled down to 16 and 32 px, the badge turns into a light grey disc: the thin cyan ring blends into the black, and the lettering fills the disc. Those two sizes keep the badge's own lettering, set a little smaller, and redraw the ring a pixel or two wide. At 32 px the ring keeps its four gaps. 64 px and up are the master scaled down.
+- The badge PNG's flat areas drift a few levels around each colour, and its opaque pixels have an alpha of 253 or 254. Pixels within 20 levels of black, ivory or cyan now become exactly that colour, which looks the same and compresses far better. The plate's gradient is filled row by row, because `CGGradient` dithers. Together they took the .icns from 1.1 MB to 539 KB.
+- `scripts/make-brand-assets.sh` regenerates the icon with the Swift in `scripts/brand/` and `iconutil`. The 1024 px master is `output/branding/free-roam/macos-app-icon-1024.png`.
+
+Rejected:
+
+- The bare badge as the icon: macOS 26 and later shrink it into a grey plate.
+- A full-bleed square: macOS 27 masks it to shape, but macOS 14 and 15 would show square corners.
+- A plate in the website's `#101514`: the badge's black disc disappeared into it.

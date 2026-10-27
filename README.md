@@ -55,7 +55,7 @@ npm run studio    # opens /studio.html with DialKit
 
 This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries, wallpapers, and `public/sounds/local/` remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
 
-The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. The website uses it in the header and as the favicon. The Mac app doesn't use it yet: it has no app icon, and its menu bar item is a radio symbol. Logo prompts are saved in `output/branding/free-roam/`.
+The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. The website uses it in the header and as the favicon. The Mac app's icon puts it on a navy plate; its menu bar item is still a radio symbol. `scripts/make-brand-assets.sh` regenerates the icon from the badge. Logo prompts are saved in `output/branding/free-roam/`.
 
 Design decisions and verification are in [docs/free-roam-design.md](docs/free-roam-design.md).
 

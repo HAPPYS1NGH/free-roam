@@ -8,6 +8,8 @@
 	<string>Free Roam</string>
 	<key>CFBundleExecutable</key>
 	<string>FreeRoam</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.happys1ngh.freeroam</string>
 	<key>CFBundleInfoDictionaryVersion</key>
