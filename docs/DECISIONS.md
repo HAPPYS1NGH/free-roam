@@ -370,3 +370,12 @@ Rejected:
 - `favicon.ico` at the site's root holds 16 and 32 px badges, drawn like the app icon's small sizes with the ring redrawn, and filling the square. Browsers ask for `/favicon.ico` on their own, and the pages link it too. `apple-touch-icon.png` (180 px) has the icon's plate full bleed, because iOS rounds the corners itself and turns transparency black.
 - There's no SVG favicon. The lettering only exists as a raster, so an SVG would either wrap the PNG, which gains nothing, or need the lettering traced into paths, which is redrawing it.
 - `free-roam/og-image.jpg` is the social card for both pages, 1200 × 630: the hero's headline on the left and the wheel on the right, over the coast photo. The wheel's station art is cut from the coast photo, because the demo's album covers are approved for the demo only. `site-metadata.mjs` turns its path into an absolute URL for `og:image` and `twitter:image`, and a test checks it's published at 1200 × 630.
+
+## 2026-10-27: Launch images
+
+- `scripts/make-brand-assets.sh` also draws the launch images into `output/launch/`, all in the After Hours look: the coast photo, the dark shade, Sofia Sans Extra Condensed capitals and Courier New eyebrows. They're support images; the launch post itself is a screen recording.
+  - `github-social-preview.jpg`, 1280 × 640: the badge and one line, kept inside the middle 640 px square so a square crop or a small unfurl still shows them.
+  - `x-announcement-1600x900.jpg` and `x-portrait-1080x1350.jpg`: the headline, the wheel and the repository's address.
+  - `video-poster-1920x1080.jpg`: the wheel open over the coast as a desktop picture, faded and vignetted as the app's backdrop is, with ⌥ Q below it.
+- The wheel follows `tokens.json`: ten slots, Radio Off at the bottom, idle discs at 40% in grey, the selected one in colour inside the `#65B4D4` ring, and its name above the centre. Its art is cut from the coast photo, not album covers. A soft dark scrim behind it keeps the faded discs readable over the bright sky.
+- No image names or shows a game, its stations or its fonts.

@@ -28,7 +28,11 @@ write(WebAssets.pageBadge(badge), to: path("prototype/public/free-roam/badge.png
 write(WebAssets.ico([WebAssets.favicon(badge, size: 16), WebAssets.favicon(badge, size: 32)]), to: path("prototype/public/favicon.ico"))
 write(AppIcon.touchIcon(badge, size: 180), to: path("prototype/public/apple-touch-icon.png"))
 
-// The website's social card.
+// The social card and launch images.
 registerFont(path("Sources/FreeRoam/Resources/SofiaSansExtraCondensed-SemiBold.ttf"))
 let launch = LaunchImages(badge: badge, coast: loadImage(path("prototype/public/free-roam/coast.jpg")))
 write(launch.socialCard(), to: path("prototype/public/free-roam/og-image.jpg"), jpegQuality: 0.82)
+write(launch.githubPreview(), to: path("output/launch/github-social-preview.jpg"), jpegQuality: 0.88)
+write(launch.announcement(), to: path("output/launch/x-announcement-1600x900.jpg"), jpegQuality: 0.9)
+write(launch.portrait(), to: path("output/launch/x-portrait-1080x1350.jpg"), jpegQuality: 0.9)
+write(launch.videoPoster(), to: path("output/launch/video-poster-1920x1080.jpg"), jpegQuality: 0.9)
