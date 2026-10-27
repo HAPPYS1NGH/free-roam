@@ -85,7 +85,7 @@ When Free Roam starts, a window explains its two permissions, with an Allow butt
 ## Requirements
 
 - macOS 14 or later
-- The Music app. An Apple Music subscription is optional, since your local library works too.
+- The Music app. Free Roam plays the playlists in it. Songs you own, imported or purchased, play without a subscription; Apple Music songs need one.
 
 ## License
 

@@ -163,7 +163,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
   - Two playlists share a name.
   - Several displays: show the wheel on the screen with the mouse.
   - Full-screen apps.
-  - No Apple Music subscription: the local library still works.
+  - No Apple Music subscription: songs you own, imported or purchased, still play; Apple Music songs need one. Not yet tested by hand.
 - Tests:
   - angle → slot, including the dead zone and wrapping past 360°
   - broadcast clock: the right track and position, including wrap-around and empty playlists
