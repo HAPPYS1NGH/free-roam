@@ -12,35 +12,41 @@ struct CaptionTests {
     ]
 
     @Test func radioOffIsOneLine() {
-        let caption = CaptionLines(station: nil, tracks: nil, at: Broadcast.epoch)
+        let caption = CaptionLines(station: nil, tracks: nil)
         #expect([caption.station, caption.artist, caption.title] == ["Radio Off", "", ""])
     }
 
-    @Test func showsTheTrackOnAir() {
-        let caption = CaptionLines(station: station, tracks: tracks, at: Broadcast.epoch.addingTimeInterval(150))
+    @Test func showsTheTrackMusicIsPlaying() {
+        let playing = NowPlaying(playlistID: station.id, trackIndex: 1, trackCount: 2)
+        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing)
         #expect([caption.station, caption.artist, caption.title] == ["Late Night", "M83", "Midnight City"])
     }
 
-    @Test func followsTheTrackMusicIsPlaying() {
-        // Skipped to the second track in Music 10 s before, while the clock is on the first.
-        let playing = NowPlaying(
-            playlistID: station.id, onAir: .init(index: 1, position: 0), date: Broadcast.epoch.addingTimeInterval(20), trackCount: 2
-        )
-        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing, at: Broadcast.epoch.addingTimeInterval(30))
-        #expect([caption.artist, caption.title] == ["M83", "Midnight City"])
+    /// Music shuffles, so a station it isn't playing has no track to name.
+    @Test func showsTheSongCountOfAStationMusicIsNotPlaying() {
+        let caption = CaptionLines(station: station, tracks: tracks)
+        #expect([caption.station, caption.artist, caption.title] == ["Late Night", "", "2 songs"])
 
-        let elsewhere = NowPlaying(playlistID: "E5B25C359F6E2F36", onAir: playing.onAir, date: playing.date, trackCount: 2)
-        let clock = CaptionLines(station: station, tracks: tracks, nowPlaying: elsewhere, at: Broadcast.epoch.addingTimeInterval(30))
-        #expect([clock.artist, clock.title] == ["Frank Ocean", "Nights"])
+        let elsewhere = NowPlaying(playlistID: "E5B25C359F6E2F36", trackIndex: 1, trackCount: 2)
+        let other = CaptionLines(station: station, tracks: tracks, nowPlaying: elsewhere)
+        #expect([other.artist, other.title] == ["", "2 songs"])
+    }
+
+    /// An edited playlist's track numbers may have moved since its tracks loaded.
+    @Test(arguments: [(1, 3), (2, 3), (5, 2)])
+    func showsTheSongCountWhenMusicsTrackDoesNotMatch(_ trackIndex: Int, _ trackCount: Int) {
+        let playing = NowPlaying(playlistID: station.id, trackIndex: trackIndex, trackCount: trackCount)
+        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing)
+        #expect([caption.artist, caption.title] == ["", "2 songs"])
     }
 
     @Test func showsTheNameAloneUntilTheTracksLoad() {
-        let caption = CaptionLines(station: station, tracks: nil, at: Broadcast.epoch)
+        let caption = CaptionLines(station: station, tracks: nil)
         #expect([caption.station, caption.artist, caption.title] == ["Late Night", "", ""])
     }
 
     @Test func saysWhenThereIsNothingToPlay() {
-        let caption = CaptionLines(station: station, tracks: [], at: Broadcast.epoch)
+        let caption = CaptionLines(station: station, tracks: [])
         #expect([caption.station, caption.artist, caption.title] == ["Late Night", "", "No songs"])
     }
 
@@ -83,14 +89,17 @@ struct CaptionRenderTests {
         let (width, height) = (1512, 982)
         let playlists = (1...stations).map { Playlist(id: String(format: "%016X", $0), name: "LATE NIGHT DRIVES \($0)") }
         let track = Track(title: "BROWN MUNDE LIVE FROM THE DESERT SESSIONS", artist: "AP DHILLON AND SHINDA KAHLON AND GURINDER GILL", album: "", duration: 1_000_000)
+        // On the right, where the selected disc comes closest to the caption.
+        let highlighted = (stations + 1) * 3 / 4
         let content = RadioWheelContent(
             style: style,
             stations: playlists,
-            // On the right, where the selected disc comes closest to the caption.
-            highlighted: (stations + 1) * 3 / 4,
+            highlighted: highlighted,
             presence: .shown,
             logos: [:],
-            tracks: Dictionary(uniqueKeysWithValues: playlists.map { ($0.id, [track]) })
+            tracks: Dictionary(uniqueKeysWithValues: playlists.map { ($0.id, [track]) }),
+            // Playing, so the caption has all three lines.
+            nowPlaying: NowPlaying(playlistID: playlists[highlighted - 1].id, trackIndex: 0, trackCount: 1)
         )
         let renderer = ImageRenderer(content: content.frame(width: Double(width), height: Double(height)))
         renderer.scale = 1

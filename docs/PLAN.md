@@ -50,7 +50,7 @@ Checked on this Mac or known limits of macOS:
       BackdropView fades out over 450 ms, then the panel leaves the screen
     if the pick moved
       play retune.wav
-      Broadcast.onAir → MusicBridge.play(playlist) with shuffle off and repeat on, paused while next track steps to track N, then seek(to: on-air position), skipped if the steps fall short
+      MusicBridge.play(playlist) with shuffle and repeat on, waits until Music plays it, then seek(to: 15–65% into the track Music started on)
     VolumeDip.restore()
     StationList.reload()                 once any tune has reached Music, for playlists added or deleted
 ```
@@ -69,7 +69,7 @@ The goal is to settle how the wheel looks and moves, down to the exact numbers, 
 
 - [x] Radio wheel copied from GTA V: ring layout, see-through idle logos, accent ring, outlined caption, desaturated and vignetted backdrop
 - [x] Station logos: a 2×2 mosaic of each playlist's album covers (`npm run library` exports yours into a gitignored folder)
-- [x] Live tuning after a 1 second rest, a quick tap of Q for the next station, scrolling to step, and a broadcast clock so stations start mid-song
+- [x] Live tuning after a 1 second rest, a quick tap of Q for the next station, scrolling to step, and stations that start mid-song
 - [x] Synthesised sounds: open, close, hover tick and three retune takes (`npm run sounds`)
 - [x] Tuning panel with an export to `tokens.json`
 - [x] Pick a retune take (`retune`) and export `prototype/tokens.json` from the tuned defaults
@@ -93,7 +93,6 @@ free-roam/
 │   │   ├── WheelStyle.swift     # numbers from prototype/tokens.json
 │   │   ├── WheelGeometry.swift  # ring layout, flick angle → slot
 │   │   ├── ScrollStepper.swift  # scroll distance → one station per event
-│   │   ├── Broadcast.swift      # which track is "on air", and how far in
 │   │   ├── RadioWheelModel.swift # hold, tap, pick and tune
 │   │   ├── RadioWheelView.swift  # discs, logos, caption, open and close
 │   │   ├── StationDetails.swift  # each station's tracks and logo, loaded in the background
@@ -129,13 +128,13 @@ free-roam/
 Build order. The riskiest parts come first, and the app works end to end before it looks right:
 
 - [x] First build: a menu bar app that lists your playlists, plays one and captures the screen, built and signed by `scripts/bundle.sh`
-- [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests. `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
+- [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests (the clock went on 2026-11-19, see DECISIONS.md). `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
 - [x] Hotkey and overlay: hold ⌥Q to open and tap for the next station, a panel on the screen with the mouse that covers full-screen apps and every Space, and mouse and scroll input while it's held. Plain circles for now. Time a screen capture on open: if it takes much longer than the 150ms filter fade, the backdrop needs a stream that keeps running
 - [x] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
 - [x] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font. The pointer hides while the wheel is open
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
 - [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Free Roam to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Free Roam's Settings window is active
-- [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle goes off and repeat on, and the caption follows the track Music is actually playing
+- [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle and repeat go on, and the caption follows the track Music is actually playing
 - [ ] Welcome window: explains both permissions at launch, with an Allow button for each. Built, needs a hand test
 - [ ] Stations picker: the stations as discs above a grid of every playlist's cover, with search. Built, needs a hand test
 - [ ] The recording for the first X post, with the local sound pack
@@ -145,7 +144,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - Welcome window: at launch, a small window explains Control Music and Screen Recording, each with its status and an Allow button. It stops showing once you choose Don't Show This Again or both are allowed. Closing it any other way saves nothing, so it shows again at the next launch. Free Roam asks for Screen Recording only when you choose Allow, in the window or the menu, never by itself. macOS still asks about Music the first time Free Roam sends it a command.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
-  - play a playlist (by persistent ID) from track N, with shuffle off and repeat on, and set `player position`, for mid-song tune-in. Music only queues a playlist it plays whole, so this plays it from the top and steps on with `next track`
+  - play a playlist (by persistent ID) with shuffle and repeat on, wait until Music says it's playing it, and set `player position`, for mid-song tune-in
   - pause, and play on after launching Music
   - the playlist, track number and position Music is playing
   - album artwork of a playlist's first four distinct albums (playlists themselves expose none)
@@ -166,7 +165,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
   - No Apple Music subscription: songs you own, imported or purchased, still play; Apple Music songs need one. Not yet tested by hand.
 - Tests:
   - angle → slot, including the dead zone and wrapping past 360°
-  - broadcast clock: the right track and position, including wrap-around and empty playlists
+  - waiting for Music to play a playlist, and where a tune lands in a track
   - loading the slot config when a playlist is missing
   - AppleScript string escaping
 

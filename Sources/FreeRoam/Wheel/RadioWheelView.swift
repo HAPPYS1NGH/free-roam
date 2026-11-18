@@ -75,15 +75,13 @@ struct RadioWheelContent: View {
                     // The ring overlaps the neighbours a little, as in GTA.
                     .zIndex(selected ? 1 : 0)
                 }
-                TimelineView(.periodic(from: .now, by: 1)) { context in
-                    CaptionView(
-                        lines: caption(at: context.date),
-                        sizes: sizes,
-                        ring: ring,
-                        centre: centre,
-                        screenHeight: proxy.size.height
-                    )
-                }
+                CaptionView(
+                    lines: caption,
+                    sizes: sizes,
+                    ring: ring,
+                    centre: centre,
+                    screenHeight: proxy.size.height
+                )
             }
             .opacity(presence == .shown ? 1 : 0)
             .scaleEffect(
@@ -98,22 +96,23 @@ struct RadioWheelContent: View {
         slot > 0 ? .station(stations[slot - 1], logos: logos) : .radioOff
     }
 
-    private func caption(at date: Date) -> CaptionLines {
+    private var caption: CaptionLines {
         let station = highlighted == 0 ? nil : stations[highlighted - 1]
-        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, nowPlaying: nowPlaying, at: date)
+        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, nowPlaying: nowPlaying)
     }
 }
 
-/// Station, ARTIST, title of the track on air.
+/// Station, ARTIST, title of the track playing, or the station's song count.
 struct CaptionLines: Equatable {
     let station: String
     let artist: String
     let title: String
 
     /// Nil is Radio Off. A station whose tracks haven't loaded yet shows its
-    /// name alone. While Music plays the station, the lines follow Music,
-    /// which a skip or a pause in Music moves off the broadcast clock.
-    init(station: Playlist?, tracks: [Track]?, nowPlaying: NowPlaying? = nil, at date: Date) {
+    /// name alone. The station Music is playing shows the track Music said
+    /// at the press. Music shuffles, so which track comes next can't be
+    /// known, and every other station shows how many songs it has.
+    init(station: Playlist?, tracks: [Track]?, nowPlaying: NowPlaying? = nil) {
         guard let station else {
             self.station = "Radio Off"
             artist = ""
@@ -126,15 +125,17 @@ struct CaptionLines: Equatable {
             title = ""
             return
         }
-        let durations = tracks.map(\.duration)
-        let musicOnAir = nowPlaying.flatMap { playing in
-            playing.playlistID == station.id
-                ? Broadcast.onAir(durations: durations, at: date, from: playing.onAir, at: playing.date)
-                : nil
+        // A track count that differs from the tracks loaded is an edited
+        // playlist, whose track numbers may have moved.
+        guard let nowPlaying, nowPlaying.playlistID == station.id, nowPlaying.trackCount == tracks.count,
+              tracks.indices.contains(nowPlaying.trackIndex)
+        else {
+            artist = ""
+            title = PlaylistTile.songCountText(tracks.count)
+            return
         }
-        let onAir = musicOnAir ?? Broadcast.onAir(durations: durations, at: date)
-        artist = onAir.map { tracks[$0.index].artist } ?? ""
-        title = onAir.map { tracks[$0.index].title } ?? "No songs"
+        artist = tracks[nowPlaying.trackIndex].artist
+        title = tracks[nowPlaying.trackIndex].title
     }
 }
 
@@ -259,9 +260,9 @@ private struct CaptionView: View {
             heights: shown.map(\.height), ring: ring, sizes: sizes, screenHeight: screenHeight
         )
         // One ZStack, so every line is positioned in the whole wheel. Left
-        // loose in the TimelineView, the lines were stacked like a VStack,
-        // each in a third of the screen, which put the artist at the bottom
-        // of the ring and the title off-screen.
+        // loose in the TimelineView the caption once had, the lines were
+        // stacked like a VStack, each in a third of the screen, which put the
+        // artist at the bottom of the ring and the title off-screen.
         ZStack {
             ForEach(shown.indices, id: \.self) { index in
                 let (text, size, _, isArtist) = shown[index]

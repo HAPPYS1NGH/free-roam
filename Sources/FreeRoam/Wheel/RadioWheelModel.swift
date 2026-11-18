@@ -78,9 +78,8 @@ final class RadioWheelModel {
     /// The playlist Music is playing from, which may not be on the ring. Nil
     /// is Radio Off: paused, stopped or not running.
     @ObservationIgnored private var tunedID: String?
-    /// Where Music was at the last press, so the caption follows the track
-    /// Music is playing after a skip or a pause in Music moved it off the
-    /// broadcast clock. Nil after a tune, which puts Music back on the clock.
+    /// Where Music was at the last press, so the caption names the track
+    /// Music is playing. Nil after a tune, until the next press asks again.
     private(set) var nowPlaying: NowPlaying?
     @ObservationIgnored private var playingRead: Task<Void, Never>?
     /// Tunes whose commands haven't reached Music yet, or that launched Music
@@ -293,8 +292,8 @@ final class RadioWheelModel {
     /// playing before the wheel opens on it. When Music isn't running that's
     /// Radio Off, and Music isn't asked.
     private func readPlaying() {
-        // Until Music answers, the caption follows the clock, so a read that
-        // fails leaves no stale position behind.
+        // Until Music answers, the caption names no track, so a read that
+        // fails leaves no stale track behind.
         nowPlaying = nil
         // A tune still on its way to Music is newer than anything Music can
         // report yet.
@@ -318,7 +317,6 @@ final class RadioWheelModel {
             nowPlaying = playing
             if let playing {
                 details.reloadIfChanged(playing.playlistID, trackCount: playing.trackCount)
-                logIfOffTheClock(playing)
             }
             let id = playing?.playlistID
             guard id != tunedID else { return }
@@ -327,17 +325,6 @@ final class RadioWheelModel {
             log.notice("Music is playing \(name, privacy: .public)")
             if isOpen, !picked { highlighted = tunedSlot }
         }
-    }
-
-    private func logIfOffTheClock(_ playing: NowPlaying) {
-        guard let durations = details.tracks[playing.playlistID]?.map(\.duration),
-              let clock = Broadcast.onAir(durations: durations, at: playing.date),
-              clock.index != playing.onAir.index
-        else { return }
-        log.notice("""
-            Music is on track \(playing.onAir.index + 1) of playlist \(playing.playlistID, privacy: .public) \
-            and the clock on track \(clock.index + 1), so the caption follows Music
-            """)
     }
 
     private func tapNext() {
@@ -386,14 +373,19 @@ final class RadioWheelModel {
         stationList.reload()
     }
 
-    /// Plays the station's on-air track from partway in, or pauses for Radio
-    /// Off and for a station with nothing to play. Music launches for a
-    /// station, but not for Radio Off, and not once a newer pick cancels
-    /// the tune.
+    /// Plays the station's playlist on shuffle from partway into whichever
+    /// track Music starts on, or pauses for Radio Off and for a station with
+    /// nothing to play. Music launches for a station, but not for Radio Off,
+    /// and not once a newer pick cancels the tune.
     private func playOnAir(_ id: String?) async {
         do {
             guard let id else {
-                if MusicBridge.isRunning { try await MusicBridge.pause() }
+                guard MusicBridge.isRunning else { return }
+                try await MusicBridge.pause()
+                // Music takes a `play` a few hundred milliseconds after it's
+                // sent, so a replaced tune's `play` can land after this pause.
+                try await Task.sleep(for: .milliseconds(700))
+                if tunedID == nil { try await MusicBridge.pause() }
                 return
             }
             let launching = !MusicBridge.isRunning
@@ -401,29 +393,29 @@ final class RadioWheelModel {
             let durations = try await MusicBridge.trackDurations(playlistID: id)
             // Superseded by a later tune while the durations were on their way.
             guard tunedID == id else { return }
-            let clockedAt = ContinuousClock.now
             // A station with nothing to play is dead air, like Radio Off.
-            guard let onAir = Broadcast.onAir(durations: durations, at: .now) else {
+            guard durations.contains(where: { $0 > 0 }) else {
                 try await MusicBridge.pause()
                 details.reloadIfChanged(id, trackCount: durations.count)
                 log.notice("Playlist \(id, privacy: .public) has no tracks to play, so Music is paused")
                 return
             }
-            let played = try await MusicBridge.play(playlistID: id, track: onAir.index + 1)
+            let played = try await MusicBridge.play(playlistID: id)
             if played.orderChanged {
-                log.notice("Turned Music's shuffle off and repeat on, so stations play in order and loop")
+                log.notice("Turned Music's shuffle and repeat on, so each station shuffles its own playlist and loops")
             }
-            if played.track == onAir.index + 1 {
-                try await seek(id, to: onAir, of: durations, since: clockedAt)
+            if durations.indices.contains(played.track - 1) {
+                try await seek(id, track: played.track, of: durations)
+                if tunedID == id { try await MusicBridge.keepOnAir() }
             } else {
                 let reached = played.track > 0 ? "track \(played.track)" : "a track it can't name"
                 log.error("""
-                    Music got to \(reached, privacy: .public) of \(durations.count) in playlist \(id, privacy: .public) \
-                    instead of track \(onAir.index + 1), so the station plays on from there without a seek
+                    Music got to \(reached, privacy: .public) of \(durations.count) in playlist \(id, privacy: .public), \
+                    so the station plays on from there without a seek
                     """)
             }
             // Only now, because an edited playlist's track and cover reads
-            // would take turns with the steps and the seek.
+            // would take turns with the wait for Music and the seek.
             details.reloadIfChanged(id, trackCount: durations.count)
             if launching { try await keepPlayingAfterLaunch(id) }
         } catch is CancellationError {
@@ -447,26 +439,27 @@ final class RadioWheelModel {
         }
     }
 
+    /// Where a tune lands in a track `duration` seconds long: `fraction` of
+    /// the way in, so it drops in mid-song like radio, and short of the end,
+    /// or Music would move on to the next track.
+    nonisolated static func landing(in duration: TimeInterval, at fraction: Double) -> TimeInterval {
+        max(min(duration * fraction, duration - 1), 0)
+    }
+
     /// Music ignores or refuses a new position until a streamed track has
-    /// loaded, so keep setting it, with the target moving on with the clock,
-    /// until Music reports it. Most tracks took a few tries. The clock moves
-    /// on from `clockedAt`, when `onAir` was worked out, so the time Music
-    /// took to step to the track counts too.
-    private func seek(
-        _ id: String, to onAir: Broadcast.OnAir, of durations: [TimeInterval], since clockedAt: ContinuousClock.Instant
-    ) async throws {
-        let duration = durations[onAir.index]
+    /// loaded, so keep setting it until Music reports it. Most tracks took a
+    /// few tries.
+    private func seek(_ id: String, track: Int, of durations: [TimeInterval]) async throws {
+        let duration = durations[track - 1]
+        let target = Self.landing(in: duration, at: .random(in: 0.15...0.65))
         var reported: TimeInterval?
         for attempt in 1...Self.seekAttempts {
             // Another tune has the player now, so this position isn't for its track.
             guard tunedID == id else { return }
-            let elapsed = (ContinuousClock.now - clockedAt) / .seconds(1)
-            // Short of the end, or Music would move on to the next track.
-            let target = max(min(onAir.position + elapsed, duration - 1), 0)
             reported = try await MusicBridge.seek(to: target)
             if let reported, abs(reported - target) < 2 {
                 log.notice("""
-                    Playing track \(onAir.index + 1) of \(durations.count) in playlist \(id, privacy: .public) \
+                    Playing track \(track) of \(durations.count) in playlist \(id, privacy: .public) \
                     from \(Int(target)) s of \(Int(duration)) s, after \(attempt) tries
                     """)
                 return
@@ -474,7 +467,7 @@ final class RadioWheelModel {
             try await Task.sleep(for: .milliseconds(100))
         }
         log.error("""
-            Music didn't move to \(Int(onAir.position)) s of track \(onAir.index + 1) in playlist \(id, privacy: .public) \
+            Music didn't move to \(Int(target)) s of track \(track) in playlist \(id, privacy: .public) \
             and says \(reported.map { "\(Int($0)) s" } ?? "it can't", privacy: .public)
             """)
     }

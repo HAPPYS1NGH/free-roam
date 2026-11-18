@@ -22,7 +22,7 @@ struct MusicBridgeTests {
 
     @Test func refusesToScriptAnInvalidID() async {
         await #expect(throws: MusicBridgeError.self) {
-            _ = try await MusicBridge.play(playlistID: "\"; beep", track: 1)
+            _ = try await MusicBridge.play(playlistID: "\"; beep")
         }
         await #expect(throws: MusicBridgeError.self) {
             try await MusicBridge.trackDurations(playlistID: "\"; beep")
@@ -109,131 +109,62 @@ struct MusicBridgeTests {
         #expect(clock.now - started < .seconds(1))
     }
 
-    /// Only the last script stops at the on-air track, in case Music skips a
-    /// track it can't play on the way.
-    @Test func stepsToTheTrackAFewTracksPerScript() async throws {
-        var track = 1
-        var counts: [Int] = []
-        var stops: [Int?] = []
-        let reached = try await MusicBridge.stepOn(from: 1, to: 47, chunk: 10) { count, stop in
-            counts.append(count)
-            stops.append(stop)
-            track += count
-            return track
-        } playOn: {
-            Issue.record("Music moved on while paused, so it didn't need to play")
+    /// Music takes `play` a few hundred milliseconds late, and until then
+    /// says it's stopped or on another playlist.
+    @Test func waitsUntilMusicPlaysThePlaylist() async throws {
+        var reads = 0
+        let track = try await MusicBridge.waitUntilPlaying(every: .milliseconds(1)) {
+            reads += 1
+            return reads < 4 ? 0 : 7
         }
-        #expect(reached == 47)
-        #expect(counts == [10, 10, 10, 10, 6])
-        #expect(stops == [nil, nil, nil, nil, 47])
+        #expect(track == 7)
+        #expect(reads == 4)
     }
 
-    /// Each script asks for the steps left from where Music says it is.
-    @Test func stepsOnFromWhereverMusicGot() async throws {
-        var track = 1
-        var counts: [Int] = []
-        let reached = try await MusicBridge.stepOn(from: 1, to: 25, chunk: 10) { count, _ in
-            counts.append(count)
-            // Music takes only four of each script's steps.
-            track += min(count, 4)
-            return track
-        } playOn: {}
-        #expect(reached == 25)
-        #expect(counts == [10, 10, 10, 10, 8, 4])
-    }
-
-    /// If a paused Music ignores `next track`, it steps while playing instead.
-    @Test func playsOnOnceWhenPausedMusicDoesNotMove() async throws {
-        var playing = false
-        var track = 1
-        var playOns = 0
-        let reached = try await MusicBridge.stepOn(from: 1, to: 13) { count, _ in
-            if playing { track += count }
-            return track
-        } playOn: {
-            playOns += 1
-            playing = true
+    @Test func doesNotWaitWhenMusicIsAlreadyPlaying() async throws {
+        var reads = 0
+        let track = try await MusicBridge.waitUntilPlaying(every: .milliseconds(1)) {
+            reads += 1
+            return 3
         }
-        #expect(reached == 13)
-        #expect(playOns == 1)
+        #expect(track == 3)
+        #expect(reads == 1)
     }
 
-    @Test func waitsAndTriesAgainWhileMusicIgnoresAStep() async throws {
-        var tries = 0
-        var track = 1
-        var playOns = 0
-        let reached = try await MusicBridge.stepOn(from: 1, to: 5, every: .milliseconds(1)) { count, _ in
-            tries += 1
-            // Moves on only every third try, as if it were loading a track.
-            if tries.isMultiple(of: 3) { track += count }
-            return track
-        } playOn: {
-            playOns += 1
-        }
-        #expect(reached == 5)
-        #expect(playOns == 1)
-    }
-
-    @Test func givesUpOnceTheLimitHasPassed() async throws {
+    @Test func givesUpWaitingOnceTheLimitHasPassed() async throws {
         let clock = ContinuousClock()
         let started = clock.now
-        let reached = try await MusicBridge.stepOn(from: 1, to: 47, within: .milliseconds(50), every: .milliseconds(5)) { _, _ in
-            1
-        } playOn: {}
-        #expect(reached == 1)
+        let track = try await MusicBridge.waitUntilPlaying(within: .milliseconds(50), every: .milliseconds(5)) { 0 }
+        #expect(track == 0)
         #expect(clock.now - started < .seconds(1))
     }
 
-    /// A track Music can't play is skipped, which can carry it past the
-    /// on-air track. Stepping back could go to and fro around it, so it stops.
-    @Test func stopsPastTheTrackRatherThanGoBack() async throws {
-        var skips = 0
-        let reached = try await MusicBridge.stepOn(from: 45, to: 47) { _, _ in
-            skips += 1
-            return 48
-        } playOn: {}
-        #expect(reached == 48)
-        #expect(skips == 1)
-    }
-
-    /// 0 is Music not saying, and a lower track is Music going back, as when
-    /// it loops past the end.
-    @Test(arguments: [0, 3]) func stopsWhenMusicGoesBackOrCantSay(_ answer: Int) async throws {
-        let reached = try await MusicBridge.stepOn(from: 5, to: 47) { _, _ in answer } playOn: {}
-        #expect(reached == answer)
-    }
-
-    @Test func doesNotStepWhenMusicCantSayWhereItStarted() async throws {
-        let reached = try await MusicBridge.stepOn(from: 0, to: 47) { _, _ in
-            Issue.record("Stepped without knowing where Music was")
-            return 1
-        } playOn: {}
-        #expect(reached == 0)
-    }
-
-    /// A newer pick cancels the tune, which stops stepping between scripts.
-    @Test func stopsSteppingOnceCancelled() async {
-        let walk = Task {
-            try await MusicBridge.stepOn(from: 1, to: 47, within: .seconds(30), every: .milliseconds(5)) { _, _ in 1 } playOn: {}
+    /// A newer pick cancels the tune, which stops the wait between reads.
+    @Test func stopsWaitingOnceCancelled() async {
+        let wait = Task {
+            try await MusicBridge.waitUntilPlaying(within: .seconds(30), every: .milliseconds(5)) { 0 }
         }
         try? await Task.sleep(for: .milliseconds(20))
-        walk.cancel()
-        await #expect(throws: CancellationError.self) { try await walk.value }
+        wait.cancel()
+        await #expect(throws: CancellationError.self) { try await wait.value }
     }
 
-    /// A cancel that lands while Music steps still throws, whether that step
-    /// reached the track (5) or didn't move (1), so the tune never plays on
-    /// after Radio Off or another station has taken over.
-    @Test(arguments: [5, 1]) func aCancelDuringAStepStopsWithoutPlayingOn(_ landsOn: Int) async {
-        let walk = Task {
-            try await MusicBridge.stepOn(from: 1, to: 5) { _, _ in
+    /// A cancel that lands while Music answers still throws, even when Music
+    /// named the track, so a replaced tune never seeks over the next pick.
+    @Test func aCancelDuringAReadStopsWithoutATrack() async {
+        let wait = Task {
+            try await MusicBridge.waitUntilPlaying(every: .milliseconds(1)) {
                 withUnsafeCurrentTask { $0?.cancel() }
-                return landsOn
-            } playOn: {
-                Issue.record("Played on after a cancel")
+                return 5
             }
         }
-        await #expect(throws: CancellationError.self) { try await walk.value }
+        await #expect(throws: CancellationError.self) { try await wait.value }
+    }
+
+    @Test func passesOnAnErrorFromMusic() async {
+        await #expect(throws: MusicBridgeError.notRunning) {
+            try await MusicBridge.waitUntilPlaying(every: .milliseconds(1)) { throw MusicBridgeError.notRunning }
+        }
     }
 
     @Test func parsesPlaylistsAndDropsUnexpectedIDs() {
@@ -259,23 +190,21 @@ struct MusicBridgeTests {
         let result = NSAppleEventDescriptor.list()
         result.insert(NSAppleEventDescriptor(string: "B965EB2A37B2731C"), at: 1)
         result.insert(NSAppleEventDescriptor(int32: 3), at: 2)
-        result.insert(NSAppleEventDescriptor(double: 121.5), at: 3)
-        result.insert(NSAppleEventDescriptor(int32: 12), at: 4)
+        result.insert(NSAppleEventDescriptor(int32: 12), at: 3)
 
-        #expect(MusicBridge.parseNowPlaying(result, at: Broadcast.epoch) == NowPlaying(
-            playlistID: "B965EB2A37B2731C", onAir: .init(index: 2, position: 121.5), date: Broadcast.epoch, trackCount: 12
+        #expect(MusicBridge.parseNowPlaying(result) == NowPlaying(
+            playlistID: "B965EB2A37B2731C", trackIndex: 2, trackCount: 12
         ))
     }
 
     @Test func parsesNothingPlaying() {
-        #expect(MusicBridge.parseNowPlaying(.list(), at: Broadcast.epoch) == nil)
+        #expect(MusicBridge.parseNowPlaying(.list()) == nil)
 
         let notAnID = NSAppleEventDescriptor.list()
         notAnID.insert(NSAppleEventDescriptor(string: "library"), at: 1)
         notAnID.insert(NSAppleEventDescriptor(int32: 1), at: 2)
-        notAnID.insert(NSAppleEventDescriptor(double: 0), at: 3)
-        notAnID.insert(NSAppleEventDescriptor(int32: 1), at: 4)
-        #expect(MusicBridge.parseNowPlaying(notAnID, at: Broadcast.epoch) == nil)
+        notAnID.insert(NSAppleEventDescriptor(int32: 1), at: 3)
+        #expect(MusicBridge.parseNowPlaying(notAnID) == nil)
     }
 
     @Test func parsesDurationsAndZeroesMissingOnes() {

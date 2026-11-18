@@ -24,8 +24,8 @@ struct Track: Hashable, Sendable {
 struct NowPlaying: Equatable, Sendable {
     /// The playlist Music is playing from, which may not be on the wheel.
     let playlistID: String
-    let onAir: Broadcast.OnAir
-    let date: Date
+    /// Zero-based index into the playlist's tracks.
+    let trackIndex: Int
     /// How many tracks the playlist has now, which tells an edited playlist
     /// from the tracks loaded for it.
     let trackCount: Int
@@ -240,147 +240,104 @@ enum MusicBridge {
             """) { isMissingValue($0) ? nil : $0.data }
     }
 
-    /// Plays a playlist on from the start of track `track` (1-based). Shuffle
-    /// goes off and repeat covers the whole playlist, so the station plays in
-    /// the broadcast clock's order and loops as the clock does, and both stay
-    /// that way. Returns whether either was set otherwise, and the track Music
-    /// got to, or 0 when it can't say or stepping failed.
+    /// Plays a playlist like a radio station: shuffle on and repeat over the
+    /// whole playlist, so Music starts on a random track of it, never leaves
+    /// it and loops, and both stay that way. Returns whether either was set
+    /// otherwise, and the track (1-based) Music started on, or 0 when it
+    /// can't say.
     ///
-    /// Music only queues the rest of a playlist when it plays the playlist
-    /// itself. `play track N of` the playlist queued that one track, so a
-    /// station stopped after it, and with repeat on played it again forever.
-    /// So this plays the playlist from its first track, pauses, and steps on
-    /// to `track` with `next track`, then plays. The on-air track is half the
-    /// playlist in on average, so a playlist of a few hundred tracks or more
-    /// will often use up the 2 s `stepOn` allows, and plays on from where
-    /// Music got to.
-    static func play(playlistID: String, track: Int) async throws -> (orderChanged: Bool, track: Int) {
+    /// Music 1.7.2 takes `play` of a playlist a few hundred milliseconds
+    /// after the script that sent it has returned. Until then it reports the
+    /// old playlist and track, or none, and can say it's stopped. So this
+    /// waits until Music says it's playing the playlist, then sets shuffle
+    /// and repeat again, because they read as changed back for up to a
+    /// second after `play` before settling on what was set.
+    static func play(playlistID: String) async throws -> (orderChanged: Bool, track: Int) {
         guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
-        let stepping = track > 1
-        // Shuffle goes off before `play`, or the playlist would start on a
-        // random track. Both are set again after it, in case the new queue
-        // brings its own: a tune's settings have been found changed a second
-        // later.
-        let started = try await run("""
-            set alreadyInOrder to shuffle enabled is false and song repeat is all
-            set shuffle enabled to false
+        let orderChanged = try await run("""
+            set alreadyOnAir to shuffle enabled is true and song repeat is all
+            set shuffle enabled to true
             set song repeat to all
             play (first user playlist whose persistent ID is "\(playlistID)")
-            \(stepping ? "pause" : "")
-            set shuffle enabled to false
-            set song repeat to all
-            \(trackIndexScript(playlistID: playlistID))
-            return {not alreadyInOrder, trackIndex}
-            """) { result in
-            (orderChanged: result.atIndex(1)?.booleanValue ?? false, track: Int(result.atIndex(2)?.int32Value ?? 0))
-        }
-        // `play` of the playlist starts on track 1, even when Music can't say so.
-        guard stepping else { return (started.orderChanged, started.track > 0 ? started.track : 1) }
+            return not alreadyOnAir
+            """) { $0.booleanValue }
         let clock = ContinuousClock()
-        let steppingStarted = clock.now
-        let reached: Int
+        let played = clock.now
+        let track: Int
         do {
-            reached = try await stepOn(from: started.track, to: track) { count, stop in
-                try await skip(count, stoppingAt: stop, playlistID: playlistID)
-            } playOn: {
-                log.notice("Music didn't move on while paused, so it steps while playing")
-                _ = try await resume()
+            track = try await waitUntilPlaying {
+                try await run(playingTrackScript(playlistID: playlistID)) { Int($0.int32Value) }
             }
-            log.notice("""
-                Stepped Music from track \(started.track) to \(reached) of playlist \(playlistID, privacy: .public) \
-                in \((clock.now - steppingStarted) / .milliseconds(1), format: .fixed(precision: 0)) ms
-                """)
+            if track > 0 {
+                log.notice("""
+                    Music was playing track \(track) of playlist \(playlistID, privacy: .public) \
+                    \((clock.now - played) / .milliseconds(1), format: .fixed(precision: 0)) ms after it was told to
+                    """)
+            }
         } catch is CancellationError {
             throw CancellationError()
         } catch {
-            // Music is paused, so it plays on from wherever it got to rather
-            // than stay silent.
+            // Music was told to play, so the station plays on without a seek.
             log.error("""
-                Couldn't step Music to track \(track) of playlist \(playlistID, privacy: .public): \
+                Couldn't tell whether Music is playing playlist \(playlistID, privacy: .public): \
                 \(String(describing: error), privacy: .public)
                 """)
-            reached = 0
+            track = 0
         }
-        // A newer pick has Music now: playing on would undo Radio Off's pause,
-        // or play this station for a moment before the next.
-        try Task.checkCancellation()
-        _ = try await resume()
-        return (started.orderChanged, reached)
+        try await keepOnAir()
+        return (orderChanged, track)
     }
 
-    /// Steps Music on from track `start` to track `target` of the playlist
-    /// it's playing, at most `chunk` tracks per script, so the volume dip and
-    /// a newer pick's cancel get a turn in between. `skip(n, stop)` moves
-    /// Music on `n` tracks, or until it's on track `stop` or past it when
-    /// `stop` isn't nil, and returns the track it's on then, or 0 when it
-    /// can't say. The last script gets `target` as its `stop`, because Music
-    /// skips a track it can't play, and the steps would carry it past.
-    ///
-    /// Whether a paused Music moves on isn't known, so the first time it
-    /// doesn't, `playOn` runs and stepping carries on while it plays. After
-    /// that, a try that doesn't move waits `interval`, in case Music ignores
-    /// `next track` while a track loads. It stops at `target`, or past it when
-    /// Music skips that track itself. It also stops once `limit` has passed,
-    /// and when Music goes back or can't say. Returns the track Music reached,
-    /// and throws `CancellationError` once cancelled, even after the last
-    /// step, so the caller doesn't play on for a pick that's been replaced.
-    static func stepOn(
-        from start: Int,
-        to target: Int,
-        chunk: Int = 10,
-        within limit: Duration = .seconds(2),
-        every interval: Duration = .milliseconds(100),
-        skip: (_ count: Int, _ stop: Int?) async throws -> Int,
-        playOn: () async throws -> Void
+    /// Sets shuffle on and repeat over the whole playlist again. A set inside
+    /// the second after `play` can be undone, so a tune calls this once more
+    /// after its seek.
+    static func keepOnAir() async throws {
+        try await run("""
+            set shuffle enabled to true
+            set song repeat to all
+            """) { _ in }
+    }
+
+    /// Asks `currentTrack` every `interval` until it names a track, and
+    /// returns it. `currentTrack` returns the track Music is playing from
+    /// the station's playlist, or 0 while it's playing something else,
+    /// nothing, or can't say. Gives up and returns 0 once `limit` has
+    /// passed. Throws `CancellationError` once cancelled, even after the
+    /// last read, so the caller doesn't seek for a pick that's been replaced.
+    static func waitUntilPlaying(
+        within limit: Duration = .seconds(3),
+        every interval: Duration = .milliseconds(150),
+        currentTrack: () async throws -> Int
     ) async throws -> Int {
         let deadline = ContinuousClock.now + limit
-        var reached = start
-        var playedOn = false
-        while reached > 0, reached < target, ContinuousClock.now < deadline {
+        while true {
             try Task.checkCancellation()
-            let count = min(target - reached, chunk)
-            let current = try await skip(count, count == target - reached ? target : nil)
-            // The cancel may have come while Music stepped.
+            let track = try await currentTrack()
+            // The cancel may have come while Music answered.
             try Task.checkCancellation()
-            if current > reached {
-                reached = current
-            } else if current < reached {
-                return current
-            } else if !playedOn {
-                try await playOn()
-                playedOn = true
-            } else {
-                try await Task.sleep(for: interval)
-            }
+            if track > 0 { return track }
+            guard ContinuousClock.now < deadline else { return 0 }
+            try await Task.sleep(for: interval)
         }
-        return reached
     }
 
-    /// Moves Music on `count` tracks, or until it's on track `stop` or past
-    /// it, and returns the track it's on then, or 0 when it can't say.
-    private static func skip(_ count: Int, stoppingAt stop: Int?, playlistID: String) async throws -> Int {
-        let stopCheck = stop.map { "if index of current track ≥ \($0) then exit repeat" } ?? ""
-        return try await run("""
-            repeat \(count) times
-                next track
-                \(stopCheck)
-            end repeat
-            \(trackIndexScript(playlistID: playlistID))
-            return trackIndex
-            """) { Int($0.int32Value) }
-    }
-
-    /// Sets `trackIndex` to the current track's place in the playlist, or to
-    /// 0 when Music is playing from somewhere else or can't say. A timeout
-    /// still throws, because Music not answering isn't Music being elsewhere.
-    private static func trackIndexScript(playlistID: String) -> String {
+    /// Returns the current track's place in the playlist while Music is
+    /// playing from it, or 0 while it's paused, stopped, playing from
+    /// somewhere else or can't say. A timeout still throws, because Music
+    /// not answering isn't Music being elsewhere.
+    ///
+    /// A new `play` starts its track from the top, so a track more than a few
+    /// seconds in is Music still reporting what it played before the tune,
+    /// as when the station was already on, and counts as 0 too.
+    private static func playingTrackScript(playlistID: String) -> String {
         """
-        set trackIndex to 0
+        if player state is not playing then return 0
         try
-            if persistent ID of current playlist is "\(playlistID)" then set trackIndex to index of current track
+            if persistent ID of current playlist is "\(playlistID)" and player position < 5 then return index of current track
         on error errText number errNumber
             if errNumber is \(errAETimeout) then error errText number errNumber
         end try
+        return 0
         """
     }
 
@@ -417,20 +374,20 @@ enum MusicBridge {
         try await run("pause") { _ in }
     }
 
-    /// The playlist Music is playing from, with the track, how far in and how
-    /// many tracks the playlist has, or nil when it's paused or stopped. The playlist can be one that isn't on
-    /// the wheel, such as the library.
+    /// The playlist Music is playing from, with the track and how many
+    /// tracks the playlist has, or nil when it's paused or stopped. The
+    /// playlist can be one that isn't on the wheel, such as the library.
     static func nowPlaying() async throws -> NowPlaying? {
         // A timeout throws, because Music not answering isn't Music playing nothing.
         try await run("""
             if player state is not playing then return {}
             try
-                return {persistent ID of current playlist, index of current track, player position, count of tracks of current playlist}
+                return {persistent ID of current playlist, index of current track, count of tracks of current playlist}
             on error errText number errNumber
                 if errNumber is \(errAETimeout) then error errText number errNumber
                 return {}
             end try
-            """) { parseNowPlaying($0, at: .now) }
+            """, parse: parseNowPlaying)
     }
 
     /// Music's own volume, 0–100, which sits under the system volume.
@@ -549,20 +506,14 @@ enum MusicBridge {
             .map { Playlist(id: $0, name: $1) }
     }
 
-    /// Reads the `{id, track number, position, track count}` returned by `nowPlaying()`.
-    static func parseNowPlaying(_ result: NSAppleEventDescriptor, at date: Date) -> NowPlaying? {
-        guard result.numberOfItems == 4,
+    /// Reads the `{id, track number, track count}` returned by `nowPlaying()`.
+    static func parseNowPlaying(_ result: NSAppleEventDescriptor) -> NowPlaying? {
+        guard result.numberOfItems == 3,
               let id = result.atIndex(1)?.stringValue, isPersistentID(id),
               let track = result.atIndex(2)?.int32Value, track > 0,
-              let position = result.atIndex(3)?.doubleValue, position.isFinite, position >= 0,
-              let trackCount = result.atIndex(4)?.int32Value
+              let trackCount = result.atIndex(3)?.int32Value
         else { return nil }
-        return NowPlaying(
-            playlistID: id,
-            onAir: Broadcast.OnAir(index: Int(track) - 1, position: position),
-            date: date,
-            trackCount: Int(trackCount)
-        )
+        return NowPlaying(playlistID: id, trackIndex: Int(track) - 1, trackCount: Int(trackCount))
     }
 
     /// Reads the list of reals returned by `trackDurations(playlistID:)`.

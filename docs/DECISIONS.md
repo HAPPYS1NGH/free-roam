@@ -401,3 +401,24 @@ Rejected:
 - Clicking the track in Music's window: needs Accessibility and Music's window on screen.
 - Stepping while playing from the start: every track it passes would start to play.
 - Stepping back from track 1 for tracks near the end: it isn't documented whether `previous track` goes round to the last track with repeat on.
+
+## 2026-11-19: A station shuffles its playlist
+
+Measured on Music 1.7.2 and macOS 27.2.1 by scripting Music directly, after Free Roam's logs showed every tune falling short.
+
+- Music now takes `play` of a playlist a few hundred milliseconds after the script that sent it returns. Read straight after `play`, `current playlist` and `index of current track` are missing or still the old ones, and `player state` can say stopped. They were right after 0.25–0.5 s. `next track` sent while paused straight after `play` didn't move Music. So stepping to the on-air track never started: every tune logged "Stepped Music from track 0 to 0" and "Music got to a track it can't name", and played from the top of whatever track Music started on.
+- After `play`, shuffle and repeat read as changed back for about a second, such as repeat reading off for 0.75 s, then settle on what was set. That's probably also the 2026-10-23 finding that the log said they were different on 34 of 42 tunes.
+- With shuffle on and repeat set to all, `play` of a playlist started on a different random track 5 times out of 5. Over 13 tracks ending on their own in a 10-track smart playlist, and in a 1-track playlist, Music always stayed in the playlist and looped. `index of current track` gave the track's place in the playlist, not in the shuffle. `set player position` works once the track has loaded, as before.
+- So a station is now its playlist on shuffle, like radio. A tune turns shuffle on and repeat to all, plays the playlist, and asks Music every 150 ms until it says it's playing that playlist, for up to 3 s. Then it sets shuffle and repeat again, and seeks to somewhere between 15% and 65% of the track Music started on, retrying while the track loads as before. In tests through `osascript`, Music said it was playing the playlist 0.7 s after `play` and took the seek on the second try. A tune never plays a song from outside the station's playlist.
+- The broadcast clock is gone from the Mac app. It needed the playlist in order, which needed stepping, and with shuffle on Music's next track can't be predicted. The prototype keeps its own clock in `broadcast.ts`.
+- For the station Music is playing, the caption shows the track Music named at the press and doesn't guess past it, because Music picks the next track. Every other station shows its song count, such as "24 songs" or "No songs", worded as in Settings. A playlist edited since its tracks loaded also shows its count, because its track numbers may have moved.
+- The log says "Turned Music's shuffle and repeat on" when either was different, and "Music was playing track … ms after it was told to" for how long Music took.
+- Pausing straight after `play`, as Radio Off right after a tune does, left Music paused in 2 tries out of 2.
+- Review fixes, not hand-tested yet. Because Music takes `play` late, a replaced tune's `play` can still land after Radio Off's pause, so Radio Off pauses again 0.7 s later if nothing has been tuned since. The wait only counts a track under 5 s in, because a new `play` starts from the top and Music can still report the station's old track when it was already on. Shuffle and repeat are set once more after the seek, more than a second after `play`, in case a set inside the flicker was undone.
+- Music 1.7.2 crashed twice on 2026-11-19, both times in `MPRemoteCommand` while handling a command. The first was before these tests. The second came after five playlists were played within a few seconds of each other, two of which didn't say they were playing within 3 s. It's not known whether quick tunes from the wheel cause it.
+
+Rejected:
+
+- Keeping the clock with shuffle off: stepping to the on-air track no longer works, and a station of a few hundred tracks would often run out of time even when it did.
+- Waiting a fixed time after `play` instead of asking: Music took 0.25–0.7 s, and a fixed wait long enough for the slowest would delay every tune.
+- Predicting the next track in the caption: wrong as soon as Music shuffles.
