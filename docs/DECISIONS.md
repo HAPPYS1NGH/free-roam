@@ -422,3 +422,23 @@ Rejected:
 - Keeping the clock with shuffle off: stepping to the on-air track no longer works, and a station of a few hundred tracks would often run out of time even when it did.
 - Waiting a fixed time after `play` instead of asking: Music took 0.25–0.7 s, and a fixed wait long enough for the slowest would delay every tune.
 - Predicting the next track in the caption: wrong as soon as Music shuffles.
+
+## 2026-11-21: Stations are back on their clock
+
+The user wanted stations to act like radio again: drop in on what's on air, a later song if you come back later, and the wheel showing what's on every station. Measured on Music 1.7.2 by scripting Music directly.
+
+- `play track N of` a playlist starts that track at once, turns shuffle off, and queues nothing after it. With repeat off, Music stops when the track ends. With repeat on all, the track loops without posting anything.
+- Repeat set off before `play track` read as all again about a second later in one try out of three, so it's set off once more 1.5 s after the track starts.
+- Music posts `com.apple.Music.playerInfo` on every change. A track that ends posts Paused and then Stopped with no track. A pause in Music posts Paused with the track, and a seek posts Playing with the same track. The notification's `PersistentID` is the track's persistent ID as a signed 64-bit number.
+- Playing the next track straight from the Stopped notification had it playing 0.35–0.4 s after the last one ended, in 2 tries out of 2.
+- So a tune plays the track on the station's clock and seeks to where the clock is in it, counting the time Music took. `OnAirRelay` listens for the notification and, when the station's track ends, plays the next track in playlist order from the top. It costs one notification and one script a song, and nothing in between.
+- It only works while Free Roam runs. Without it Music stops after the track, and the next tune lines the station up with its clock again.
+- After a pause in Music the station plays on in order behind its clock until it's tuned again, and the caption follows Music for that station. Every other station shows its track on the clock again.
+- If you play a track in Music that Free Roam didn't pick, the relay stops following the station.
+- If Music doesn't reach the track within 3 s, the station falls back to the 2026-11-19 shuffle.
+- Not hand-tested through the wheel yet: macOS doesn't let the terminal send ⌥Q.
+
+Rejected:
+
+- Stepping with `next track` from the top: still ignored straight after `play`, and slow for long playlists.
+- Polling Music for the end of the track: the notification says it for free.

@@ -75,13 +75,15 @@ struct RadioWheelContent: View {
                     // The ring overlaps the neighbours a little, as in GTA.
                     .zIndex(selected ? 1 : 0)
                 }
-                CaptionView(
-                    lines: caption,
-                    sizes: sizes,
-                    ring: ring,
-                    centre: centre,
-                    screenHeight: proxy.size.height
-                )
+                TimelineView(.periodic(from: .now, by: 1)) { context in
+                    CaptionView(
+                        lines: caption(at: context.date),
+                        sizes: sizes,
+                        ring: ring,
+                        centre: centre,
+                        screenHeight: proxy.size.height
+                    )
+                }
             }
             .opacity(presence == .shown ? 1 : 0)
             .scaleEffect(
@@ -96,13 +98,13 @@ struct RadioWheelContent: View {
         slot > 0 ? .station(stations[slot - 1], logos: logos) : .radioOff
     }
 
-    private var caption: CaptionLines {
+    private func caption(at date: Date) -> CaptionLines {
         let station = highlighted == 0 ? nil : stations[highlighted - 1]
-        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, nowPlaying: nowPlaying)
+        return CaptionLines(station: station, tracks: station.flatMap { tracks[$0.id] }, nowPlaying: nowPlaying, at: date)
     }
 }
 
-/// Station, ARTIST, title of the track playing, or the station's song count.
+/// Station, ARTIST, title of the track on air.
 struct CaptionLines: Equatable {
     let station: String
     let artist: String
@@ -110,9 +112,9 @@ struct CaptionLines: Equatable {
 
     /// Nil is Radio Off. A station whose tracks haven't loaded yet shows its
     /// name alone. The station Music is playing shows the track Music said
-    /// at the press. Music shuffles, so which track comes next can't be
-    /// known, and every other station shows how many songs it has.
-    init(station: Playlist?, tracks: [Track]?, nowPlaying: NowPlaying? = nil) {
+    /// at the press, which a pause or a skip in Music can move off the
+    /// clock. Every other station shows the track on its clock.
+    init(station: Playlist?, tracks: [Track]?, nowPlaying: NowPlaying? = nil, at date: Date) {
         guard let station else {
             self.station = "Radio Off"
             artist = ""
@@ -127,15 +129,17 @@ struct CaptionLines: Equatable {
         }
         // A track count that differs from the tracks loaded is an edited
         // playlist, whose track numbers may have moved.
-        guard let nowPlaying, nowPlaying.playlistID == station.id, nowPlaying.trackCount == tracks.count,
-              tracks.indices.contains(nowPlaying.trackIndex)
-        else {
+        let musicIndex = nowPlaying.flatMap { playing in
+            playing.playlistID == station.id && playing.trackCount == tracks.count
+                && tracks.indices.contains(playing.trackIndex) ? playing.trackIndex : nil
+        }
+        guard let index = musicIndex ?? Broadcast.onAir(durations: tracks.map(\.duration), at: date)?.index else {
             artist = ""
-            title = PlaylistTile.songCountText(tracks.count)
+            title = "No songs"
             return
         }
-        artist = tracks[nowPlaying.trackIndex].artist
-        title = tracks[nowPlaying.trackIndex].title
+        artist = tracks[index].artist
+        title = tracks[index].title
     }
 }
 

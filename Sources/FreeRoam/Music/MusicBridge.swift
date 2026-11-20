@@ -240,7 +240,8 @@ enum MusicBridge {
             """) { isMissingValue($0) ? nil : $0.data }
     }
 
-    /// Plays a playlist like a radio station: shuffle on and repeat over the
+    /// The fallback for when `play(playlistID:track:)` doesn't reach its
+    /// track. Plays a playlist like a radio station: shuffle on and repeat over the
     /// whole playlist, so Music starts on a random track of it, never leaves
     /// it and loops, and both stay that way. Returns whether either was set
     /// otherwise, and the track (1-based) Music started on, or 0 when it
@@ -286,6 +287,46 @@ enum MusicBridge {
         }
         try await keepOnAir()
         return (orderChanged, track)
+    }
+
+    /// Plays track `number` (1-based) of a playlist and returns its
+    /// persistent ID once Music says it's playing it, or nil when Music
+    /// didn't within the wait.
+    ///
+    /// Music queues that one track and nothing after it, so with repeat off
+    /// it stops when the track ends and `OnAirRelay` plays the next one.
+    /// Measured on Music 1.7.2: `play track` turns shuffle off, and repeat can
+    /// read as all again for a second after it, so `keepSingleTrack()` is
+    /// sent again once the tune has settled.
+    static func play(playlistID: String, track number: Int) async throws -> String? {
+        guard isPersistentID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        try await run("""
+            set song repeat to off
+            play track \(number) of (first user playlist whose persistent ID is "\(playlistID)")
+            """) { _ in }
+        let clock = ContinuousClock()
+        let played = clock.now
+        let reached = try await waitUntilPlaying {
+            try await run(playingTrackScript(playlistID: playlistID)) { Int($0.int32Value) }
+        }
+        guard reached == number else {
+            log.error("""
+                Music got to track \(reached) instead of \(number) of playlist \(playlistID, privacy: .public) \
+                within \((clock.now - played) / .milliseconds(1), format: .fixed(precision: 0)) ms
+                """)
+            return nil
+        }
+        log.notice("""
+            Music was playing track \(number) of playlist \(playlistID, privacy: .public) \
+            \((clock.now - played) / .milliseconds(1), format: .fixed(precision: 0)) ms after it was told to
+            """)
+        return try await run("return persistent ID of current track") { $0.stringValue }
+    }
+
+    /// Repeat off, so a station's track ends instead of looping without a
+    /// word from Music, which would leave `OnAirRelay` nothing to act on.
+    static func keepSingleTrack() async throws {
+        try await run("set song repeat to off") { _ in }
     }
 
     /// Sets shuffle on and repeat over the whole playlist again. A set inside

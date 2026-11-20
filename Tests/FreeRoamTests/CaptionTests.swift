@@ -12,41 +12,41 @@ struct CaptionTests {
     ]
 
     @Test func radioOffIsOneLine() {
-        let caption = CaptionLines(station: nil, tracks: nil)
+        let caption = CaptionLines(station: nil, tracks: nil, at: Broadcast.epoch)
         #expect([caption.station, caption.artist, caption.title] == ["Radio Off", "", ""])
     }
 
-    @Test func showsTheTrackMusicIsPlaying() {
-        let playing = NowPlaying(playlistID: station.id, trackIndex: 1, trackCount: 2)
-        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing)
+    @Test func showsTheTrackOnTheClock() {
+        let caption = CaptionLines(station: station, tracks: tracks, at: Broadcast.epoch.addingTimeInterval(150))
         #expect([caption.station, caption.artist, caption.title] == ["Late Night", "M83", "Midnight City"])
     }
 
-    /// Music shuffles, so a station it isn't playing has no track to name.
-    @Test func showsTheSongCountOfAStationMusicIsNotPlaying() {
-        let caption = CaptionLines(station: station, tracks: tracks)
-        #expect([caption.station, caption.artist, caption.title] == ["Late Night", "", "2 songs"])
+    /// A pause or a skip in Music moves the station it's playing off the clock.
+    @Test func showsTheTrackMusicIsPlaying() {
+        let playing = NowPlaying(playlistID: station.id, trackIndex: 1, trackCount: 2)
+        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing, at: Broadcast.epoch)
+        #expect([caption.artist, caption.title] == ["M83", "Midnight City"])
 
         let elsewhere = NowPlaying(playlistID: "E5B25C359F6E2F36", trackIndex: 1, trackCount: 2)
-        let other = CaptionLines(station: station, tracks: tracks, nowPlaying: elsewhere)
-        #expect([other.artist, other.title] == ["", "2 songs"])
+        let other = CaptionLines(station: station, tracks: tracks, nowPlaying: elsewhere, at: Broadcast.epoch)
+        #expect([other.artist, other.title] == ["Frank Ocean", "Nights"])
     }
 
     /// An edited playlist's track numbers may have moved since its tracks loaded.
     @Test(arguments: [(1, 3), (2, 3), (5, 2)])
-    func showsTheSongCountWhenMusicsTrackDoesNotMatch(_ trackIndex: Int, _ trackCount: Int) {
+    func followsTheClockWhenMusicsTrackDoesNotMatch(_ trackIndex: Int, _ trackCount: Int) {
         let playing = NowPlaying(playlistID: station.id, trackIndex: trackIndex, trackCount: trackCount)
-        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing)
-        #expect([caption.artist, caption.title] == ["", "2 songs"])
+        let caption = CaptionLines(station: station, tracks: tracks, nowPlaying: playing, at: Broadcast.epoch)
+        #expect([caption.artist, caption.title] == ["Frank Ocean", "Nights"])
     }
 
     @Test func showsTheNameAloneUntilTheTracksLoad() {
-        let caption = CaptionLines(station: station, tracks: nil)
+        let caption = CaptionLines(station: station, tracks: nil, at: Broadcast.epoch)
         #expect([caption.station, caption.artist, caption.title] == ["Late Night", "", ""])
     }
 
     @Test func saysWhenThereIsNothingToPlay() {
-        let caption = CaptionLines(station: station, tracks: [])
+        let caption = CaptionLines(station: station, tracks: [], at: Broadcast.epoch)
         #expect([caption.station, caption.artist, caption.title] == ["Late Night", "", "No songs"])
     }
 

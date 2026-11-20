@@ -50,7 +50,8 @@ Checked on this Mac or known limits of macOS:
       BackdropView fades out over 450 ms, then the panel leaves the screen
     if the pick moved
       play retune.wav
-      MusicBridge.play(playlist) with shuffle and repeat on, waits until Music plays it, then seek(to: 15–65% into the track Music started on)
+      MusicBridge.play(playlist, track: the one on the station's clock) with repeat off, waits until Music plays it, then seek(to: where the clock is in it)
+      OnAirRelay plays the next track when Music says this one ended; shuffle is the fallback if Music doesn't reach the track
     VolumeDip.restore()
     StationList.reload()                 once any tune has reached Music, for playlists added or deleted
 ```
@@ -128,13 +129,13 @@ free-roam/
 Build order. The riskiest parts come first, and the app works end to end before it looks right:
 
 - [x] First build: a menu bar app that lists your playlists, plays one and captures the screen, built and signed by `scripts/bundle.sh`
-- [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests (the clock went on 2026-11-19, see DECISIONS.md). `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
+- [x] Wheel logic, no UI: `WheelStyle` from `tokens.json`, ring layout, angle → slot and the broadcast clock, with tests (the clock went on 2026-11-19 and came back on 2026-11-21, see DECISIONS.md). `bundle.sh` copies resources into `Contents/Resources`, because SwiftPM's resource bundles don't fit an app's layout
 - [x] Hotkey and overlay: hold ⌥Q to open and tap for the next station, a panel on the screen with the mouse that covers full-screen apps and every Space, and mouse and scroll input while it's held. Plain circles for now. Time a screen capture on open: if it takes much longer than the 150ms filter fade, the backdrop needs a stream that keeps running
 - [x] Tuning in, end to end: the on-air track at its position, the volume dip and restore (also on quit), Radio Off pauses, and live tuning after a 1 second rest
 - [x] The real wheel: album art mosaics, caption, selected ring, open and close timing, sounds and the bundled font. The pointer hides while the wheel is open
 - [x] Backdrop: desaturated capture under the vignette and tint, and the vignette and tint alone without permission. Start the capture when ⌥Q goes down and capture once at launch, so the image is ready when the wheel opens. The menu explains the stale Screen Recording switch
 - [x] Settings and the real menu: choose and order stations by persistent ID, drop deleted playlists, Settings…, Quit and "Allow Free Roam to control Music". The test items (Play Playlist, Capture Screen) go. Check the wheel still follows the mouse when Free Roam's Settings window is active
-- [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. Shuffle and repeat go on, and the caption follows the track Music is actually playing
+- [x] Edge cases: Music not running or not answering, empty playlists, duplicate names, several displays and no subscription. The caption shows each station's track on air, and follows Music for the station it's playing
 - [ ] Welcome window: explains both permissions at launch, with an Allow button for each. Built, needs a hand test
 - [ ] Stations picker: the stations as discs above a grid of every playlist's cover, with search. Built, needs a hand test
 - [ ] The recording for the first X post, with the local sound pack
@@ -144,7 +145,8 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - Welcome window: at launch, a small window explains Control Music and Screen Recording, each with its status and an Allow button. It stops showing once you choose Don't Show This Again or both are allowed. Closing it any other way saves nothing, so it shows again at the next launch. Free Roam asks for Screen Recording only when you choose Allow, in the window or the menu, never by itself. macOS still asks about Music the first time Free Roam sends it a command.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
-  - play a playlist (by persistent ID) with shuffle and repeat on, wait until Music says it's playing it, and set `player position`, for mid-song tune-in
+  - play track N of a playlist (by persistent ID) with repeat off, wait until Music says it's playing it, and set `player position`, for mid-song tune-in on the station's clock
+  - play a playlist with shuffle and repeat on, the fallback when Music doesn't reach track N
   - pause, and play on after launching Music
   - the playlist, track number and position Music is playing
   - album artwork of a playlist's first four distinct albums (playlists themselves expose none)
