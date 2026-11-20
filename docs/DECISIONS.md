@@ -436,7 +436,7 @@ The user wanted stations to act like radio again: drop in on what's on air, a la
 - After a pause in Music the station plays on in order behind its clock until it's tuned again, and the caption follows Music for that station. Every other station shows its track on the clock again.
 - If you play a track in Music that Free Roam didn't pick, the relay stops following the station.
 - If Music doesn't reach the track within 3 s, the station falls back to the 2026-11-19 shuffle.
-- Not hand-tested through the wheel yet: macOS doesn't let the terminal send ⌥Q.
+- Hand-tested through the wheel on 2026-11-21: it played as expected.
 
 Rejected:
 
