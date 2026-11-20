@@ -58,9 +58,9 @@ struct StationPicker: View {
     /// The black rim round a disc's art, as a fraction of the disc, for when
     /// tokens.json didn't load.
     nonisolated static let defaultRim = 0.05
-    /// Narrow enough for a small laptop, and wide enough for all 25 discs to
-    /// fit in two rows.
-    nonisolated static let minWidth = 660.0
+    /// Narrow enough for a small laptop, wide enough for all 25 discs to fit
+    /// in two rows, and for six covers a row in the grid.
+    nonisolated static let minWidth = 760.0
     nonisolated static let margin = 20.0
 
     let phase: Phase
@@ -120,7 +120,7 @@ struct StationPicker: View {
                 picker
             }
         }
-        .frame(minWidth: Self.minWidth, idealWidth: 720, maxWidth: .infinity, minHeight: 480, idealHeight: 600, maxHeight: .infinity, alignment: .top)
+        .frame(minWidth: Self.minWidth, idealWidth: Self.minWidth, maxWidth: .infinity, minHeight: 480, idealHeight: 600, maxHeight: .infinity, alignment: .top)
     }
 
     private var isFull: Bool {

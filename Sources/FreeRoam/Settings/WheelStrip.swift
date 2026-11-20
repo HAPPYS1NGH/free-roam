@@ -23,7 +23,8 @@ struct WheelStrip: View {
     let requestLogo: (String) -> Void
     let cancelLogo: (String) -> Void
 
-    nonisolated static let discSize = 36.0
+    /// Close to a station's size on the wheel, so the strip reads as the wheel.
+    nonisolated static let discSize = 44.0
     /// The disc and its place below it. Every disc is the same size, so the
     /// strip can tell which one the pointer is over from where it is.
     nonisolated static let itemHeight = discSize + 18

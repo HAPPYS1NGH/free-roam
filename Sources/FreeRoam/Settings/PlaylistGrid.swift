@@ -19,7 +19,7 @@ struct PlaylistGrid: View {
     var body: some View {
         ScrollView {
             LazyVGrid(
-                columns: [GridItem(.adaptive(minimum: 116, maximum: 168), spacing: 16, alignment: .top)],
+                columns: [GridItem(.adaptive(minimum: 96, maximum: 140), spacing: 16, alignment: .top)],
                 alignment: .leading,
                 spacing: 18
             ) {
