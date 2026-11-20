@@ -19,7 +19,7 @@ struct StationsSettingsView: View {
             logos: details.logos,
             songCounts: details.songCounts,
             search: $search,
-            ringColor: style.flatMap { Color(hex: $0.colors.ringColor) } ?? .accentColor,
+            ringColor: RingColor.resolve(brand: style?.colors.ringColor),
             rim: style?.sizes.rim ?? StationPicker.defaultRim,
             setOn: stations.setOn,
             move: stations.moveStation,

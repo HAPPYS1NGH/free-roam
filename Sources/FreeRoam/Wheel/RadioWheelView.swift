@@ -64,7 +64,7 @@ struct RadioWheelContent: View {
                         size: size,
                         rim: (size * (selected ? sizes.selectedRim : sizes.rim)).rounded(),
                         ringWidth: selected ? ringWidth : 0,
-                        ringColor: Color(hex: style.colors.ringColor) ?? .white,
+                        ringColor: RingColor.resolve(brand: style.colors.ringColor),
                         inColour: selected && style.flags.selectedInColour,
                         opacity: selected ? 1 : sizes.idleOpacity
                     )

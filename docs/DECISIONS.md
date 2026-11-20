@@ -442,3 +442,10 @@ Rejected:
 
 - Stepping with `next track` from the top: still ignored straight after `play`, and slow for long playlists.
 - Polling Music for the end of the track: the notification says it for free.
+
+## 2026-11-21: The ring follows the Mac's accent colour
+
+The user's brief: match the accent colour in System Settings → Appearance, but keep Free Roam's blue for Multicolor. There's no setting, to keep the app small.
+
+- macOS writes `AppleAccentColor` to the global domain for every accent but Multicolor, and Multicolor gives apps system blue, which is darker than `#65B4D4`. So with the key the selected ring and Settings' highlights use `controlAccentColor`, and without it they use `ringColor` from `tokens.json`.
+- The wheel reads it each time it draws, so a change shows on the next open.
