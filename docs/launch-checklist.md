@@ -27,18 +27,50 @@ Everything here comes from the badge, `prototype/public/free-roam/app-icon.png`,
 - [ ] Upload the GitHub social preview: the repository's Settings > General > Social preview > Edit > Upload an image, then choose `github-social-preview.jpg`.
 - [ ] Attach the X images to the posts, as in the thread below.
 - [ ] Record the demo GIF, save it as `docs/media/demo.gif`, and swap it in for the comment at the top of the README.
-- [ ] Record the launch video in Screen Studio with the local sound pack, and use the poster frame as its cover.
+- [ ] Record the launch video in Screen Studio with the app's sounds on, and use the poster frame as its cover.
 
 ## Still blocking a public release
 
 - [ ] Apple Developer Program membership, for Developer ID signing and notarization. Until then the app is unsigned and everyone has to click Open Anyway.
-- [ ] `scripts/bundle.sh --release` doesn't exist yet. It needs a universal build, a DMG, and only the synthesised sounds, never `prototype/public/sounds/local/`.
-- [ ] The website's domain and host. Then run `SITE_URL=https://… npm run build:release` in `prototype/` and deploy `prototype/dist/`.
+- [ ] `scripts/bundle.sh --release` doesn't exist yet. It needs a universal build and a DMG, with the sounds from `assets/sounds/`.
+- [ ] Deploy the website to freeroam.happys1ngh.com, as below.
 - [ ] The demo GIF and the launch recording.
 - [ ] A GitHub release with the DMG and its checksum.
 - [ ] A Homebrew cask, which waits for signing.
 
 Not blocking: at 16 and 32 pt on non-Retina screens, macOS 26 and later draw a grey frame round any app icon that ships only as an .icns. Fixing that takes an Icon Composer icon compiled with Xcode's `actool`.
+
+## Deploy the website
+
+The site is the static build of `prototype/`. `prototype/vercel.json` sets clean URLs, a year's immutable caching for the hashed `/assets/` files and the fonts, a day for sounds and images, revalidation for HTML, and security headers. A missing path gets `404.html` with a real 404. Vercel takes the Node version, 24.x, from `engines` in `prototype/package.json`.
+
+To check the build first: `cd prototype && SITE_URL=https://freeroam.happys1ngh.com npm run build:release`. It should end with "Release check passed".
+
+### Vercel
+
+1. On vercel.com, choose Add New → Project and import `HAPPYS1NGH/free-roam`.
+2. Set Root Directory to `prototype` and Framework Preset to Vite.
+3. Under Build and Output Settings, set Build Command to `npm run build:release` and Output Directory to `dist`. Leave Install Command as it is.
+4. Under Environment Variables, add `SITE_URL` with the value `https://freeroam.happys1ngh.com`, for every environment. The release build fails without it.
+5. Choose Deploy. Open the `.vercel.app` address it gives you, and check the wheel opens and makes its sounds.
+6. Go to the project's Settings → Domains and add `freeroam.happys1ngh.com`. Vercel shows a CNAME target for it. Copy that exact value.
+
+### Namecheap
+
+These steps assume happys1ngh.com uses Namecheap BasicDNS. If its nameservers point somewhere else, add the record there instead.
+
+1. Go to Domain List, then choose Manage next to happys1ngh.com, then open the Advanced DNS tab.
+2. Under Host Records, delete any record whose host is `freeroam`: an A, AAAA, CNAME or URL Redirect record. Leave the other hosts alone.
+3. Choose Add New Record → CNAME Record. Set Host to `freeroam`, set Value to the target Vercel showed, and leave TTL on Automatic. Save it with the tick.
+4. Back in Vercel's Domains page, wait for the domain to show Valid Configuration. Vercel then issues the HTTPS certificate on its own.
+
+### After it's live
+
+- [ ] `https://freeroam.happys1ngh.com/` loads, and the wheel opens with sound.
+- [ ] `curl -sI https://freeroam.happys1ngh.com/nowhere` answers `404`, and the browser shows the Wrong Turn page.
+- [ ] `curl -sI https://freeroam.happys1ngh.com/` shows `x-frame-options: DENY`, `x-content-type-options: nosniff` and `cache-control: public, max-age=0, must-revalidate`.
+- [ ] The page source has `<link rel="canonical" href="https://freeroam.happys1ngh.com/">`, and `/robots.txt` and `/sitemap.xml` name the same address.
+- [ ] Share the address somewhere that shows a link preview, to check the social card.
 
 ## Draft X thread
 

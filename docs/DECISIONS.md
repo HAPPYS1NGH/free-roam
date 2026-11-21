@@ -489,3 +489,12 @@ Harpreet made the pack that used to sit in the gitignored `prototype/public/soun
 - `scripts/bundle.sh` copies them into the app, and the site's asset step publishes them at `/sounds/<name>.wav`. There's no fallback and no override folder.
 - The synthesised set, `make-sounds.mjs`, the `sounds` npm script, the alternative retune takes and the retune-take setting are gone. The app always loads `retune`. The studio's Sound Pack and Retune Take controls went with them, and it imports the sounds from `assets/sounds/` directly.
 - This supersedes the 2026-11-21 entry "The site plays the app's own sound files" and the earlier rule that only synthesised sounds ship.
+
+## 2026-11-21: The site goes on Vercel
+
+The site deploys to Vercel at freeroam.happys1ngh.com, with Namecheap pointing a CNAME at it. Steps are in the launch checklist.
+
+- `prototype/vercel.json`: clean URLs, a year's immutable caching for `/assets/` and `/fonts/`, a day for `/sounds/` and `/free-roam/`, whose file names carry no hash, and revalidation for HTML and everything else. Every response gets `nosniff`, `strict-origin-when-cross-origin`, `X-Frame-Options: DENY` with `frame-ancestors 'none'`, and a Permissions-Policy that turns off the camera, microphone and location.
+- `prototype/404.html` is a second Vite entry, so a missing path gets a real 404 in the site's style. It's `noindex` and needs no JavaScript.
+- `engines.node` is `24.x`, which matches local development and is a version Vercel offers. Vite 8 needs 20.19 or 22.12 and later, and the build also passes on 22.
+- The fonts' file names aren't hashed. If the font ever changes, rename the file, or the year's cache keeps the old one.
