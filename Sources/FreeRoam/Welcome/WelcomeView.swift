@@ -87,7 +87,7 @@ struct WelcomeContent: View {
                         // launch or when it's connected to warm up. All stay in memory.
                         """
                         macOS will say Free Roam can record your screen. It only takes a still as you hold ⌥Q, \
-                        and never saves or sends it. macOS may ask you to reopen Free Roam after you allow it.
+                        and never saves or sends it.
                         """,
                     ],
                     preview: AnyView(ScreenRecordingPreview(previews: previews)),
