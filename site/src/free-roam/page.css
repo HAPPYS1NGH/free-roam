@@ -81,6 +81,7 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
 .p-button-md { min-height: 48px; padding: 0 20px 0 18px; font-size: 14px; }
 .p-button-lg { min-height: 56px; padding: 0 26px 0 22px; font-size: 15px; }
 .p-apple { width: 15px; height: 18px; margin-top: -2px; flex: none; }
+.p-download-label { display: inline-flex; align-items: center; gap: inherit; }
 .p-button-sm .p-apple { width: 12px; height: 14px; }
 @media (hover: hover) and (pointer: fine) {
   .p-button:hover { background: color-mix(in oklch, var(--accent), white 14%); }

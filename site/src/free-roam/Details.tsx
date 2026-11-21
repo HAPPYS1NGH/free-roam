@@ -1,4 +1,5 @@
-import { downloadUrl, sourceUrl } from "./content"
+import { sourceUrl } from "./content"
+import { DownloadLink } from "./DownloadLink"
 import { Keycap, useAltHeld, useKeyHeld } from "./keys"
 import { Brand, DownloadButton } from "./Shared"
 
@@ -19,7 +20,7 @@ export function Details() {
         <Brand />
         <p className="p-footer-line">Hold ⌥Q anywhere.</p>
         <nav aria-label="Footer">
-          <a href={downloadUrl}>Download</a>
+          <DownloadLink elsewhere="Send to your Mac">Download</DownloadLink>
           <a href={sourceUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
           <a href="https://x.com/HAPPYS1NGH" target="_blank" rel="noreferrer">X ↗</a>
         </nav>
