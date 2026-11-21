@@ -68,6 +68,22 @@ struct WelcomeRenderTests {
         #expect(Double(sizes[0][0]) == WelcomeContent.width)
         #expect(sizes[0][1] < 700)
     }
+
+    /// The window opens at its content's smallest size. A resizable image
+    /// can shrink to nothing, which hid both previews in the real window
+    /// while renders at the ideal size still showed them.
+    @Test func smallestSizeKeepsThePreviews() throws {
+        let resources = URL(filePath: #filePath)
+            .deletingLastPathComponent()
+            .appending(path: "../../Sources/FreeRoam/Resources")
+        let previews = try (
+            before: #require(NSImage(contentsOf: resources.appending(path: "WelcomeBefore.jpg"))),
+            after: #require(NSImage(contentsOf: resources.appending(path: "WelcomeAfter.jpg")))
+        )
+        let host = NSHostingController(rootView: WelcomeContent(previews: previews, musicAllowed: true, screenRecordingAllowed: false))
+        let smallest = host.sizeThatFits(in: CGSize(width: WelcomeContent.width, height: 1))
+        #expect(abs(smallest.height - host.view.fittingSize.height) < 2, "\(smallest) vs \(host.view.fittingSize)")
+    }
 }
 
 @MainActor

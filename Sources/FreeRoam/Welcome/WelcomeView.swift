@@ -184,6 +184,9 @@ private struct ScreenRecordingPreview: View {
             frame(previews?.after, label: "With")
         }
         .padding(.vertical, 2)
+        // The window takes its content's smallest size, and a resizable
+        // image's smallest height is zero, so this holds them at full height.
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("The wheel over a light tint without Screen Recording, and over a faded screen with it")
     }
