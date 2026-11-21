@@ -6,9 +6,9 @@ import {
   type TimeOfDay,
 } from "../radio"
 import "./GoldenHour.css"
-import { CoastDrive as DriveScene } from "../drive/CoastDrive"
-import { PAINTS, type Paint } from "../drive/car"
-import { PHASE_HOUR, phaseOf } from "../drive/daylight"
+import { CoastDrive as DriveScene } from "../../../src/free-roam/drive/CoastDrive"
+import { PAINTS, type Paint } from "../../../src/free-roam/drive/car"
+import { PHASE_HOUR, phaseOf } from "../../../src/free-roam/drive/daylight"
 
 const TIMES: TimeOfDay[] = ["dawn", "day", "dusk", "night"]
 const ALT: Record<TimeOfDay, string> = {

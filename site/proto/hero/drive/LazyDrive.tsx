@@ -3,7 +3,7 @@ import { useFx } from "../radio"
 
 // three.js and the scene load as a separate chunk, so visitors who never get
 // the live drive never download it.
-const CoastDrive = lazy(() => import("./CoastDrive").then(module => ({ default: module.CoastDrive })))
+const CoastDrive = lazy(() => import("../../../src/free-roam/drive/CoastDrive").then(module => ({ default: module.CoastDrive })))
 
 type Connection = { saveData?: boolean; effectiveType?: string }
 
