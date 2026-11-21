@@ -1,0 +1,48 @@
+name: Bug report
+description: Something in Free Roam doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: app-version
+    attributes:
+      label: Free Roam version
+      description: Select Free Roam in Finder and choose File → Get Info.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      placeholder: "15.2"
+    validations:
+      required: true
+  - type: dropdown
+    id: subscription
+    attributes:
+      label: Do you have an Apple Music subscription?
+      options:
+        - "Yes"
+        - "No, I play songs I own"
+    validations:
+      required: true
+  - type: checkboxes
+    id: permissions
+    attributes:
+      label: Permissions you've allowed
+      options:
+        - label: Control Music (System Settings → Privacy & Security → Automation)
+        - label: Screen Recording
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "Optional. Run this in Terminal, reproduce the problem, then paste the output: `log stream --predicate 'subsystem == \"com.happys1ngh.freeroam\"'`"
+      render: text
