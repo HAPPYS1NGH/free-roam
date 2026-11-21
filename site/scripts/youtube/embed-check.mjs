@@ -10,10 +10,10 @@
 // chosen video is also tried from http://127.0.0.1 for the record.
 //
 // Run from site/:
-//   YTDLP=/path/to/yt-dlp PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/embed-check.mjs
+//   YTDLP=/path/to/yt-dlp PLAYWRIGHT=/path/to/playwright/index.mjs node scripts/youtube/embed-check.mjs
 // YTDLP defaults to `yt-dlp` on PATH, PLAYWRIGHT to the `playwright` package,
 // ORIGIN to https://embed-check.example.org.
-// Writes proto/hero/youtube/embed-check.json and search-cache.json, and the
+// Writes scripts/youtube/embed-check.json and search-cache.json, and the
 // videoId and duration per track that the landing page ships, in
 // src/free-roam/live/videos.json.
 import { execFile } from "node:child_process"
@@ -22,7 +22,7 @@ import { createServer } from "node:http"
 import { promisify } from "node:util"
 
 const here = new URL(".", import.meta.url)
-const catalog = JSON.parse(readFileSync(new URL("../../../src/free-roam/catalog.json", import.meta.url), "utf8"))
+const catalog = JSON.parse(readFileSync(new URL("../../src/free-roam/catalog.json", import.meta.url), "utf8"))
 const ytdlp = process.env.YTDLP ?? "yt-dlp"
 const { chromium } = await import(process.env.PLAYWRIGHT ?? "playwright")
 const run = promisify(execFile)
@@ -184,12 +184,12 @@ await browser.close()
 server.close()
 
 writeFileSync(new URL("embed-check.json", here), JSON.stringify({ checkedAt: new Date().toISOString(), origin, tracks: results }, null, 2) + "\n")
-// The prototype's playable subset: station id → catalog track index → video.
+// The playable subset: station id → catalog track index → video.
 const stations = {}
 for (const station of catalog) {
   stations[station.id] = results.filter(entry => entry.station === station.id).map(entry => entry.embeddable ? { videoId: entry.videoId, ytDuration: entry.ytDuration } : null)
 }
-writeFileSync(new URL("../../../src/free-roam/live/videos.json", import.meta.url), JSON.stringify(stations, null, 2) + "\n")
+writeFileSync(new URL("../../src/free-roam/live/videos.json", import.meta.url), JSON.stringify(stations, null, 2) + "\n")
 const embeddable = results.filter(entry => entry.embeddable).length
 const onIp = results.filter(entry => entry.embeddableOnIpAddress).length
 console.log(`\n${embeddable}/${results.length} embeddable from ${origin}; ${onIp} also from 127.0.0.1`)

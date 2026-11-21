@@ -1,5 +1,7 @@
 # Contributing
 
+Found a bug? Open an [issue](https://github.com/HAPPYS1NGH/free-roam/issues/new/choose). Security problems go through [SECURITY.md](SECURITY.md) instead.
+
 The repo has two parts:
 
 - **The Mac app**: `Sources/`, `Tests/`, `Package.swift` and the build scripts in `scripts/`.
