@@ -35,7 +35,7 @@ npm run dev
 
 Open `/`. Hold **Q** anywhere on the page, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Try the wheel, use the arrow keys and Enter, tap a station on the wheel, or pick one from the station list. Radio Off clears the selection. Escape closes the wheel.
 
-The public demo includes four explicitly approved playlists: God's Favorite, gym, PLow, and Morning Playlist, alongside six public-catalog selections. Only their approved track metadata and artwork are copied into the demo; it never loads the full Music export or streams songs. The open, close, hover and retune sounds are the synthesised ones a release of the app ships. They start on your first interaction, and the sound control mutes them. The build copies only the files on an allowlist, so your wallpaper and the local sound pack stay out. When `public/sounds/local/` or `public/wallpaper/` exists on the Mac doing the build, the release check also fails on any built file that's a byte-identical copy of a file in it. It prints which folders it checked and which it skipped. A host has neither folder, so it only skips there.
+The page shows six of the owner's playlists, God's Favorite, High, Vibe, Culture Truth, Serbian and Right Eyebrow, alongside seven public-catalog selections. Only their approved track metadata and artwork are copied into the site; it never loads the full Music export or streams songs. The open, close, hover and retune sounds are the four files in `assets/sounds/`, the same ones the Mac app bundles. They start on your first interaction, and the sound control mutes them. The build copies only the files on an allowlist, so your wallpaper stays out. When `public/wallpaper/` exists on the Mac doing the build, the release check also fails on any built file that's a byte-identical copy of a file in it. A host has no such folder, so it only skips there.
 
 ```sh
 npm test      # playlist, audio, prerender, privacy, and metadata tests
@@ -63,7 +63,7 @@ npm run wallpaper # optional: copies your desktop picture
 npm run studio    # opens /studio.html with DialKit
 ```
 
-This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries, wallpapers, and `public/sounds/local/` remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
+This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries and wallpapers remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
 
 The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. It's the source for everything else: the website's 48 KB header copy, favicon, home screen icon and social card, the Mac app's icon on a navy plate, its menu bar item, and the launch images. `scripts/make-brand-assets.sh` regenerates them all from the badge and the coast photo. Logo prompts are saved in `output/branding/free-roam/`.
 
@@ -88,7 +88,7 @@ tccutil reset All com.happys1ngh.static
 defaults delete com.happys1ngh.static
 ```
 
-If `prototype/public/sounds/local/` has sounds in it, `bundle.sh` uses them instead of the synthesised ones with the same name, as the prototype's Local pack does. That's only for builds on your own Mac.
+The wheel's four sounds live in `assets/sounds/`. `bundle.sh` copies them into the app, and the website publishes the same files at `/sounds/<name>.wav`.
 
 When Free Roam starts, a window explains its two permissions, with an Allow button for each. It shows at every launch until you choose Don't Show This Again or both are allowed. macOS asks once to let Free Roam control Music. Screen Recording, which desaturating the screen needs, is optional: Free Roam asks for it only when you choose Allow, in that window or the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
 

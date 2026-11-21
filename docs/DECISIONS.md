@@ -480,3 +480,12 @@ The user's brief: use exactly the sounds the Free Roam Mac app plays.
 ## 2026-11-21: The owner's stations on the site
 
 The user chose which of their playlists the site shows: God's Favorite, High, Vibe, Culture Truth, Serbian and Right Eyebrow, in their wheel's order, with the seven popular picks after them. gym, PLow, Morning Playlist, Favourite Songs and Veere da Vyah came off, and so did their covers. Thirteen stations matches the owner's own wheel, so the discs come out the size they are in the app. The snapshots came from a fresh `npm run library` export.
+
+## 2026-11-21: One sound set for the app and the site
+
+Harpreet made the pack that used to sit in the gitignored `prototype/public/sounds/local/`, from royalty-free stock, so it can be committed and shipped. It replaces the synthesised sounds everywhere.
+
+- The four sounds that play, open, close, hover and retune, are in `assets/sounds/`. Open and close are the same sound, kept as two files so each can change on its own.
+- `scripts/bundle.sh` copies them into the app, and the site's asset step publishes them at `/sounds/<name>.wav`. There's no fallback and no override folder.
+- The synthesised set, `make-sounds.mjs`, the `sounds` npm script, the alternative retune takes and the retune-take setting are gone. The app always loads `retune`. The studio's Sound Pack and Retune Take controls went with them, and it imports the sounds from `assets/sounds/` directly.
+- This supersedes the 2026-11-21 entry "The site plays the app's own sound files" and the earlier rule that only synthesised sounds ship.

@@ -6,7 +6,11 @@ import { Desktop } from "./Desktop"
 import { isLegibilityPreset, LEGIBILITY_PRESETS, legibilityControls, legibilityReadout } from "./legibility"
 import { loadLibrary, type Library } from "./library"
 import { RadioWheel, radioWheelControls, type RingLayout } from "./RadioWheel"
-import { preloadSounds, RETUNE_TAKES, SILENT_DB, SOUND_PACKS, type SoundName, type SoundPack } from "./sound"
+import closeSound from "../../assets/sounds/close.wav?url"
+import hoverSound from "../../assets/sounds/hover.wav?url"
+import openSound from "../../assets/sounds/open.wav?url"
+import retuneSound from "../../assets/sounds/retune.wav?url"
+import { preloadSounds, SILENT_DB } from "./sound"
 import { crowdedPlaylists, slotsFor } from "./stations"
 import { transitionFor } from "./timing"
 import { buildTokens, downloadJson } from "./tokens"
@@ -20,10 +24,8 @@ const NOTICE_MS = 1600
 export function App() {
   const [library, setLibrary] = useState<Library | null>(null)
   const [wallpaper, setWallpaper] = useState<string | null>(null)
-  const [localSounds, setLocalSounds] = useState(0)
-
   useEffect(() => {
-    preloadSounds().then(setLocalSounds)
+    preloadSounds({ open: openSound, close: closeSound, hover: hoverSound, retune: retuneSound }).catch(error => console.warn("Sounds unavailable:", error))
     Promise.all([loadLibrary(), loadWallpaper()]).then(([library, wallpaper]) => {
       setWallpaper(wallpaper)
       setLibrary(library)
@@ -31,12 +33,12 @@ export function App() {
   }, [])
 
   if (!library) return <Desktop playlist={null} volume={1} wheelOpen={false} wallpaper={null} />
-  return <Studio library={library} wallpaper={wallpaper} localSounds={localSounds} />
+  return <Studio library={library} wallpaper={wallpaper} />
 }
 
-type StudioProps = { library: Library; wallpaper: string | null; localSounds: number }
+type StudioProps = { library: Library; wallpaper: string | null }
 
-function Studio({ library, wallpaper, localSounds }: StudioProps) {
+function Studio({ library, wallpaper }: StudioProps) {
   const reduced = useReducedMotion() ?? false
   const [notice, setNotice] = useState<string | null>(null)
   const actions = useRef<(action: string) => void>(() => {})
@@ -70,8 +72,6 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
       backdropBrightness: [1.04, 0.4, 1.2, 0.01],
       vignette: [1, 0, 1.5, 0.05],
       duckVolume: [0.4, 0, 1, 0.05],
-      soundPack: { type: "select", options: [...SOUND_PACKS], default: "Local" },
-      retuneTake: { type: "select", options: [...RETUNE_TAKES], default: "retune" },
       retuneVolumeDb: [-4.5, SILENT_DB, 0, 0.5],
       uiVolumeDb: [-2, SILENT_DB, 0, 0.5],
       hoverVolumeDb: [-2, SILENT_DB, 0, 0.5],
@@ -102,8 +102,6 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
     holdDelayMs: harness.holdDelayMs,
     keepOpen: harness.keepOpen,
     sounds: {
-      pack: harness.soundPack as SoundPack,
-      retuneTake: harness.retuneTake as SoundName,
       retuneVolumeDb: harness.retuneVolumeDb,
       uiVolumeDb: harness.uiVolumeDb,
       hoverVolumeDb: harness.hoverVolumeDb,
@@ -140,7 +138,6 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
       backdropBrightness: harness.backdropBrightness,
       vignette: harness.vignette,
       duckVolume: harness.duckVolume,
-      retuneTake: harness.retuneTake,
       retuneVolumeDb: harness.retuneVolumeDb,
       uiVolumeDb: harness.uiVolumeDb,
       hoverVolumeDb: harness.hoverVolumeDb,
@@ -214,7 +211,6 @@ function Studio({ library, wallpaper, localSounds }: StudioProps) {
         keepOpen={harness.keepOpen}
         notice={notice}
         library={library}
-        sounds={harness.soundPack === "Local" && localSounds > 0 ? `${localSounds} local sounds` : "synthesised sounds"}
         wallpaper={wallpaper !== null}
         readout={readout}
       />
@@ -227,12 +223,11 @@ type HintProps = {
   keepOpen: boolean
   notice: string | null
   library: Library
-  sounds: string
   wallpaper: boolean
   readout: string
 }
 
-function Hint({ keepOpen, notice, library, sounds, wallpaper, readout }: HintProps) {
+function Hint({ keepOpen, notice, library, wallpaper, readout }: HintProps) {
   if (notice) {
     return (
       <div className="hint" role="status" aria-live="polite">
@@ -258,7 +253,6 @@ function Hint({ keepOpen, notice, library, sounds, wallpaper, readout }: HintPro
         {library.source === "library"
           ? `Your library: ${library.playlists.length} playlists`
           : "Mock playlists. Run npm run library to use yours"}
-        {` · ${sounds}`}
         {wallpaper ? "" : " · Run npm run wallpaper to use your desktop picture"}
       </span>
       <span className="hint-readout">{readout}</span>

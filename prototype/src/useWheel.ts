@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { slotAngle, slotForVector } from "./geometry"
-import { playSound, unlockAudio, type SoundName, type SoundPack } from "./sound"
+import { playSound, unlockAudio, type SoundName } from "./sound"
 import type { Slot } from "./stations"
 
 type Options = {
@@ -22,7 +22,7 @@ type Options = {
   holdDelayMs: number
   keepOpen: boolean
   ignoreSelector?: string
-  sounds: { pack: SoundPack; retuneTake: SoundName; retuneVolumeDb: number; uiVolumeDb: number; hoverVolumeDb: number }
+  sounds: { retuneVolumeDb: number; uiVolumeDb: number; hoverVolumeDb: number }
 }
 
 // Roughly how long Music.app takes to start a playlist after the command.
@@ -61,7 +61,7 @@ export function useWheel(options: Options) {
     return !!selector && target instanceof Element && !!target.closest(selector)
   }
 
-  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolumeDb, settings.current.sounds.pack)
+  const uiSound = (name: SoundName) => playSound(name, settings.current.sounds.uiVolumeDb)
 
   const playingIndex = () => {
     const id = playingRef.current ?? "off"
@@ -74,8 +74,7 @@ export function useWheel(options: Options) {
     if (!slot) return
     const nextId = slot.kind === "off" ? null : slot.id
     if (nextId === playingRef.current) return
-    const { pack, retuneTake, retuneVolumeDb } = settings.current.sounds
-    playSound(retuneTake, retuneVolumeDb, pack)
+    playSound("retune", settings.current.sounds.retuneVolumeDb)
     playingRef.current = nextId
     window.clearTimeout(switchTimer.current)
     switchTimer.current = window.setTimeout(() => setPlayingId(nextId), SWITCH_DELAY_MS)
@@ -88,8 +87,7 @@ export function useWheel(options: Options) {
     if (index === highlightRef.current) return
     highlightRef.current = index
     setHighlighted(index)
-    const { pack, hoverVolumeDb } = settings.current.sounds
-    playSound("hover", hoverVolumeDb, pack)
+    playSound("hover", settings.current.sounds.hoverVolumeDb)
     window.clearTimeout(dwellTimer.current)
     dwellTimer.current = window.setTimeout(() => tune(index), settings.current.dwellMs)
   }

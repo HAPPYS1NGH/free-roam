@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import tokens from "../../tokens.json"
-import { playSound, preloadProductSounds, SILENT_DB, unlockAudio } from "../sound"
+import { playSound, preloadSounds, SILENT_DB, unlockAudio } from "../sound"
 
 export function useProductAudio() {
   const [enabled, setEnabled] = useState(true)
@@ -9,7 +9,7 @@ export function useProductAudio() {
 
   useEffect(() => {
     let active = true
-    void preloadProductSounds().then(() => {
+    void preloadSounds().then(() => {
       if (active) { setLoading(false); setError(false) }
     }).catch(() => {
       if (active) { setLoading(false); setError(true) }
@@ -22,10 +22,10 @@ export function useProductAudio() {
     unlockAudio()
     setLoading(true)
     try {
-      await preloadProductSounds()
+      await preloadSounds()
       setError(false)
       setEnabled(true)
-      playSound("open", tokens.behaviour.uiVolumeDb, "Product")
+      playSound("open", tokens.behaviour.uiVolumeDb)
     } catch {
       setError(true)
     } finally {
@@ -36,8 +36,6 @@ export function useProductAudio() {
   return {
     enabled, error, loading, toggle,
     sounds: {
-      pack: "Product" as const,
-      retuneTake: "retune" as const,
       retuneVolumeDb: enabled ? tokens.behaviour.retuneVolumeDb : SILENT_DB,
       uiVolumeDb: enabled ? tokens.behaviour.uiVolumeDb : SILENT_DB,
       hoverVolumeDb: enabled ? tokens.behaviour.hoverVolumeDb : SILENT_DB,

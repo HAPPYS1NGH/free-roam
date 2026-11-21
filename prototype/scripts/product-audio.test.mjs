@@ -13,7 +13,8 @@ test('cold-load first gesture plays the product clip at its configured gain; mut
   t.after(() => Object.assign(globalThis, originals))
   globalThis.fetch = async url => {
     requested.push(url)
-    const bytes = await readFile(new URL(`../public${url}`, import.meta.url))
+    // The site serves assets/sounds/<name>.wav at /sounds/<name>.wav.
+    const bytes = await readFile(new URL(`../../assets${url}`, import.meta.url))
     return { ok: true, headers: new Headers({ 'content-type': 'audio/wav' }), arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) }
   }
   globalThis.OfflineAudioContext = class {
@@ -38,17 +39,17 @@ test('cold-load first gesture plays the product clip at its configured gain; mut
   }
   const source = await readFile(new URL('../src/sound.ts', import.meta.url), 'utf8')
   const { code } = await transformWithOxc(source, 'sound.ts')
-  const { preloadProductSounds, unlockAudio, playSound, SILENT_DB } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
-  const loading = preloadProductSounds()
+  const { preloadSounds, unlockAudio, playSound, SILENT_DB } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`)
+  const loading = preloadSounds()
   unlockAudio()
-  playSound('open', -2, 'Product')
+  playSound('open', -2)
   assert.equal(started.length, 0)
   await loading
   await Promise.resolve()
   assert.equal(started.length, 1)
-  assert.equal(started[0].bytes, 12392)
+  assert.equal(started[0].bytes, 10628)
   assert.ok(Math.abs(gains[0].gain.value - 10 ** (-2 / 20)) < 1e-9)
-  playSound('close', SILENT_DB, 'Product')
+  playSound('close', SILENT_DB)
   assert.equal(started.length, 1)
   assert.deepEqual(requested.sort(), ['close', 'hover', 'open', 'retune'].map(name => `/sounds/${name}.wav`))
 })

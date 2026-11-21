@@ -68,7 +68,7 @@ God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshot
 - On a physical phone, tap stations and check controls around the notch and home indicator, including landscape.
 - With VoiceOver, verify station announcements and keyboard focus.
 - On the deployed domain, open both routes in a private window over cellular and check social previews.
-- Superseded on 2026-11-21: the site now plays the same files as the Mac app, local pack included, and a test compares them byte for byte with the built app. Listen to the web demo next to an app built without the local sound pack. File hashes, settings and code match, but nobody has compared them by ear.
+- Superseded on 2026-11-21: the site and the Mac app now share one sound set in `assets/sounds/`, and a test compares the site's files byte for byte with the built app's.
 
 ## Needs a human
 
@@ -81,6 +81,6 @@ God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshot
 - `npm --prefix prototype run build`: TypeScript, Vite, prerender, and release check pass. `Release check passed: 35 files, no private exports or studio controls.`
 - `SITE_URL=https://release-check.example.test npm --prefix prototype run build:release`: tested with an explicitly non-production fixture origin. `Release check passed: 37 files, no private exports or studio controls.` The final local preview was rebuilt without that fixture origin.
 - Production browser: approved playlist labels and covers, PLow and Morning Playlist selection, mute/unmute, keyboard navigation, Radio Off, and landing-to-demo navigation. No console warnings or errors observed.
-- The four built WAV files are the synthesised sounds a release build ships, byte for byte. When `public/sounds/local/` or `public/wallpaper/` exists on the building Mac, the release check also fails on any built file that's a byte-identical copy of a file in it, and it prints which folders it checked or skipped.
+- At the time, the four built WAV files were the synthesised sounds; since 2026-11-21 they're the files in `assets/sounds/`. When `public/wallpaper/` exists on the building Mac, the release check also fails on any built file that's a byte-identical copy of a file in it, and it prints which folders it checked or skipped.
 - No lint or formatter command exists. Native code was untouched; native tests were not rerun.
 - The available pnpm runner attempted dependency installation instead of running scripts and failed under network restrictions. Its local changes were restored; verification used the repository's existing npm lockfile and installed dependencies.

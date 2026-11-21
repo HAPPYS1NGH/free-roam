@@ -10,19 +10,21 @@ test('personal exports and unapproved assets never reach the public directory', 
   try {
     const source = join(root, 'public')
     const destination = join(root, 'site')
-    const privateFiles = ['library/library.json', 'library/cover.jpg', 'wallpaper/desktop.jpg', 'sounds/local/retune.wav', 'free-roam/unapproved.png']
-    for (const file of [...publicAssets, ...privateFiles]) {
+    const sounds = join(root, 'sounds')
+    const privateFiles = ['library/library.json', 'library/cover.jpg', 'wallpaper/desktop.jpg', 'free-roam/unapproved.png']
+    for (const file of [...publicAssets.filter(asset => !asset.startsWith('sounds/')), ...privateFiles]) {
       const path = join(source, file)
       mkdirSync(dirname(path), { recursive: true })
       writeFileSync(path, file)
     }
+    mkdirSync(sounds)
+    for (const name of ['open', 'close', 'hover', 'retune', 'unused']) writeFileSync(join(sounds, `${name}.wav`), `official ${name}`)
     mkdirSync(join(destination, 'library'), { recursive: true })
     writeFileSync(join(destination, 'library/stale.json'), 'old private export')
-    preparePublicAssets(source, destination)
+    preparePublicAssets(source, destination, sounds)
     assert.deepEqual(listFiles(destination).sort(), [...publicAssets].sort())
-    // A local sound replaces the synthesised one under the published name, as in the Mac app.
-    assert.equal(readFileSync(join(destination, 'sounds/retune.wav'), 'utf8'), 'sounds/local/retune.wav')
-    assert.equal(readFileSync(join(destination, 'sounds/open.wav'), 'utf8'), 'sounds/open.wav')
+    // The sounds come from the official set, and only the listed ones.
+    assert.equal(readFileSync(join(destination, 'sounds/retune.wav'), 'utf8'), 'official retune')
   } finally {
     rmSync(root, { recursive: true, force: true })
   }

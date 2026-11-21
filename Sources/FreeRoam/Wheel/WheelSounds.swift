@@ -4,8 +4,7 @@ import OSLog
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "sound")
 
 /// The wheel's sounds, from the .wav files scripts/bundle.sh copies out of
-/// `prototype/public/sounds`: your local pack where it has a sound, as in the
-/// prototype, and the synthesised one otherwise. Ported from
+/// `assets/sounds`, the same ones the website plays. Ported from
 /// `prototype/src/sound.ts`.
 @MainActor
 final class WheelSounds {
@@ -32,8 +31,7 @@ final class WheelSounds {
     private var idleStop: Task<Void, Never>?
 
     init(behaviour: WheelStyle.Behaviour) {
-        let files: [Name: String] = [.open: "open", .close: "close", .hover: "hover", .retune: behaviour.retuneTake]
-        samples = files.compactMapValues(Self.load)
+        samples = Dictionary(uniqueKeysWithValues: Name.allCases.compactMap { name in Self.load(name.rawValue).map { (name, $0) } })
         let levels: [Name: Double] = [
             .open: behaviour.uiVolumeDb,
             .close: behaviour.uiVolumeDb,

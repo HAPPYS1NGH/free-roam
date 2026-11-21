@@ -11,7 +11,6 @@ const files = listFiles(dist)
 const sha256 = path => createHash('sha256').update(readFileSync(path)).digest('hex')
 // Gitignored files on the building Mac that must never ship, even under another
 // name. A host's checkout has no wallpaper, so there it can only report a skip.
-// sounds/local/ isn't here: the site ships the same sounds the Mac app bundles.
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url))
 const privateCopies = new Map()
 for (const folder of ['wallpaper']) {
@@ -32,7 +31,7 @@ for (const file of files) {
   assert.ok(!original, `${file} is a copy of the gitignored public/${original}`)
   if (/\.(js|html|css)$/.test(file)) {
     const content = readFileSync(`${dist}/${file}`, 'utf8')
-    for (const privateMarker of ['library/library.json', '/sounds/local/', '/wallpaper/', 'dialkit-root', 'Prototype variants', 'mini-player']) {
+    for (const privateMarker of ['library/library.json', '/wallpaper/', 'dialkit-root', 'Prototype variants', 'mini-player']) {
       assert.ok(!content.includes(privateMarker), `Private or studio code in ${file}: ${privateMarker}`)
     }
   }

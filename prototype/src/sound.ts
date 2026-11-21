@@ -1,68 +1,31 @@
-export const RETUNE_TAKES = ["retune", "retune-b", "retune-c"] as const
+export type SoundName = "open" | "close" | "hover" | "retune"
 
-export type SoundName = "open" | "close" | "hover" | (typeof RETUNE_TAKES)[number]
+const SOUND_NAMES: SoundName[] = ["open", "close", "hover", "retune"]
 
-const SOUND_NAMES: SoundName[] = ["open", "close", "hover", ...RETUNE_TAKES]
-
-// "Local" plays WAVs from public/sounds/local/, a gitignored folder for
-// sounds that can't be committed. Any sound missing there falls back to the
-// synthesised one.
-export const SOUND_PACKS = ["Local", "Synth"] as const
-export type SoundPack = (typeof SOUND_PACKS)[number] | "Product"
-
-const synthBuffers = new Map<SoundName, AudioBuffer>()
-const localBuffers = new Map<SoundName, AudioBuffer>()
-const productBuffers = new Map<SoundName, AudioBuffer>()
-let productPreloading: Promise<void> | null = null
+const buffers = new Map<SoundName, AudioBuffer>()
 let context: AudioContext | null = null
-let preloading: Promise<number> | null = null
+let preloading: Promise<void> | null = null
 
-// Resolves to null when the file doesn't exist; rejects if it can't be decoded.
-async function load(decoder: BaseAudioContext, url: string) {
-  const response = await fetch(url)
-  // Vite answers unknown paths with index.html, so check what came back.
-  if (!response.ok || !response.headers.get("content-type")?.includes("audio")) return null
-  return decoder.decodeAudioData(await response.arrayBuffer())
-}
+export type SoundUrls = Record<SoundName, string>
 
-function loadInto(decoder: BaseAudioContext, buffers: Map<SoundName, AudioBuffer>, folder: string, name: SoundName) {
-  const url = `${folder}/${name}.wav`
-  return load(decoder, url).then(
-    (buffer) => {
-      if (buffer) buffers.set(name, buffer)
-      // Most setups have no local pack, so only a missing synthesised sound is worth a warning.
-      else if (buffers === synthBuffers) console.warn(`Sound "${name}" missing (run npm run sounds)`)
-    },
-    (error) => console.warn(`Sound ${url} could not be decoded:`, error),
-  )
-}
-
-// The site's four sounds: whatever the Mac app bundles, which
-// scripts/public-assets.mjs copies to /sounds/ under the same names.
-export function preloadProductSounds(): Promise<void> {
-  if (productPreloading) return productPreloading
-  const decoder = new OfflineAudioContext(1, 1, 44100)
-  productPreloading = Promise.all((["open", "close", "hover", "retune"] as const).map(async name => {
-    const buffer = await load(decoder, `/sounds/${name}.wav`)
-    if (!buffer) throw new Error(`Tuning sound unavailable: ${name}`)
-    productBuffers.set(name, buffer)
-  })).then(() => undefined).catch(error => {
-    productPreloading = null
-    throw error
-  })
-  return productPreloading
-}
+// The site publishes assets/sounds/, the files the Mac app bundles, here.
+const PUBLISHED: SoundUrls = { open: "/sounds/open.wav", close: "/sounds/close.wav", hover: "/sounds/hover.wav", retune: "/sounds/retune.wav" }
 
 // Decodes with an offline context, which browsers allow before any user
-// gesture, so the very first open already has its sound ready. Resolves to
-// the number of local sounds found.
-export function preloadSounds() {
+// gesture, so the very first open already has its sound. Rejects if one can't
+// load, and a later call tries again.
+export function preloadSounds(urls: SoundUrls = PUBLISHED): Promise<void> {
   if (preloading) return preloading
   const decoder = new OfflineAudioContext(1, 1, 44100)
-  preloading = Promise.all([
-    ...SOUND_NAMES.map((name) => loadInto(decoder, synthBuffers, "/sounds", name)),
-    ...SOUND_NAMES.map((name) => loadInto(decoder, localBuffers, "/sounds/local", name)),
-  ]).then(() => localBuffers.size)
+  preloading = Promise.all(SOUND_NAMES.map(async name => {
+    const response = await fetch(urls[name])
+    // Vite answers unknown paths with index.html, so check what came back.
+    if (!response.ok || !response.headers.get("content-type")?.includes("audio")) throw new Error(`Sound unavailable: ${name}`)
+    buffers.set(name, await decoder.decodeAudioData(await response.arrayBuffer()))
+  })).then(() => undefined).catch(error => {
+    preloading = null
+    throw error
+  })
   return preloading
 }
 
@@ -124,7 +87,6 @@ function playHover(audio: AudioContext, buffer: AudioBuffer, level: number) {
 // Only one retune plays at a time: a new one fades out the last over a few
 // milliseconds (a ramp, not a cut, so it doesn't click) instead of stacking.
 const RETUNE_FADE_S = 0.012
-const retuneNames = new Set<SoundName>(RETUNE_TAKES)
 let activeRetune: { source: AudioBufferSourceNode; gain: GainNode } | null = null
 
 function fadeOutRetune(audio: AudioContext) {
@@ -138,15 +100,15 @@ function fadeOutRetune(audio: AudioContext) {
   activeRetune = null
 }
 
-export function playSound(name: SoundName, volumeDb: number, pack: SoundPack = "Synth") {
+export function playSound(name: SoundName, volumeDb: number) {
   if (!context || volumeDb <= SILENT_DB) return
-  const buffer = pack === "Product" ? productBuffers.get(name) : (pack === "Local" ? localBuffers.get(name) : undefined) ?? synthBuffers.get(name)
+  const buffer = buffers.get(name)
   if (!buffer) {
     // Keep the first gesture audible even on a cold cache or slow connection.
-    if (pack === "Product" && productPreloading) {
-      void productPreloading.then(() => {
-        if (productBuffers.has(name)) playSound(name, volumeDb, pack)
-      }).catch(error => console.warn("Tuning audio unavailable:", error))
+    if (preloading) {
+      void preloading.then(() => {
+        if (buffers.has(name)) playSound(name, volumeDb)
+      }).catch(error => console.warn("Sounds unavailable:", error))
     }
     return
   }
@@ -155,7 +117,7 @@ export function playSound(name: SoundName, volumeDb: number, pack: SoundPack = "
     playHover(context, buffer, level)
     return
   }
-  const isRetune = retuneNames.has(name)
+  const isRetune = name === "retune"
   if (isRetune) fadeOutRetune(context)
 
   const source = context.createBufferSource()

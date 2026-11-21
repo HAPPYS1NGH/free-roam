@@ -64,7 +64,6 @@ struct WheelStyle: Decodable, Sendable {
         let vignette: Double
         /// Music's volume while the wheel is open, as a fraction of the volume before.
         let duckVolume: Double
-        let retuneTake: String
         let retuneVolumeDb: Double
         let uiVolumeDb: Double
         let hoverVolumeDb: Double
