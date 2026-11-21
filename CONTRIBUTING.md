@@ -80,3 +80,13 @@ xcrun stapler validate "dist/Free Roam-0.1.0.dmg"
 codesign --verify --deep --strict --verbose=2 "dist/Free Roam.app"
 (cd dist && shasum -a 256 -c "Free Roam-0.1.0.dmg.sha256")
 ```
+
+### Publish
+
+The site and README link to `releases/latest/download/FreeRoam.dmg`, so every release must include the DMG under that exact name. Tag the commit the DMG was built from:
+
+```sh
+cp "dist/Free Roam-0.1.0.dmg" dist/FreeRoam.dmg
+gh release create v0.1.0 --target <commit> --title "Free Roam 0.1.0" \
+  dist/FreeRoam.dmg "dist/Free Roam-0.1.0.dmg" "dist/Free Roam-0.1.0.dmg.sha256"
+```

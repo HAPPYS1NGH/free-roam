@@ -7,7 +7,7 @@
 <p align="center">Your Music playlists on a radio wheel. Hold ⌥Q, flick, let go.</p>
 
 <p align="center">
-  <a href="https://github.com/HAPPYS1NGH/free-roam/releases/latest">Download for Mac</a> ·
+  <a href="https://github.com/HAPPYS1NGH/free-roam/releases/latest/download/FreeRoam.dmg">Download for Mac</a> ·
   <a href="https://freeroam.happys1ngh.com">Try it in your browser</a>
 </p>
 
@@ -24,7 +24,7 @@ Free Roam is the radio wheel from open-world driving games, for your Mac. Hold �
 
 ## Install
 
-1. Download `Free Roam-<version>.dmg` from [Releases](https://github.com/HAPPYS1NGH/free-roam/releases/latest).
+1. [Download Free Roam](https://github.com/HAPPYS1NGH/free-roam/releases/latest/download/FreeRoam.dmg). Older versions are on [Releases](https://github.com/HAPPYS1NGH/free-roam/releases).
 2. Open it and drag Free Roam to Applications.
 3. Open Free Roam, then hold ⌥Q.
 

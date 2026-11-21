@@ -1,2 +1,3 @@
 export const sourceUrl = "https://github.com/HAPPYS1NGH/free-roam"
-export const downloadUrl = `${sourceUrl}/releases/latest`
+// Every release uploads the DMG as FreeRoam.dmg, so this always downloads the newest one.
+export const downloadUrl = `${sourceUrl}/releases/latest/download/FreeRoam.dmg`
