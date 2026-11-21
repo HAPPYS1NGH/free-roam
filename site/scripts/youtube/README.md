@@ -2,7 +2,7 @@
 
 On the 3 A.M. Drive hero the stations make sound, the way the Mac app does with Apple Music. Hold **⌥Q** and let go on a station, tap **⌥Q**, or pick one from the station list, and that station's song plays mid-song from the same broadcast clock as the wheel and the dial. There's no button and no video to look at: a YouTube player nobody sees does the playing. Nothing is requested from YouTube before the first ⌥Q press or the first press on a station.
 
-Try it: in `site/`, run `npx vite --port 5180` and open <http://localhost:5180/proto/hero/?v=5>. Use `localhost`, not `127.0.0.1` (see below).
+Try it: in `site/`, run `npx vite --port 5180` and open <http://localhost:5180/>. Use `localhost`, not `127.0.0.1` (see below).
 
 ## Embed check
 
@@ -33,14 +33,14 @@ The embedding page's address changes the result. Label-restricted uploads (Jorda
 
 Files:
 
-- `embed-check.mjs`: the check. Writes `embed-check.json` (per track: videoId, embeddable, error code, YouTube duration, every candidate tried) and `src/free-roam/live/videos.json`, the videoId and YouTube duration per track that the prototype and the landing page read.
+- `embed-check.mjs`: the check. Writes `embed-check.json` (per track: videoId, embeddable, error code, YouTube duration, every candidate tried) and `src/free-roam/live/videos.json`, the videoId and YouTube duration per track that the landing page reads.
 - `probe.html`: the page the check loads in the player.
 - `search-cache.json` (git-ignored): search results. YouTube search varies between runs, so results accumulate. Delete the file to start over.
 
 Re-run from `site/`:
 
 ```sh
-YTDLP=/path/to/yt-dlp PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/embed-check.mjs
+YTDLP=/path/to/yt-dlp PLAYWRIGHT=/path/to/playwright/index.mjs node scripts/youtube/embed-check.mjs
 ```
 
 ## How it behaves
@@ -58,7 +58,7 @@ YTDLP=/path/to/yt-dlp PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/y
 With the dev server running on localhost:
 
 ```sh
-PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/verify-live.mjs http://localhost:5180
+PLAYWRIGHT=/path/to/playwright/index.mjs node scripts/youtube/verify-live.mjs http://localhost:5180
 ```
 
 It checks for zero YouTube requests on load, then: holding ⌥Q and letting go on a station plays that station's song at the clock's second (within 1.5 s) with sound; tapping ⌥Q moves to the next station's song; the sound toggle mutes and unmutes; the player can't be seen, clicked or focused; After Dark stays silent; the station list tunes in; Radio Off pauses; a forced error skips to the next song; no page errors. It launches Chromium with the GPU. Without it, the WebGL drive scene renders in software and starves the video, which then drifts behind the clock.

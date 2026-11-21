@@ -11,7 +11,7 @@ import embeddable from "./videos.json"
 // sees, mid-song, from the same broadcast clock as the rest of the page. Like
 // the Mac app with Music, there is no player to look at, only the radio.
 //
-// Only songs proto/hero/youtube/embed-check.mjs proved playable in the embed have a video. When
+// Only songs scripts/youtube/embed-check.mjs proved playable in the embed have a video. When
 // the clock lands on a song without one (or one that errors), the next song
 // with a video fills in from its start, then the station rejoins the clock.
 // The caption names whatever you're actually hearing.
