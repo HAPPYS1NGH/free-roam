@@ -5,6 +5,7 @@ import { downloadUrl } from "./content"
 import { LazyDrive } from "./drive/LazyDrive"
 import { Keycap, useAltHeld, useKeyHeld } from "./keys"
 import { LiveRadio, type LiveAudio } from "./live/LiveRadio"
+import { track } from "./analytics"
 import { useRadio } from "./RadioProvider"
 import { Brand, DownloadButton, OnAirTally, SoundToggle } from "./Shared"
 
@@ -17,6 +18,11 @@ export function Hero() {
   const { retunes, playing, audio } = useRadio()
   // Nothing is requested from YouTube until the visitor starts choosing a station.
   const [liveAudio, setLiveAudio] = useState<LiveAudio>({ kind: "idle" })
+  // Analytics: whether the YouTube music actually plays, gets held back by the browser, or fails.
+  useEffect(() => {
+    if (liveAudio.kind === "idle" || liveAudio.kind === "connecting") return
+    track("youtube_audio", { state: liveAudio.kind, station: playing?.playlist.name ?? "Radio Off" })
+  }, [liveAudio.kind])
   useTimeOfDay()
   return <section className="ta-hero" data-lift={q && alt ? "" : undefined} aria-labelledby="ta-title">
     <div className="ta-scene" aria-hidden="true">

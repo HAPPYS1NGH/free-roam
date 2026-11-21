@@ -6,6 +6,7 @@ import { useWheel } from "../useWheel"
 import { WheelOverlay } from "./WheelOverlay"
 import { demoSlots } from "./demo-stations"
 import { useProductAudio } from "./useProductAudio"
+import { useRadioTracking } from "./useRadioTracking"
 
 type Radio = {
   wheel: ReturnType<typeof useWheel>
@@ -40,6 +41,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
     withOption: true,
     sounds: audio.sounds,
   })
+  const trackedWheel = useRadioTracking(wheel, audio)
   const slot = demoSlots.find(candidate => candidate.id === wheel.playingId)
   const playing = slot?.kind === "playlist" ? slot : undefined
   const stationRgb = useCoverColour(playing?.playlist.covers[0])
@@ -60,7 +62,7 @@ export function RadioProvider({ children }: { children: ReactNode }) {
     if (lost && opener.current instanceof HTMLElement) opener.current.focus({ preventScroll: true })
   }, [wheel.open])
 
-  return <RadioContext.Provider value={{ wheel, audio, playing, retunes, stationRgb }}>
+  return <RadioContext.Provider value={{ wheel: trackedWheel, audio, playing, retunes, stationRgb }}>
     {children}
     <WheelOverlay open={wheel.open} highlighted={wheel.highlighted} onChoose={wheel.choose} onClose={wheel.hide} />
   </RadioContext.Provider>

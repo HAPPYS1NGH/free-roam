@@ -20,6 +20,7 @@
   "dependencies": {
     "dialkit": "2.0.2",
     "motion": "13.4.0",
+    "posthog-js": "1.446.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "three": "0.187.0"
