@@ -38,6 +38,10 @@ enum MusicApp: String, CaseIterable, Codable, Sendable {
 protocol MusicAppBridge {
     static var bundleID: String { get }
     static var isRunning: Bool { get }
+    /// True when the playlists and their tracks are ones Free Roam saved
+    /// itself, so they can be read while the app is closed, and an empty
+    /// list really means there are none.
+    static var listsSavedPlaylists: Bool { get }
 
     /// Never prompts. The app has to be running for macOS to answer.
     static func permission() -> MusicPermission
@@ -84,7 +88,14 @@ protocol MusicAppBridge {
     static func setVolumeNow(_ volume: Int, after delay: Duration) throws
 }
 
+extension MusicAppBridge {
+    /// Whether playlists and tracks can be read now, without launching the app.
+    static var canReadPlaylists: Bool { listsSavedPlaylists || isRunning }
+}
+
 extension MusicBridge: MusicAppBridge {
+    static let listsSavedPlaylists = false
+
     /// With Music, a station plays one track at a time and `OnAirRelay` plays
     /// the next, so repeat stays off.
     static func keepOnClock() async throws {

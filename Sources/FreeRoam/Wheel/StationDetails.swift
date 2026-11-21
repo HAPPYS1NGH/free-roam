@@ -120,7 +120,7 @@ final class StationDetails {
     }
 
     private func startLoading() {
-        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicApp.bridge.isRunning else { return }
+        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicApp.bridge.canReadPlaylists else { return }
         loading = Task {
             await loadQueued()
             loading = nil
@@ -129,7 +129,7 @@ final class StationDetails {
 
     /// Stations first, then the logos Settings asked for.
     private func loadQueued() async {
-        while MusicApp.bridge.isRunning, !Task.isCancelled {
+        while MusicApp.bridge.canReadPlaylists, !Task.isCancelled {
             if !queued.isEmpty {
                 await loadStations()
             } else if let id = requested.first {
@@ -152,7 +152,7 @@ final class StationDetails {
             let started = clock.now
             let batch = queued
             for id in batch {
-                guard MusicApp.bridge.isRunning else { break }
+                guard MusicApp.bridge.canReadPlaylists else { break }
                 do {
                     let stationTracks = try await MusicApp.bridge.tracks(playlistID: id)
                     // An empty playlist isn't kept, so it's read again on the
@@ -167,7 +167,7 @@ final class StationDetails {
             let tracksLoaded = clock.now
             var covers = 0
             for id in batch {
-                guard MusicApp.bridge.isRunning, let stationTracks = tracks[id] else { continue }
+                guard MusicApp.bridge.canReadPlaylists, let stationTracks = tracks[id] else { continue }
                 let data = await coverData(id, tracks: Self.coverTracks(stationTracks))
                 covers += data.count
                 logos[id] = await Self.logo(from: data)
@@ -229,7 +229,7 @@ final class StationDetails {
                 return false
             }
         }
-        return queued.isEmpty && requested.contains(id) && MusicApp.bridge.isRunning
+        return queued.isEmpty && requested.contains(id) && MusicApp.bridge.canReadPlaylists
     }
 
     /// The covers of the given 1-based tracks that have one.

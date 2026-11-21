@@ -92,7 +92,7 @@ final class StationList {
     var onWheel: [Playlist] {
         // An empty list is far more likely a library that hasn't loaded yet,
         // as just after Music launches, than every playlist deleted.
-        let playlists = library?.isEmpty == false ? library : lastLibrary
+        let playlists = library?.isEmpty == false || app.bridge.listsSavedPlaylists ? library ?? lastLibrary : lastLibrary
         let entries = choice ?? playlists.map(Self.libraryOrder) ?? []
         return entries.filter { $0.isOn && !$0.isMissing }.map { Playlist(id: $0.id, name: $0.name) }
     }
@@ -164,13 +164,15 @@ final class StationList {
     /// playlists join the end of the wheel while it has room.
     func update(library playlists: [Playlist]) {
         if library != playlists { library = playlists }
-        if !playlists.isEmpty, playlists != lastLibrary {
+        let isTrusted = !playlists.isEmpty || app.bridge.listsSavedPlaylists
+        if isTrusted, playlists != lastLibrary {
             lastLibrary = playlists
             save(playlists, forKey: libraryKey)
         }
         // An empty list is far more likely a library that hasn't loaded than
         // every playlist deleted, and taking it would hide every station.
-        if let choice, !playlists.isEmpty {
+        // Saved playlists can't be half loaded, so theirs is taken as it is.
+        if let choice, isTrusted {
             let merged = Self.merge(choice, with: playlists)
             if merged != choice {
                 logChanges(from: choice, to: merged)
@@ -279,11 +281,11 @@ final class StationList {
 
     private func load(launchingMusic: Bool) {
         let loadingApp = app
-        guard loading == nil, launchingMusic || loadingApp.bridge.isRunning else { return }
+        guard loading == nil, launchingMusic || loadingApp.bridge.canReadPlaylists else { return }
         loading = Task {
             defer { if app == loadingApp { loading = nil } }
             do {
-                if !loadingApp.bridge.isRunning {
+                if !loadingApp.bridge.canReadPlaylists {
                     try await loadingApp.bridge.launch()
                     log.notice("Launched \(loadingApp.name, privacy: .public) to list its playlists")
                 }

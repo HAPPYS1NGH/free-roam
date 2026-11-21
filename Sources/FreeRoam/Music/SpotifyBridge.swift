@@ -14,6 +14,8 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "music"
 /// itself carries on from track to track in the order the clock expects.
 enum SpotifyBridge: MusicAppBridge {
     static let bundleID = "com.spotify.client"
+    /// Spotify can't list playlists, so these are the ones you added.
+    static let listsSavedPlaylists = true
 
     // AppleScript isn't thread-safe, and this keeps slow Apple Events off the
     // main thread. `MusicBridge.execute` also holds a lock across both apps.

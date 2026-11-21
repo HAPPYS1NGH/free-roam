@@ -203,6 +203,20 @@ struct StationListPerAppTests {
         #expect(StationList(defaults: defaults, app: .spotify).onWheel == [playlist("B")])
     }
 
+    @Test func anEmptySpotifyListEmptiesTheWheelButAnEmptyMusicListDoesNot() {
+        let music = StationList(defaults: defaults, app: .music)
+        music.update(library: [playlist("A")])
+        music.update(library: [])
+        #expect(music.onWheel == [playlist("A")])
+
+        // Spotify's playlists are the ones you added, so none left is none.
+        let spotify = StationList(defaults: defaults, app: .spotify)
+        spotify.update(library: [playlist("B")])
+        spotify.update(library: [])
+        #expect(spotify.onWheel.isEmpty)
+        #expect(StationList(defaults: defaults, app: .spotify).onWheel.isEmpty)
+    }
+
     @Test func switchingSwapsInTheOtherAppsStations() {
         let stations = StationList(defaults: defaults, app: .music)
         stations.update(library: [playlist("A"), playlist("C")])
