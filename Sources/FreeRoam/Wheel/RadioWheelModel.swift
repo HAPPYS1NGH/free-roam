@@ -287,6 +287,18 @@ final class RadioWheelModel {
 
     // MARK: Tuning
 
+    /// The app was switched, so nothing is tuned until the next press reads
+    /// the new app. Tunes and reads for the old app are dropped.
+    func appChanged() {
+        dwellTimer?.cancel()
+        playingRead?.cancel()
+        tuning?.cancel()
+        tunedID = nil
+        nowPlaying = nil
+        relay.airing = nil
+        stations = Array(stationList.onWheel.prefix(Self.maxStations))
+    }
+
     private var tunedSlot: Int {
         guard let tunedID, let index = stations.firstIndex(where: { $0.id == tunedID }) else { return 0 }
         return index + 1

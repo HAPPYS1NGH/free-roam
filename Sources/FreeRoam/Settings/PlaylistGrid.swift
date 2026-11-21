@@ -13,6 +13,9 @@ struct PlaylistGrid: View {
     let isFull: Bool
     let ringColor: Color
     let toggle: (Playlist) -> Void
+    /// Spotify only: tune a playlist again, or take it out of Free Roam.
+    var retune: ((String) -> Void)?
+    var remove: ((String) -> Void)?
     let requestLogo: (String) -> Void
     let cancelLogo: (String) -> Void
 
@@ -34,6 +37,14 @@ struct PlaylistGrid: View {
                         toggle: { toggle(playlist) }
                     )
                     .disabled(isFull && slot == nil)
+                    .contextMenu {
+                        if let retune {
+                            Button("Tune Again") { retune(playlist.id) }
+                        }
+                        if let remove {
+                            Button("Remove from Free Roam", role: .destructive) { remove(playlist.id) }
+                        }
+                    }
                     .onAppear { requestLogo(playlist.id) }
                     .onDisappear { cancelLogo(playlist.id) }
                 }

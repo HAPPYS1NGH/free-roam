@@ -15,13 +15,13 @@ struct FreeRoamApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenu(model: appDelegate.menu)
+            StatusMenu(model: appDelegate.menu, stations: appDelegate.stations, selectApp: appDelegate.selectApp)
         } label: {
             MenuBarIcon()
                 .modifier(SettingsOpenerCapture { appDelegate.openSettings = $0 })
         }
         Settings {
-            StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style)
+            StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style, selectApp: appDelegate.selectApp)
         }
         .windowResizability(.contentMinSize)
     }
@@ -83,6 +83,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wheel.loadDetails(for: stations.onWheel)
         wheel.start()
         self.wheel = wheel
+    }
+
+    /// Switches between Music and Spotify, from Settings or the menu. The app
+    /// you leave is paused, so two never play at once, and the wheel opens on
+    /// Radio Off until it reads the new one.
+    func selectApp(_ app: MusicApp) {
+        let previous = MusicApp.current
+        guard app != previous else { return }
+        MusicApp.current = app
+        log.notice("Switched from \(previous.name, privacy: .public) to \(app.name, privacy: .public)")
+        stations.switchApp(to: app)
+        wheel?.appChanged()
+        menu.refreshPermissions()
+        guard previous.bridge.isRunning else { return }
+        Task {
+            do {
+                try await previous.bridge.pause()
+            } catch MusicBridgeError.notRunning {
+                // It quit while the pause waited its turn.
+            } catch {
+                log.error("Couldn't pause \(previous.name, privacy: .public): \(String(describing: error), privacy: .public)")
+            }
+        }
     }
 
     /// Opening Free Roam again from Finder, Spotlight or Raycast while it's

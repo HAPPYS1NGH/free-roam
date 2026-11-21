@@ -71,6 +71,7 @@ struct StationPickerTests {
     @Test func saysHowManyStationsMusicDidNotList() {
         #expect(StationPicker.countText(stations: 12, missing: 0) == "12 of 25 on the wheel")
         #expect(StationPicker.countText(stations: 23, missing: 2) == "23 of 25 on the wheel · 2 not found in Music")
+        #expect(StationPicker.countText(stations: 23, missing: 2, app: .spotify) == "23 of 25 on the wheel · 2 not found in Spotify")
     }
 
     // MARK: Reordering
@@ -251,5 +252,15 @@ struct StationListPickerTests {
         #expect(stations.isFull)
         stations.setOn(false, id: library(26)[3].id)
         #expect(!stations.isFull)
+    }
+
+    // MARK: Adding a Spotify playlist
+
+    @Test func theTuningNoteNamesThePlaylistAndHowManySongsAreFound() {
+        let muted = "Spotify is muted until it's done."
+        #expect(SpotifyLinkField.tuningText(.init(name: "Today's Top Hits", tracksFound: 34)) == "Tuning Today's Top Hits · 34 songs. \(muted)")
+        #expect(SpotifyLinkField.tuningText(.init(name: "Gym", tracksFound: 1)) == "Tuning Gym · 1 song. \(muted)")
+        #expect(SpotifyLinkField.tuningText(.init(name: "Gym", tracksFound: 0)) == "Tuning Gym. \(muted)")
+        #expect(SpotifyLinkField.tuningText(nil) == "Reading the playlist. \(muted)")
     }
 }

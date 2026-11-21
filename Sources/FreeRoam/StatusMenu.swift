@@ -16,6 +16,11 @@ final class StatusMenuModel {
         }
     }
 
+    /// For a switch of app, whose permission is the one the menu shows.
+    func refreshPermissions() {
+        checkPermissions()
+    }
+
     private func checkPermissions() {
         let music = MusicApp.bridge.permission()
         if music != musicPermission { musicPermission = music }
@@ -32,6 +37,8 @@ final class StatusMenuModel {
 
 struct StatusMenu: View {
     let model: StatusMenuModel
+    let stations: StationList
+    let selectApp: (MusicApp) -> Void
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
@@ -43,11 +50,19 @@ struct StatusMenu: View {
         }
         .keyboardShortcut(",")
 
+        Divider()
+        Picker("Play from", selection: Binding(get: { stations.app }, set: { selectApp($0) })) {
+            ForEach(MusicApp.allCases, id: \.self) { app in
+                Text(app.name).tag(app)
+            }
+        }
+        .pickerStyle(.inline)
+
         if model.musicPermission == .denied || !model.screenRecordingAllowed {
             Divider()
         }
         if model.musicPermission == .denied {
-            Button("Allow Free Roam to Control Music…") { PrivacyPane.automation.open() }
+            Button("Allow Free Roam to Control \(stations.app.name)…") { PrivacyPane.automation.open() }
         }
         if !model.screenRecordingAllowed {
             Button("Allow Screen Recording…") {
