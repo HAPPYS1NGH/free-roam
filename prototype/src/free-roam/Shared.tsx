@@ -9,26 +9,20 @@ export function Brand({ href = "#top" }: { href?: string }) {
 
 export function Header() {
   return <header className="site-header"><Brand /><nav aria-label="Main navigation">
+    <a href="#stations">Stations</a>
     <a href="#how-it-works">How it works</a>
     <a href={sourceUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
-    <a className="nav-cta" href="/">Try the demo <span aria-hidden="true">↗</span></a>
+    <a className="nav-cta" href={`${sourceUrl}#build-the-mac-app`} target="_blank" rel="noreferrer">Build for Mac <span aria-hidden="true">↗</span></a>
   </nav></header>
 }
 
-export function Actions() {
-  return <div className="hero-actions">
-    <a className="primary-action" href="/">Try the radio <span aria-hidden="true">↗</span></a>
-    <a className="text-action" href={`${sourceUrl}#build-the-mac-app`} target="_blank" rel="noreferrer">Build for Mac <span aria-hidden="true">↗</span></a>
-  </div>
-}
-
-export function Details({ variant: _variant }: { variant?: "night" | "fm" | "paper" }) {
+export function Details() {
   return <>
     <section className="story-section" id="how-it-works">
       <div><span className="eyebrow">Your favorites, on the dial</span><h2>You know the feeling.<br />You just need the music.</h2></div>
       <div className="story-copy">
         <p>You want a different mood. So you open Music, scroll through playlists, and forget what you were doing.</p>
-        <p>Free Roam turns your playlists into radio stations. Hold a shortcut, flick to something familiar, and carry on. Each station keeps its place, so you drop into the music like switching on the radio.</p>
+        <p>Free Roam turns your playlists into radio stations. Hold a shortcut, flick to something familiar, and carry on. Each station runs on its own clock, so you drop in mid-song, like switching on the radio.</p>
         <p>Need to concentrate? Pick Radio Off from the same wheel. A little quiet, without opening another app.</p>
       </div>
     </section>
@@ -42,8 +36,8 @@ export function Details({ variant: _variant }: { variant?: "night" | "fm" | "pap
     </section>
     <section className="questions"><h2>A few things to know.</h2><div>
       <details><summary>What do I need?<span aria-hidden="true">+</span></summary><p>A Mac running macOS 14 or later and the Music app. Free Roam plays the playlists in your Music app. Songs you own, imported or purchased, play without a subscription; Apple Music songs need one. Building the current app requires Xcode 26 or later.</p></details>
-      <details><summary>Can I choose my own stations?<span aria-hidden="true">+</span></summary><p>Yes. Open Settings from the Mac app's menu bar to choose your playlists and put them in order. This demo includes God's Favorite, gym, PLow, and Morning Playlist, shared by the creator, alongside popular picks. It never accesses a visitor's Music library.</p></details>
-      <details><summary>Does the browser demo play music?<span aria-hidden="true">+</span></summary><p>The browser uses the same open, close, selection, and tuning sounds as the Mac app. Sound starts with your first interaction and can be muted. It doesn't access your Music library or play songs. The Mac app controls playback in Music.</p></details>
+      <details><summary>Can I choose my own stations?<span aria-hidden="true">+</span></summary><p>Yes. Open Settings from the Mac app's menu bar to choose your playlists and put them in order. This page includes God's Favorite, gym, PLow, and Morning Playlist, shared by the creator, alongside popular picks. It never accesses a visitor's Music library.</p></details>
+      <details><summary>Does this page play music?<span aria-hidden="true">+</span></summary><p>No, only the wheel. It's the Mac app's wheel with the same sound effects from the Mac app, which start on your first interaction and can be muted. It doesn't access your Music library or play songs. The Mac app controls playback in Music.</p></details>
       <details><summary>How do I get the Mac app?<span aria-hidden="true">+</span></summary><p>You can build it from source today. A signed download isn't available yet.</p><a href={`${sourceUrl}#build-the-mac-app`} target="_blank" rel="noreferrer">Build instructions ↗</a></details>
       <details><summary>Is this connected to GTA?<span aria-hidden="true">+</span></summary><p>No. Free Roam is an independent app inspired by switching radio stations in open-world games.</p></details>
     </div></section>

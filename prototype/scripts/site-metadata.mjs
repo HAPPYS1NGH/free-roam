@@ -24,7 +24,7 @@ export function applySiteMetadata(html, canonical) {
 
 export function writeSiteMetadata(directory, origin) {
   if (!origin) return
-  const routes = [{ file: 'index.html', path: '/' }, { file: 'free-roam/index.html', path: '/free-roam/' }]
+  const routes = [{ file: 'index.html', path: '/' }]
   for (const route of routes) {
     const file = join(directory, route.file)
     writeFileSync(file, applySiteMetadata(readFileSync(file, 'utf8'), `${origin}${route.path}`))

@@ -449,3 +449,12 @@ The user's brief: match the accent colour in System Settings → Appearance, but
 
 - macOS writes `AppleAccentColor` to the global domain for every accent but Multicolor, and Multicolor gives apps system blue, which is darker than `#65B4D4`. So with the key the selected ring and Settings' highlights use `controlAccentColor`, and without it they use `ringColor` from `tokens.json`.
 - The wheel reads it each time it draws, so a change shows on the next open.
+
+## 2026-11-21: One page, with the app's wheel
+
+The user's brief: one site, not `/free-roam/` and `/` side by side, with the app's exact wheel and sounds.
+
+- The landing page moved to `/`, and the full-screen demo and the landing page's always-on wheel preview are gone.
+- Holding Q anywhere on the page opens the overlay from the browser prototype that the Mac app was ported from: a fixed backdrop with the app's saturation, brightness and vignette, the wheel above it, and the app's open, close and filter timings. The sounds were already the four WAVs a release ships.
+- The station list tunes through the same `useWheel` instance, so touch and keyboard users get the same stations without a second wheel. It also keeps every station name in the prerendered HTML, which the release check needs now that the wheel is only in the DOM while open.
+- The unused Passenger Seat and Frequency directions were deleted.

@@ -2,7 +2,7 @@
 
 **Not yet published.** The web release candidate passes local checks. The production domain and hosting destination are still needed to generate final canonical and social URLs and deploy it. No known blocking web defect remains after this pass.
 
-Scope: the After Hours landing page at `/free-roam/` and full-screen demo at `/`. Both import the same approved playlist catalog, wheel renderer, interaction controller, and sound hook. Native signing, notarization and installation are separate work. The website accurately offers source-build instructions.
+Scope at the time: the After Hours landing page at `/free-roam/` and full-screen demo at `/`. On 2026-11-21 they were merged into one page at `/`; see the decision log. Both import the same approved playlist catalog, wheel renderer, interaction controller, and sound hook. Native signing, notarization and installation are separate work. The website accurately offers source-build instructions.
 
 ## A. Accessibility
 

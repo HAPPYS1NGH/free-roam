@@ -6,13 +6,12 @@ The brand badge follows the supplied circular reference, with only FREE ROAM in 
 
 ## Public experience
 
-- `/free-roam/`: After Hours with a small interactive station preview.
-- `/`: clean full-screen interaction demo using the existing `useWheel` controller and `RadioWheel` renderer.
+- `/`: the only public page, After Hours. Holding Q anywhere on it, or clicking Try the wheel, opens the app's overlay over the whole page: the same backdrop, vignette, wheel and fades as the Mac app. A station list below the hero tunes the same wheel.
 - `/studio.html`: local design studio only; excluded from the production build.
 
-The demo preserves tap-to-skip, hold-to-open, relative mouse selection, scroll selection, dwell tuning, and release-to-choose. Visible buttons, arrow navigation, Enter, and Escape cover keyboard and touch use. Closing the full-screen wheel returns focus to its opener. No music list or persistent track player is shown.
+The demo preserves tap-to-skip, hold-to-open, relative mouse selection, scroll selection, dwell tuning, and release-to-choose. Visible buttons, arrow navigation, Enter, and Escape cover keyboard and touch use. Closing the wheel returns focus to its opener.
 
-Public stations include the four requested playlists, God's Favorite, gym, PLow, and Morning Playlist, plus six popular selections. Their track metadata and artwork are explicitly approved for the demo. Approved playlist snapshots and public-catalog sources are recorded in `prototype/src/free-roam/catalog.json`. The build copies only explicitly approved assets and checks the final output for private files and studio code. The full Music export remains local; the public experience only uses the four approved snapshots. The web plays the four synthesised WAVs that a release of the app ships, with the app's volumes, hover filtering and retune fades. The local sound pack is only for app builds on your own Mac, so the web never plays it. Effects start on the first user interaction and can be muted. The public demo does not stream songs. Both web views now share the original interaction controller.
+Public stations include the four requested playlists, God's Favorite, gym, PLow, and Morning Playlist, plus six popular selections. Their track metadata and artwork are explicitly approved for the demo. Approved playlist snapshots and public-catalog sources are recorded in `prototype/src/free-roam/catalog.json`. The build copies only explicitly approved assets and checks the final output for private files and studio code. The full Music export remains local; the public experience only uses the four approved snapshots. The web plays the four synthesised WAVs that a release of the app ships, with the app's volumes, hover filtering and retune fades. The local sound pack is only for app builds on your own Mac, so the web never plays it. Effects start on the first user interaction and can be muted. The public demo does not stream songs.
 
 ## References
 
@@ -26,4 +25,4 @@ Public stations include the four requested playlists, God's Favorite, gym, PLow,
 
 The original browser prototype and its interaction controller were inspected directly, alongside the Swift model's tap, hold, dwell, and Radio Off paths. The installed native overlay was not visually reverified in this pass. No native playback or installed-app behavior was changed.
 
-The website and full-screen demo were checked against the production build. Both use the same approved playlists and sound controller. Nine tests pass: private-asset exclusion, source audio checksums, product-token parity, catalog assets, cold-cache first-gesture audio with mute, deterministic landing-page prerendering, production-origin validation, generated metadata, and the social card's size. TypeScript, Vite, prerendering, and generated-output checks pass. See [the release review](free-roam-release-review.md) for the remaining launch checks.
+The website was checked against the production build. Nine tests pass: private-asset exclusion, source audio checksums, product-token parity, catalog assets, cold-cache first-gesture audio with mute, deterministic landing-page prerendering, production-origin validation, generated metadata, and the social card's size. TypeScript, Vite, prerendering, and generated-output checks pass. See [the release review](free-roam-release-review.md) for the remaining launch checks.

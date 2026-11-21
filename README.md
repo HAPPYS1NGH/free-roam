@@ -25,7 +25,7 @@ The full plan is in [docs/PLAN.md](docs/PLAN.md).
 
 ## Try the web demo
 
-The website uses the After Hours design. The full-screen demo shares the original wheel renderer, saved tokens, and interaction controller.
+The website is one page in the After Hours design. Its wheel is the app's: the same renderer, saved tokens, interaction controller, overlay and sounds.
 
 ```sh
 cd prototype
@@ -33,7 +33,7 @@ npm install
 npm run dev
 ```
 
-Open `/free-roam/` for the website or `/` for the full-screen demo. Hold **Q**, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Choose a station, use the arrow keys and Enter, or tap a station. Radio Off clears the selection. Escape closes the wheel.
+Open `/`. Hold **Q** anywhere on the page, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Try the wheel, use the arrow keys and Enter, tap a station on the wheel, or pick one from the station list. Radio Off clears the selection. Escape closes the wheel.
 
 The public demo includes four explicitly approved playlists: God's Favorite, gym, PLow, and Morning Playlist, alongside six public-catalog selections. Only their approved track metadata and artwork are copied into the demo; it never loads the full Music export or streams songs. The open, close, hover and retune sounds are the synthesised ones a release of the app ships. They start on your first interaction, and the sound control mutes them. The build copies only the files on an allowlist, so your wallpaper and the local sound pack stay out. When `public/sounds/local/` or `public/wallpaper/` exists on the Mac doing the build, the release check also fails on any built file that's a byte-identical copy of a file in it. It prints which folders it checked and which it skipped. A host has neither folder, so it only skips there.
 
@@ -48,7 +48,7 @@ Only files listed in `prototype/scripts/public-assets.mjs` enter the generated `
 
 Set `SITE_URL` to the chosen HTTPS origin, without a path, then run `npm run build:release` from `prototype/`. This runs tests and the production build, writes canonical and absolute social-image URLs for both pages, and generates `robots.txt` and `sitemap.xml`. It fails if the origin is missing or invalid. `npm run build` remains available for local previews without a domain.
 
-Publish only `prototype/dist/` to a static host that serves directory `index.html` files. The landing page is `/free-roam/`; the full-screen demo is `/`. Keep missing assets and `/studio.html` as 404s instead of rewriting every URL to the demo. A host's build command is `npm run build:release` with root directory `prototype` and output directory `dist`. Use the committed npm lockfile with `npm ci` for reproducible installation.
+Publish only `prototype/dist/` to a static host that serves directory `index.html` files. The site is the single page at `/`. Keep missing assets and `/studio.html` as 404s instead of rewriting every URL to the demo. A host's build command is `npm run build:release` with root directory `prototype` and output directory `dist`. Use the committed npm lockfile with `npm ci` for reproducible installation.
 
 The website links to source-build instructions. A downloadable, signed native app is a separate release. See [the launch review](docs/free-roam-release-review.md) for the final device and deployed checks.
 

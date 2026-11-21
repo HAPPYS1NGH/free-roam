@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -18,20 +18,16 @@ test('release metadata requires an unambiguous HTTPS origin', () => {
 test('release pages and sitemap share the configured origin and exclude studio routes', t => {
   const directory = mkdtempSync(join(tmpdir(), 'free-roam-metadata-'))
   t.after(() => rmSync(directory, { recursive: true, force: true }))
-  mkdirSync(join(directory, 'free-roam'))
-  for (const route of ['index.html', 'free-roam/index.html']) {
-    writeFileSync(join(directory, route), `<head><meta property="og:image" content="${socialImage}" /></head>`)
-  }
+  writeFileSync(join(directory, 'index.html'), `<head><meta property="og:image" content="${socialImage}" /></head>`)
   writeSiteMetadata(directory, 'https://example.test')
-  for (const [file, path] of [['index.html', '/'], ['free-roam/index.html', '/free-roam/']]) {
-    const html = readFileSync(join(directory, file), 'utf8')
-    assert.ok(html.includes(`rel="canonical" href="https://example.test${path}"`))
-    assert.ok(html.includes('content="https://example.test/free-roam/og-image.jpg"'))
-    assert.ok(html.includes('name="twitter:image" content="https://example.test/free-roam/og-image.jpg"'))
-  }
+  const html = readFileSync(join(directory, 'index.html'), 'utf8')
+  assert.ok(html.includes('rel="canonical" href="https://example.test/"'))
+  assert.ok(html.includes('content="https://example.test/free-roam/og-image.jpg"'))
+  assert.ok(html.includes('name="twitter:image" content="https://example.test/free-roam/og-image.jpg"'))
   assert.match(readFileSync(join(directory, 'robots.txt'), 'utf8'), /Sitemap: https:\/\/example.test\/sitemap.xml/)
   const sitemap = readFileSync(join(directory, 'sitemap.xml'), 'utf8')
-  assert.ok(sitemap.includes('<loc>https://example.test/free-roam/</loc>'))
+  assert.ok(sitemap.includes('<loc>https://example.test/</loc>'))
+  assert.ok(!sitemap.includes('/free-roam/'))
   assert.ok(!sitemap.includes('studio'))
 })
 

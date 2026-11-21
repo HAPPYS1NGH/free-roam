@@ -7,7 +7,7 @@ export default defineConfig(({ command, mode }) => ({
   publicDir: command === "serve" && mode === "studio" ? "public" : ".site-public",
   build: {
     rollupOptions: {
-      input: { wheel: "index.html", freeRoam: "free-roam/index.html" },
+      input: { site: "index.html" },
     },
   },
 }))
