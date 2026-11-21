@@ -24,7 +24,7 @@ for (const folder of ['wallpaper']) {
   console.log(`Copy check: looking for byte-identical copies of the ${privateFiles.length} files in public/${folder}/.`)
 }
 const origin = siteOrigin(process.env.SITE_URL, process.env.RELEASE_BUILD === '1')
-const allowed = new Set([...publicAssets, 'index.html', ...(origin ? ['robots.txt', 'sitemap.xml'] : [])])
+const allowed = new Set([...publicAssets, 'index.html', '404.html', ...(origin ? ['robots.txt', 'sitemap.xml'] : [])])
 for (const file of files) {
   assert.ok(allowed.has(file) || /^assets\/[^/]+\.(js|css)$/.test(file), `Unexpected release file: ${file}`)
   const original = privateCopies.get(sha256(join(dist, file)))

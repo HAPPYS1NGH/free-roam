@@ -9,7 +9,7 @@ export default defineConfig(({ command, mode }) => ({
   server: { fs: { allow: [".", "../assets/sounds"] } },
   build: {
     rollupOptions: {
-      input: { site: "index.html" },
+      input: { site: "index.html", notFound: "404.html" },
     },
   },
 }))
