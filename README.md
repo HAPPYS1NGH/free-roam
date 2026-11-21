@@ -88,6 +88,31 @@ The wheel's four sounds live in `assets/sounds/`. `bundle.sh` copies them into t
 
 When Free Roam starts, a window explains its two permissions, with an Allow button for each. It shows at every launch until you choose Don't Show This Again or both are allowed. macOS asks once to let Free Roam control Music. Screen Recording, which desaturating the screen needs, is optional: Free Roam asks for it only when you choose Allow, in that window or the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
 
+## Release build
+
+`scripts/release.sh` makes the download, `dist/Free Roam-<version>.dmg`, plus a `.sha256` checksum beside it. The version comes from `CFBundleShortVersionString` in `Sources/FreeRoam/Info.plist`, and the build number is the commit count.
+
+You need two things on the Mac, once:
+
+- The Developer ID Application certificate for team R5NM7593WP in your login keychain.
+- A notarytool keychain profile called `freeroam-notary`, made with `xcrun notarytool store-credentials freeroam-notary` and an app-specific password from account.apple.com. The credentials stay in the keychain. The script only uses the profile's name.
+
+Commit your changes, then run the script. It won't build with uncommitted changes to the app's files unless you set `ALLOW_DIRTY=1`, which is for test runs. Most of the few minutes it takes is spent waiting on Apple. The script:
+
+1. Builds a universal (arm64 and x86_64) release with `bundle.sh --release` and signs it with Developer ID and the hardened runtime. `scripts/FreeRoam.entitlements` holds a single entitlement, Apple Events, which Music needs. Screen Recording doesn't need an entitlement: it's a privacy permission the user grants.
+2. Fails if the bundle holds a file that isn't on its allowlist, a copy of anything in `prototype/public/library/`, `prototype/public/wallpaper/` or `prototype/public/sounds/local/`, or a `/Users/` path in the binary.
+3. Notarizes and staples the app, so a copy dragged out of the DMG still opens offline. Then it builds the DMG, signs it, notarizes it and staples it. If Apple rejects a submission, the script prints Apple's log and stops.
+4. Writes the checksum.
+
+Then check the result, and open the DMG on a Mac that has never run Free Roam:
+
+```sh
+spctl -a -vvv -t install "dist/Free Roam-0.1.0.dmg"   # accepted, source=Notarized Developer ID
+xcrun stapler validate "dist/Free Roam-0.1.0.dmg"
+codesign --verify --deep --strict --verbose=2 "dist/Free Roam.app"
+(cd dist && shasum -a 256 -c "Free Roam-0.1.0.dmg.sha256")
+```
+
 ## Requirements
 
 - macOS 14 or later
