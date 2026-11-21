@@ -4,7 +4,7 @@
 
 <h1 align="center">Free Roam</h1>
 
-<p align="center">Your Music playlists on a radio wheel. Hold ⌥Q, flick, let go.</p>
+<p align="center">Your Music or Spotify playlists on a radio wheel. Hold ⌥Q, flick, let go.</p>
 
 <p align="center">
   <a href="https://github.com/HAPPYS1NGH/free-roam/releases/latest/download/FreeRoam.dmg"><b>Download for Mac</b></a> ·
@@ -21,7 +21,7 @@
 
 https://github.com/user-attachments/assets/4644947d-9f4c-403b-88ef-29e547737867
 
-Free Roam brings the radio wheel from open-world driving games to your Mac. Hold ⌥Q in any app and your playlists appear on a wheel. Flick toward one, let go, and Music tunes in with a burst of static.
+Free Roam brings the radio wheel from open-world driving games to your Mac. Hold ⌥Q in any app and your playlists appear on a wheel. Flick toward one, let go, and your music app tunes in with a burst of static.
 
 Stations behave like radio. Each playlist plays on a loop, on a clock, as if it has been on air all year. You drop in mid-song, and the wheel shows what's playing on every station before you pick one.
 
@@ -29,14 +29,14 @@ Stations behave like radio. Each playlist plays on a loop, on a clock, as if it 
 
 | Do this | What happens |
 |---|---|
-| Hold <kbd>⌥</kbd> <kbd>Q</kbd> | The wheel opens over whatever you're doing, and Music turns down |
+| Hold <kbd>⌥</kbd> <kbd>Q</kbd> | The wheel opens over whatever you're doing, and the music turns down |
 | Move the mouse or scroll | Picks a station and shows what's on it |
 | Let go | Tunes in |
 | Tap <kbd>⌥</kbd> <kbd>Q</kbd> | Skips to the next station |
-| Pick Radio Off | Pauses Music |
+| Pick Radio Off | Pauses the music |
 | Press <kbd>Esc</kbd> while holding <kbd>⌥</kbd> | Closes the wheel without changing station |
 
-Choose your stations in **Settings**, from the menu bar icon. Drag them into order, and click a cover to add or remove a playlist. **Launch at Login** is in the same menu. Free Roam has no Dock icon.
+Choose your stations in **Settings**, from the menu bar icon. Drag them into order, and click a cover to add or remove a playlist. **Launch at Login** is in the same menu. Free Roam plays from Music or Spotify, never both. Switch with **Play from** in Settings or in the menu. Free Roam has no Dock icon.
 
 ## Install
 
@@ -46,7 +46,7 @@ Choose your stations in **Settings**, from the menu bar icon. Drag them into ord
 
 The app is signed and notarized by Apple, so it opens without a warning. Older versions and checksums are on [Releases](https://github.com/HAPPYS1NGH/free-roam/releases).
 
-**Requirements:** macOS 14 or later and the Music app. Songs you own play without a subscription. Apple Music songs need one.
+**Requirements:** macOS 14 or later, and the Music app or the Spotify desktop app. In Music, songs you own play without a subscription and Apple Music songs need one. Spotify works with Free and Premium.
 
 **Updating:** Free Roam doesn't update itself yet. Download the new DMG and replace the app in Applications. Your stations and permissions carry over.
 
@@ -54,20 +54,20 @@ The app is signed and notarized by Apple, so it opens without a warning. Older v
 
 Free Roam asks for at most two things:
 
-- **Control Music** (required). Lets Free Roam switch playlists and turn Music down while the wheel is open. macOS asks the first time you use it.
+- **Control Music** or **Control Spotify** (required, for the app you pick). Lets Free Roam switch playlists and turn the volume down while the wheel is open. macOS asks the first time you use each one.
 - **Screen Recording** (optional). Fades the colour out of the screen behind the wheel. Free Roam only asks if you choose Allow. Without it, the wheel works the same over a tinted background.
 
 What it doesn't do:
 
 - It never saves or sends what's on your screen. It uses the capture only to draw the backdrop.
-- It makes no network requests and has no analytics.
+- It has no analytics, and makes no network requests except to read a Spotify playlist's name and cover when you add one.
 - It doesn't need Accessibility or Input Monitoring. ⌥Q is a standard macOS global shortcut, so other keys never pass through Free Roam.
 
 ## FAQ
 
 ### Does it work with Spotify?
 
-No. Free Roam controls the Music app only.
+Yes. Pick Spotify under **Play from** in Settings. Spotify doesn't let other apps list your playlists, so the stations are the playlists you add: paste a playlist link (or drop it) into Settings. Free Roam then tunes it, which means stepping through the playlist with Spotify muted to learn its songs. It takes about half a second a song, up to 300 songs, and Spotify goes back to what you were playing when it's done. Right-click a playlist to tune it again after you edit it, or to remove it. It works with Free and Premium.
 
 ### Why does a station start in the middle of a song?
 
@@ -80,7 +80,7 @@ Not yet. If another app already uses ⌥Q, quit that app or turn its shortcut of
 ### Nothing happens when I hold ⌥Q
 
 - Check that Free Roam is running. Its icon should be in the menu bar.
-- Open System Settings → Privacy & Security → Automation and make sure Free Roam is allowed to control Music. If it isn't, the menu bar menu shows **Allow Free Roam to Control Music…**.
+- Open System Settings → Privacy & Security → Automation and make sure Free Roam is allowed to control Music or Spotify, whichever you picked. If it isn't, the menu bar menu shows **Allow Free Roam to Control Music…** (or Spotify).
 - Check that no other app uses ⌥Q (see above).
 
 ### How do I uninstall it?

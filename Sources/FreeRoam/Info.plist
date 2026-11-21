@@ -29,7 +29,7 @@
 	<key>LSUIElement</key>
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
-	<string>Free Roam switches playlists and sets the volume in Music.</string>
+	<string>Free Roam switches playlists and sets the volume in Music or Spotify.</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
