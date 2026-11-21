@@ -1,13 +1,15 @@
 # Vercel only needs site/ and the shared assets/ to build the website.
-.build/
-dist/
-output/
-docs/
-Sources/
-Tests/
-scripts/
-site/node_modules/
-site/dist/
-site/.site-public/
-site/public/library/
-site/public/wallpaper/
+# A leading slash anchors a pattern to the repo root, so scripts/ doesn't
+# also drop site/scripts/.
+/.build/
+/dist/
+/output/
+/docs/
+/Sources/
+/Tests/
+/scripts/
+/site/node_modules/
+/site/dist/
+/site/.site-public/
+/site/public/library/
+/site/public/wallpaper/
