@@ -52,13 +52,15 @@
   .ta-try:hover { color: var(--ink); }
 }
 
-/* Intro: fade up from black, then the line resolves. About 1.1 s, on load. */
+/* Intro: fade up from black, then the line resolves. About 0.85 s, once per
+   session: index.html sets <html data-intro="seen"> on later loads. */
 @keyframes ta-from-black { from { opacity: 0; } }
 @keyframes ta-resolve { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } }
 @keyframes ta-fade { from { opacity: 0; } }
 .ta .ta-scene-img { animation: ta-from-black 700ms var(--ease-out) both; }
-.ta .ta-line { animation: ta-resolve 550ms var(--ease-out) 400ms both; }
-.ta :is(.ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: ta-fade 400ms var(--ease-out) 700ms both; }
+.ta .ta-line { animation: ta-resolve 550ms var(--ease-out) 200ms both; }
+.ta :is(.ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: ta-fade 400ms var(--ease-out) 450ms both; }
+:root[data-intro="seen"] .ta :is(.ta-scene-img, .ta-line, .ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: none; }
 
 /* Closing */
 .ta-closing { display: grid; justify-items: start; gap: 22px; }

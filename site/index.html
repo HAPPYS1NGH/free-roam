@@ -30,6 +30,12 @@
         link.href = "/free-roam/scenes/coast-" + time + ".jpg"
         link.setAttribute("fetchpriority", "high")
         document.head.appendChild(link)
+        // The intro plays once per session. It's CSS on prerendered markup, so the
+        // flag has to land before first paint. Storage can throw in private modes.
+        try {
+          if (sessionStorage.getItem("free-roam-intro")) document.documentElement.dataset.intro = "seen"
+          else sessionStorage.setItem("free-roam-intro", "1")
+        } catch (error) {}
       })()
     </script>
     <title>Free Roam | A radio for your favorite music</title>
