@@ -141,7 +141,7 @@ Build order. The riskiest parts come first, and the app works end to end before 
 - [ ] The recording for the first X post, with the local sound pack
 
 - `Info.plist`: no Dock icon (`LSUIElement`), plus the text for the Music permission prompt (`NSAppleEventsUsageDescription`). Without that text, macOS silently blocks the commands.
-- Menu bar menu: Settings… and Quit, plus "Allow Free Roam to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing.
+- Menu bar menu: Settings…, Launch at Login (a checkmark, kept in step with System Settings → Login Items) and Quit, plus "Allow Free Roam to control Music" if permission was denied, which opens System Settings → Automation, and "Allow Screen Recording…" if that's missing.
 - Welcome window: at launch, a small window explains Control Music and Screen Recording, each with its status and an Allow button. It stops showing once you choose Don't Show This Again or both are allowed. Closing it any other way saves nothing, so it shows again at the next launch. Free Roam asks for Screen Recording only when you choose Allow, in the window or the menu, never by itself. macOS still asks about Music the first time Free Roam sends it a command.
 - MusicBridge commands:
   - list playlists (name and persistent ID)
