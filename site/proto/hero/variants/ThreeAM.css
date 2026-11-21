@@ -36,12 +36,9 @@
 
 .ta .ta-caption { margin-inline: auto; display: flex; gap: 10px; align-items: center; padding-bottom: 24px; font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.03em; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
 .ta-caption-track { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-/* Listen live: quiet, in the caption's own voice, with a full-height hit area. */
-.ta-listen { flex: none; display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0; border: 0; background: none; font: inherit; letter-spacing: inherit; color: var(--accent); transition: color 400ms var(--ease-out); }
-.ta-listen::before { content: ""; width: 0; height: 0; border-block: 4px solid transparent; border-left: 7px solid currentColor; }
-.ta-listen[aria-pressed="true"]::before { width: 7px; height: 7px; border: 0; background: currentColor; border-radius: 1px; }
-.ta-listen:active { opacity: 0.7; }
-@media (hover: hover) and (pointer: fine) { .ta-listen:hover { text-decoration: underline; text-underline-offset: 4px; } }
+/* The sound toggle in the caption's own voice, with a full-height hit area. */
+.ta-caption .p-sound { flex: none; min-height: 32px; padding: 0; font: inherit; letter-spacing: inherit; color: var(--muted); }
+.ta-caption-note { color: var(--muted); }
 .ta-caption-time { color: var(--accent); margin-left: 6px; transition: color 400ms var(--ease-out); }
 
 /* Touch has no Q to hold. */

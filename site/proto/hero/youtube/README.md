@@ -1,6 +1,6 @@
-# Listen live (YouTube) on 3 A.M. Drive
+# Audible stations (YouTube) on 3 A.M. Drive
 
-An opt-in way to hear the stations on the landing page. Press **Listen live** in the hero caption. The station on air then plays through YouTube's embed player, mid-song, from the same broadcast clock as the wheel and the dial. Nothing is requested from YouTube until that click.
+On the 3 A.M. Drive hero the stations make sound, the way the Mac app does with Apple Music. Hold **⌥Q** and let go on a station, tap **⌥Q**, or pick one from the station list, and that station's song plays mid-song from the same broadcast clock as the wheel and the dial. There's no button and no video to look at: a YouTube player nobody sees does the playing. Nothing is requested from YouTube before the first ⌥Q press or the first press on a station.
 
 Try it: in `site/`, run `npx vite --port 5180` and open <http://localhost:5180/proto/hero/?v=5>. Use `localhost`, not `127.0.0.1` (see below).
 
@@ -43,22 +43,22 @@ Re-run from `site/`:
 YTDLP=/path/to/yt-dlp PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/embed-check.mjs
 ```
 
-## How Listen live behaves
+## How it behaves
 
-- Before the click: no script, iframe, image or cookie from YouTube. The API (`www.youtube.com/iframe_api`, about 1.2 MB with the player) loads on the click. The player uses `youtube-nocookie.com`.
-- The card sits at the top of the hero's copy column, in the layout flow, so it never covers the headline or the car and never gets covered. It's 480×270 on desktop. On phones it narrows with the screen, but the player never drops below 200 px tall. Labels sit in strips above and below the video, never on it, and YouTube's own controls and branding are left alone.
-- The ⌥Q wheel: its overlay (and the full-screen pick layer under it) covers the whole viewport, so no corner is clear of it. While the wheel is open, the card pauses the video and then hides in place. When the wheel closes, the card shows again and rejoins the broadcast at the clock's current second, the way a radio you stepped away from kept playing. This was chosen over stacking the player above the overlay: on most screens the wheel is big enough to collide with any corner, and hiding avoids both overlay and hidden playback.
-- The clock: the station plays the song `onAir()` says is on, at its position. Load time is corrected once playback starts, with one seek to wherever the clock has got to. If the song on air has no video, the next song with one fills in from the top and the station then rejoins the clock. A song that errors at runtime is skipped the same way for the rest of the visit.
-- Retuning from the wheel or the station list switches video at the new station's clock position. Radio Off pauses. A station with no videos (After Dark) says "No live audio for this station" and offers one that has them.
-- Safari can refuse to start sound outside the click. If the video hasn't started 4 s after loading, the card says "Press play on the video to start."
-- Close (×, or "Stop listening" in the caption) destroys the player.
+- On load: no script, iframe, image or cookie from YouTube. The API (`www.youtube.com/iframe_api`, about 1.2 MB with the player) starts loading on the ⌥Q keydown, or on a press on the station list or the wheel. The player uses `youtube-nocookie.com`.
+- Tuning in happens on the release: letting go of Q, or the click on a station. Both count as user activation, so Chrome lets the unmuted song start. If the browser holds the sound back anyway (Safari can), the caption says "Click for sound" and the next click or key press starts it.
+- The player is a 200×200 iframe fixed to the corner at opacity 0, click-through, `aria-hidden` and `tabindex="-1"`. It stays rendered, not `display: none`, so the player runs as it would on screen.
+- The clock: the station plays the song `onAir()` says is on, at its position. Once a second the player is checked against the clock, and if it's more than 1 s off it seeks back (aiming 0.5 s ahead to cover the rebuffer, at most once every 4 s). If the song on air has no video, the next song with one fills in from the top and the station then rejoins the clock. A song that errors at runtime is skipped the same way for the rest of the visit.
+- Tapping ⌥Q moves to the next station's song. The wheel can stay open while music plays, and dwelling on a station retunes, as in the app. Radio Off pauses. After Dark has no video, so it stays silent and the caption says "After Dark has no audio here".
+- The sound toggle in the caption mutes the music along with the wheel's sounds.
+- Ads: YouTube can play a pre-roll, and it plays invisibly like the song. The embed API has no ad event, so an ad is inferred when the player reports a different video ID, a duration more than 5 s off the song's, or "playing" while the song's time hasn't moved for 2.5 s. During an ad the caption reads "YouTube ad, then <song>" and nothing seeks. When the song's time moves again, the clock check seeks it to the right second. None of the test runs got an ad, so this path hasn't been seen working.
 
 ## Verify
 
 With the dev server running on localhost:
 
 ```sh
-PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/verify-live.mjs http://localhost:5180 [screenshot.png]
+PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/verify-live.mjs http://localhost:5180
 ```
 
-It checks for zero YouTube requests before the click, then playback at the clock's second (within 2 s), switching stations, the station with no videos, the wheel hiding a paused player, Radio Off, skipping on a forced error, close, and page errors. It launches Chromium with the GPU. Without it, the WebGL drive scene renders in software and starves the video, which then drifts behind the clock.
+It checks for zero YouTube requests on load, then: holding ⌥Q and letting go on a station plays that station's song at the clock's second (within 1.5 s) with sound; tapping ⌥Q moves to the next station's song; the sound toggle mutes and unmutes; the player can't be seen, clicked or focused; After Dark stays silent; the station list tunes in; Radio Off pauses; a forced error skips to the next song; no page errors. It launches Chromium with the GPU. Without it, the WebGL drive scene renders in software and starves the video, which then drifts behind the clock.

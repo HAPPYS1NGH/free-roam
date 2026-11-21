@@ -1,6 +1,6 @@
-// The YouTube IFrame Player API, loaded only when a visitor asks for live
-// audio: the script sets YouTube cookies the moment it loads, so nothing from
-// YouTube may be requested before that click. The API itself only exists on
+// The YouTube IFrame Player API, loaded only once a visitor starts choosing a
+// station: the script sets YouTube cookies the moment it loads, so nothing
+// from YouTube may be requested before then. The API itself only exists on
 // www.youtube.com (youtube-nocookie.com/iframe_api is a 404); the player it
 // builds is pointed at the nocookie host instead.
 
@@ -12,6 +12,13 @@ export type YouTubePlayer = {
   seekTo(seconds: number, allowSeekAhead: boolean): void
   getCurrentTime(): number
   getPlayerState(): number
+  getDuration(): number
+  // Undocumented but long-standing: the video the player is actually on.
+  getVideoData?(): { video_id?: string } | undefined
+  mute(): void
+  unMute(): void
+  setVolume(volume: number): void
+  getIframe(): HTMLIFrameElement
   destroy(): void
 }
 
