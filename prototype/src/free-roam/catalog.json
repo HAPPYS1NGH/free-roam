@@ -403,6 +403,213 @@
     "provenance": "owner-approved-playlist"
   },
   {
+    "id": "favourites",
+    "name": "Favourite Songs",
+    "album": null,
+    "tracks": [
+      {
+        "title": "RYDE OR DIE (feat. Karam Brar)",
+        "artist": "Chinna & Manni Sandhu",
+        "duration": 135.177001953125
+      },
+      {
+        "title": "God’s Favorite (feat. Sultaan)",
+        "artist": "Jordan Sandhu, Sultaan, Kaptaan & Avvy Sra",
+        "duration": 174.065994262695
+      },
+      {
+        "title": "Untouchable",
+        "artist": "Tegi Pannu & Manni Sandhu",
+        "duration": 153.210998535156
+      },
+      {
+        "title": "God's Grace (feat. Gurlej Akhtar)",
+        "artist": "Jordan Sandhu, Gur Sidhu & Kaptaan",
+        "duration": 162.309005737305
+      },
+      {
+        "title": "Warriors Honour",
+        "artist": "Navaan Sandhu & Manjit Singh Sohi",
+        "duration": 293.475006103516
+      },
+      {
+        "title": "Insane",
+        "artist": "AP Dhillon, Shinda Kahlon, Gurinder Gill & Gminxr",
+        "duration": 206.061004638672
+      },
+      {
+        "title": "Rich Heart",
+        "artist": "Gurinder Gill & Manu",
+        "duration": 146.350997924805
+      },
+      {
+        "title": "Black Jays (feat. Fateh Doe)",
+        "artist": "Himmat Sandhu",
+        "duration": 168.570999145508
+      },
+      {
+        "title": "Badfella",
+        "artist": "Sidhu Moose Wala",
+        "duration": 217.531997680664
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/favourites-0.jpg",
+      "/free-roam/albums/favourites-1.jpg",
+      "/free-roam/albums/favourites-2.jpg",
+      "/free-roam/albums/favourites-3.jpg"
+    ],
+    "sourceUrl": null,
+    "artworkSource": null,
+    "provenance": "owner-approved-playlist"
+  },
+  {
+    "id": "veere-da-vyah",
+    "name": "Veere da Vyah",
+    "album": null,
+    "tracks": [
+      {
+        "title": "Phulkari",
+        "artist": "Gippy Grewal",
+        "duration": 255.869003295898
+      },
+      {
+        "title": "Jatti",
+        "artist": "Raaj Sohal",
+        "duration": 190.908996582031
+      },
+      {
+        "title": "Akh Larh Gayi",
+        "artist": "Gippy Grewal",
+        "duration": 293.459991455078
+      },
+      {
+        "title": "De Le Gerha",
+        "artist": "Balvir Boparai",
+        "duration": 236.587997436523
+      },
+      {
+        "title": "Tera Yaar Bolda",
+        "artist": "Surjit Bindrakhia",
+        "duration": 336.253997802734
+      },
+      {
+        "title": "Alrhaan Kuaariaan",
+        "artist": "Diljit Dosanjh",
+        "duration": 299.363006591797
+      },
+      {
+        "title": "Daaka",
+        "artist": "Diljit Dosanjh",
+        "duration": 263.755004882812
+      },
+      {
+        "title": "Naag",
+        "artist": "Jazzy B",
+        "duration": 349.839996337891
+      },
+      {
+        "title": "Das Ja (feat. Lehmber Hussainpuri)",
+        "artist": "DJ Sanj",
+        "duration": 231.132995605469
+      },
+      {
+        "title": "Sharaab",
+        "artist": "Diljit Dosanjh",
+        "duration": 282.044006347656
+      },
+      {
+        "title": "Mera Mahi Tu Pateya",
+        "artist": "Lehmber Hussainpuri, Miss Pooja & Jeeti",
+        "duration": 274.200012207031
+      },
+      {
+        "title": "Aaja Bhangra Pa Laiye",
+        "artist": "Jaidev Kumar, Diljit Dosanjh, Navraj Hans & Simran Tripat",
+        "duration": 203.052993774414
+      },
+      {
+        "title": "Jatt Di Pasand",
+        "artist": "Surjit Bindrakhia",
+        "duration": 283.786987304688
+      },
+      {
+        "title": "Desi Daaru Bargi",
+        "artist": "Diljit Dosanjh",
+        "duration": 187.492004394531
+      },
+      {
+        "title": "Daru Pee Ke",
+        "artist": "Kaka Bhainiwala",
+        "duration": 237.957992553711
+      },
+      {
+        "title": "Smile",
+        "artist": "Diljit Dosanjh",
+        "duration": 262.454986572266
+      },
+      {
+        "title": "Handsome Jatta (From \"Ashke\" Soundtrack) [with Bunty Bains & Davvy Singh]",
+        "artist": "Jordan Sandhu",
+        "duration": 168.033004760742
+      },
+      {
+        "title": "Moorni",
+        "artist": "Panjabi MC",
+        "duration": 262.60400390625
+      },
+      {
+        "title": "Kabza",
+        "artist": "Babbu Maan",
+        "duration": 300.587005615234
+      },
+      {
+        "title": "Jattiye Ni",
+        "artist": "Jordan Sandhu",
+        "duration": 181.787002563477
+      },
+      {
+        "title": "Darling Jatt Di",
+        "artist": "Amrinder Gill, Dr Zeus & Gurlej Akhtar",
+        "duration": 176.555999755859
+      },
+      {
+        "title": "Rim vs Jhanjar",
+        "artist": "Karan Aujla & Deep Jandu",
+        "duration": 199.682006835938
+      },
+      {
+        "title": "Kinna Sohna Munda",
+        "artist": "Ranjit Bawa & Desi Crew",
+        "duration": 191.537994384766
+      },
+      {
+        "title": "Wang Da Naap (feat. Sonam Bajwa)",
+        "artist": "Ammy Virk",
+        "duration": 158.983001708984
+      },
+      {
+        "title": "Rail Gaddi",
+        "artist": "Chirag Pehchan & Mangal Singh",
+        "duration": 303.920013427734
+      },
+      {
+        "title": "Kale Rang Da Paranda (Remix)",
+        "artist": "Urban Singh",
+        "duration": 138.42399597168
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/veere-da-vyah-0.jpg",
+      "/free-roam/albums/veere-da-vyah-1.jpg",
+      "/free-roam/albums/veere-da-vyah-2.jpg",
+      "/free-roam/albums/veere-da-vyah-3.jpg"
+    ],
+    "sourceUrl": null,
+    "artworkSource": null,
+    "provenance": "owner-approved-playlist"
+  },
+  {
     "id": "night",
     "name": "Night Drive",
     "album": "After Hours",
@@ -503,5 +710,22 @@
     ],
     "sourceUrl": "https://music.apple.com/us/album/yellow/1122782080?i=1122782283&uo=4",
     "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f5/93/8c/f5938c49-964c-31d1-4b33-78b634f71fb7/190295978075.jpg/600x600bb.jpg"
+  },
+  {
+    "id": "currents",
+    "name": "Slow Burn",
+    "album": "Currents",
+    "tracks": [
+      {
+        "title": "Let It Happen",
+        "artist": "Tame Impala",
+        "duration": 466.893
+      }
+    ],
+    "covers": [
+      "/free-roam/albums/currents.jpg"
+    ],
+    "sourceUrl": "https://music.apple.com/us/album/let-it-happen/1440838039?i=1440838060&uo=4",
+    "artworkSource": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a8/2e/b4/a82eb490-f30a-a321-461a-0383c88fec95/15UMGIM23316.rgb.jpg/600x600bb.jpg"
   }
 ]
