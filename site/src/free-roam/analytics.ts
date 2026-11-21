@@ -31,7 +31,7 @@ const sectionNames: Record<string, string> = {
   "ta-closing-title": "closing",
 }
 
-function sectionName(element: Element | null) {
+export function sectionName(element: Element | null) {
   if (!element) return "other"
   if (element.tagName === "HEADER") return "nav"
   if (element.tagName === "FOOTER") return "footer"
@@ -41,6 +41,7 @@ function sectionName(element: Element | null) {
 
 function watchPage() {
   document.addEventListener("click", (event) => {
+    // Off a Mac the links point at the release page and send the link instead; DownloadLink tracks those.
     const link = (event.target as Element).closest(`a[href="${downloadUrl}"]`)
     if (link) track("download_clicked", { placement: sectionName(link.closest("header, footer, section")) })
   })

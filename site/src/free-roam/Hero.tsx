@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { onAir, useNow } from "../broadcast"
 import { useMounted } from "../useMounted"
-import { downloadUrl } from "./content"
 import { LazyDrive } from "./drive/LazyDrive"
 import { Keycap, useAltHeld, useKeyHeld } from "./keys"
 import { LiveRadio, type LiveAudio } from "./live/LiveRadio"
@@ -34,7 +33,7 @@ export function Hero() {
     <header className="p-nav ta-nav">
       <Brand />
       <OnAirTally />
-      <a className="p-button p-button-sm ta-nav-cta" href={downloadUrl}>Download for Mac</a>
+      <DownloadButton size="sm" className="ta-nav-cta" />
     </header>
     <div className="ta-copy p-wrap">
       <h1 id="ta-title" className="p-display ta-line">

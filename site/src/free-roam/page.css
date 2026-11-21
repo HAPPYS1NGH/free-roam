@@ -5,6 +5,29 @@
   font-weight: 600;
   font-display: swap;
 }
+/* Local stand-ins scaled to Sofia's width and vertical metrics, so the display
+   type doesn't reflow when the webfont swaps in. Measured on uppercase
+   headlines: both run about 1.31x wider than Sofia. Overrides are divided by
+   size-adjust, which scales them too. Impact on macOS and Windows, Avenir Next
+   Condensed on iOS. */
+@font-face {
+  font-family: "Sofia Fallback Impact";
+  src: local("Impact");
+  font-weight: 600;
+  size-adjust: 76.5%;
+  ascent-override: 117.6%;
+  descent-override: 39.2%;
+  line-gap-override: 0%;
+}
+@font-face {
+  font-family: "Sofia Fallback Avenir";
+  src: local("Avenir Next Condensed Demi Bold"), local("AvenirNextCondensed-DemiBold");
+  font-weight: 600;
+  size-adjust: 76%;
+  ascent-override: 118.4%;
+  descent-override: 39.5%;
+  line-gap-override: 0%;
+}
 
 /* ---------------------------------------------------------------- palettes */
 .p-page {
@@ -19,7 +42,7 @@
   --live: oklch(0.69 0.19 32);
   --on-brand: oklch(0.2 0.035 60);
 
-  --font-display: "Sofia Condensed", Impact, "Arial Narrow", sans-serif;
+  --font-display: "Sofia Condensed", "Sofia Fallback Impact", "Sofia Fallback Avenir", "Arial Narrow", sans-serif;
   --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -81,6 +104,7 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
 .p-button-md { min-height: 48px; padding: 0 20px 0 18px; font-size: 14px; }
 .p-button-lg { min-height: 56px; padding: 0 26px 0 22px; font-size: 15px; }
 .p-apple { width: 15px; height: 18px; margin-top: -2px; flex: none; }
+.p-download-label { display: inline-flex; align-items: center; gap: inherit; }
 .p-button-sm .p-apple { width: 12px; height: 14px; }
 @media (hover: hover) and (pointer: fine) {
   .p-button:hover { background: color-mix(in oklch, var(--accent), white 14%); }
