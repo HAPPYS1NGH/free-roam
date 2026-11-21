@@ -242,17 +242,17 @@ final class StationList {
     }
 
     private func load(launchingMusic: Bool) {
-        guard loading == nil, launchingMusic || MusicBridge.isRunning else { return }
+        guard loading == nil, launchingMusic || MusicApp.bridge.isRunning else { return }
         loading = Task {
             defer { loading = nil }
             do {
-                if !MusicBridge.isRunning {
-                    try await MusicBridge.launch()
+                if !MusicApp.bridge.isRunning {
+                    try await MusicApp.bridge.launch()
                     log.notice("Launched Music to list its playlists")
                 }
                 let clock = ContinuousClock()
                 let started = clock.now
-                let playlists = try await MusicBridge.playlists()
+                let playlists = try await MusicApp.bridge.playlists()
                 log.notice("Read \(playlists.count) playlists in \((clock.now - started) / .milliseconds(1), format: .fixed(precision: 0)) ms")
                 update(library: playlists)
                 loadError = nil

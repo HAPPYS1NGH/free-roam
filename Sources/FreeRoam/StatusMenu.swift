@@ -2,7 +2,7 @@ import SwiftUI
 
 @MainActor @Observable
 final class StatusMenuModel {
-    private(set) var musicPermission = MusicBridge.permission()
+    private(set) var musicPermission = MusicApp.bridge.permission()
     private(set) var screenRecordingAllowed = ScreenCapture.isAllowed
     private(set) var launchesAtLogin = LaunchAtLogin.isEnabled
 
@@ -17,7 +17,7 @@ final class StatusMenuModel {
     }
 
     private func checkPermissions() {
-        let music = MusicBridge.permission()
+        let music = MusicApp.bridge.permission()
         if music != musicPermission { musicPermission = music }
         let screen = ScreenCapture.isAllowed
         if screen != screenRecordingAllowed { screenRecordingAllowed = screen }

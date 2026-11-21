@@ -49,7 +49,9 @@ final class OnAirRelay {
     }
 
     private func receive(state: String?, persistentID: Int64?) {
-        guard let airing else { return }
+        // Spotify plays a station's playlist on by itself, so only Music's
+        // stations are relayed.
+        guard let airing, MusicApp.current == .music else { return }
         switch Self.event(state: state, persistentID: persistentID, airing: airing.trackID) {
         case .ended:
             // Music posts Stopped twice at the end of a track.
