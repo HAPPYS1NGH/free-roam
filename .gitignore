@@ -32,3 +32,7 @@ docs/
 
 # Vercel project link (vercel link)
 .vercel/
+
+# Research reports and notes stay local
+reports/
+research_notes/
