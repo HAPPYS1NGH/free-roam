@@ -1,122 +1,56 @@
 <p align="center">
-  <img src="prototype/public/free-roam/badge.png" width="120" height="120" alt="Free Roam">
+  <img src="site/public/free-roam/badge.png" width="120" height="120" alt="Free Roam">
 </p>
 
 <h1 align="center">Free Roam</h1>
 
 <p align="center">Your Music playlists on a radio wheel. Hold ⌥Q, flick, let go.</p>
 
+<p align="center">
+  <a href="https://github.com/HAPPYS1NGH/free-roam/releases/latest">Download for Mac</a> ·
+  <a href="https://freeroam.happys1ngh.com">Try it in your browser</a>
+</p>
+
 <!-- Demo GIF: save the recording as media/demo.gif, then replace this comment with
 <p align="center"><img src="media/demo.gif" width="720" alt="Holding Option-Q opens the radio wheel over the desktop, a flick picks a playlist, and Music switches to it"></p>
 -->
 
-Hold ⌥Q and a radio wheel pops up over whatever you're doing. Flick the mouse toward a station, let go, and Apple Music switches playlist with a burst of radio static.
+Free Roam is the radio wheel from open-world driving games, for your Mac. Hold ⌥Q in any app and your playlists appear on a wheel. Flick toward one and let go, and Music tunes in with a burst of static.
 
-It's a macOS menu bar app inspired by the radio and weapon wheels in open-world driving games. Work in progress.
+- **Stations act like radio.** Each playlist plays on a loop, on a clock, as if it's been on air all year. You drop in mid-song, and the wheel shows what's playing on every station.
+- **Tap ⌥Q** to skip to the next station. Radio Off pauses.
+- **Pick your stations** in Settings: drag them into order and click a cover to add or remove a playlist.
+- **Lives in the menu bar.** It has no Dock icon. Turn on Launch at Login from the menu.
 
-## Status
+## Install
 
-- [x] Browser prototype of the radio wheel (`prototype/`)
-- [ ] Mac app: radio wheel
-- [ ] Weapon wheel (after v1)
-- [ ] v1.0 release
+1. Download `Free Roam-<version>.dmg` from [Releases](https://github.com/HAPPYS1NGH/free-roam/releases/latest).
+2. Open it and drag Free Roam to Applications.
+3. Open Free Roam, then hold ⌥Q.
 
-## Try the web demo
+The app is signed and notarized by Apple, so it opens without warnings.
 
-The website is one page in the After Hours design. Its wheel is the app's: the same renderer, saved tokens, interaction controller, overlay and sounds.
+## Permissions
 
-```sh
-cd prototype
-npm install
-npm run dev
-```
-
-Open `/`. Hold **Q** anywhere on the page, move or scroll, then release to choose a station. Tap **Q** to skip. You can also click Try the wheel, use the arrow keys and Enter, tap a station on the wheel, or pick one from the station list. Radio Off clears the selection. Escape closes the wheel.
-
-The page shows six of the owner's playlists, God's Favorite, High, Vibe, Culture Truth, Serbian and Right Eyebrow, alongside seven public-catalog selections. Only their approved track metadata and artwork are copied into the site; it never loads the full Music export or streams songs. The open, close, hover and retune sounds are the four files in `assets/sounds/`, the same ones the Mac app bundles. They start on your first interaction, and the sound control mutes them. The build copies only the files on an allowlist, so your wallpaper stays out. When `public/wallpaper/` exists on the Mac doing the build, the release check also fails on any built file that's a byte-identical copy of a file in it. A host has no such folder, so it only skips there.
-
-```sh
-npm test      # playlist, audio, prerender, privacy, and metadata tests
-npm run build # typecheck, production build, prerender, and release-content check
-```
-
-Only files listed in `prototype/scripts/public-assets.mjs` enter the generated `.site-public/` directory and production build. Deploy `prototype/dist/`, never `prototype/public/`. The build checks that private exports and studio controls are absent.
-
-## Prepare the website for launch
-
-Set `SITE_URL` to the chosen HTTPS origin, without a path, then run `npm run build:release` from `prototype/`. This runs tests and the production build, writes canonical and absolute social-image URLs for both pages, and generates `robots.txt` and `sitemap.xml`. It fails if the origin is missing or invalid. `npm run build` remains available for local previews without a domain.
-
-Publish only `prototype/dist/` to a static host that serves directory `index.html` files. The site is the single page at `/`. Keep missing assets and `/studio.html` as 404s instead of rewriting every URL to the demo. A host's build command is `npm run build:release` with root directory `prototype` and output directory `dist`. Use the committed npm lockfile with `npm ci` for reproducible installation.
-
-The website links to source-build instructions. A downloadable, signed native app is a separate release.
-
-## Local design studio
-
-The old tuning controls are retained for local development and excluded from the production entry points.
-
-```sh
-cd prototype
-npm run library   # optional: exports your Music playlists and art
-npm run wallpaper # optional: copies your desktop picture
-npm run studio    # opens /studio.html with DialKit
-```
-
-This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries and wallpapers remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
-
-The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. It's the source for everything else: the website's 48 KB header copy, favicon, home screen icon and social card, the Mac app's icon on a navy plate, its menu bar item, and the launch images. `scripts/make-brand-assets.sh` regenerates them all from the badge and the coast photo. Logo prompts are saved in `output/branding/free-roam/`.
-
-## Build the Mac app
-
-The Mac app is a work in progress. Hold ⌥Q in any app for the radio wheel, with your playlists' album art, over a desaturated and vignetted screen. Flick or scroll to a station and let go, and Music tunes in mid-song. Each station acts like radio: it plays its playlist in order on a loop, on a clock, as if it's been on air all year, so you drop in on whatever's on and the wheel shows what's playing on every station. Music only queues the track a station starts on, so Free Roam plays the next one when it ends, which works while Free Roam is running. Tuning turns Music's repeat off. The selected station's ring takes the accent colour from System Settings → Appearance, or Free Roam's blue with Multicolor. A quick tap skips to the next station. Settings… in the menu bar menu shows your stations as discs you drag into order, above a grid of every playlist's cover. Click a cover to put it on the wheel or take it off. Launch at Login in the same menu, or the checkbox in the welcome window, starts Free Roam when you log in. Opening Free Roam again while it's running opens Settings. You need Xcode 26 or later, because the app uses Swift 6.2.
-
-```sh
-scripts/make-signing-cert.sh   # once per Mac
-scripts/bundle.sh --run        # builds "dist/Free Roam.app" and opens it
-swift test
-```
-
-The app was called Static until 2026-10-26. If you built it then, clean up once before the first Free Roam build. A running Static still registers ⌥Q, so both apps would answer the hotkey. Quit Static from its menu bar menu, then remove the old build:
-
-```sh
-rm -rf dist/Static.app
-# Optional: forget Static's permissions and saved stations
-tccutil reset All com.happys1ngh.static
-defaults delete com.happys1ngh.static
-```
-
-The wheel's four sounds live in `assets/sounds/`. `bundle.sh` copies them into the app, and the website publishes the same files at `/sounds/<name>.wav`.
-
-When Free Roam starts, a window explains its two permissions, with an Allow button for each. It shows at every launch until you choose Don't Show This Again or both are allowed. macOS asks once to let Free Roam control Music. Screen Recording, which desaturating the screen needs, is optional: Free Roam asks for it only when you choose Allow, in that window or the menu, and without it the wheel gets the vignette and tint only. The certificate keeps the app's identity the same from build to build, so your answers stick. Without it, `bundle.sh` signs ad hoc and macOS forgets the Screen Recording permission after every build.
-
-## Release build
-
-`scripts/release.sh` makes the download, `dist/Free Roam-<version>.dmg`, plus a `.sha256` checksum beside it. The version comes from `CFBundleShortVersionString` in `Sources/FreeRoam/Info.plist`, and the build number is the commit count.
-
-You need two things on the Mac, once:
-
-- The Developer ID Application certificate for team R5NM7593WP in your login keychain.
-- A notarytool keychain profile called `freeroam-notary`, made with `xcrun notarytool store-credentials freeroam-notary` and an app-specific password from account.apple.com. The credentials stay in the keychain. The script only uses the profile's name.
-
-Commit your changes, then run the script. It won't build with uncommitted changes to the app's files unless you set `ALLOW_DIRTY=1`, which is for test runs. Most of the few minutes it takes is spent waiting on Apple. The script:
-
-1. Builds a universal (arm64 and x86_64) release with `bundle.sh --release` and signs it with Developer ID and the hardened runtime. `scripts/FreeRoam.entitlements` holds a single entitlement, Apple Events, which Music needs. Screen Recording doesn't need an entitlement: it's a privacy permission the user grants.
-2. Fails if the bundle holds a file that isn't on its allowlist, a copy of anything in `prototype/public/library/`, `prototype/public/wallpaper/` or `prototype/public/sounds/local/`, or a `/Users/` path in the binary.
-3. Notarizes and staples the app, so a copy dragged out of the DMG still opens offline. Then it builds the DMG, signs it, notarizes it and staples it. If Apple rejects a submission, the script prints Apple's log and stops.
-4. Writes the checksum.
-
-Then check the result, and open the DMG on a Mac that has never run Free Roam:
-
-```sh
-spctl -a -vvv -t install "dist/Free Roam-0.1.0.dmg"   # accepted, source=Notarized Developer ID
-xcrun stapler validate "dist/Free Roam-0.1.0.dmg"
-codesign --verify --deep --strict --verbose=2 "dist/Free Roam.app"
-(cd dist && shasum -a 256 -c "Free Roam-0.1.0.dmg.sha256")
-```
+- **Control Music** (required): so Free Roam can play your playlists and turn Music down while the wheel is open. macOS asks the first time.
+- **Screen Recording** (optional): fades the colour from the screen behind the wheel. Free Roam only asks if you choose Allow. It never saves or sends what's on your screen.
 
 ## Requirements
 
 - macOS 14 or later
-- The Music app. Free Roam plays the playlists in it. Songs you own, imported or purchased, play without a subscription; Apple Music songs need one.
+- The Music app. Songs you own play without a subscription. Apple Music songs need one.
+
+## Build from source
+
+You need Xcode 26 or later.
+
+```sh
+scripts/make-signing-cert.sh   # once per Mac, so permissions survive rebuilds
+scripts/bundle.sh --run        # builds dist/Free Roam.app and opens it
+swift test
+```
+
+[CONTRIBUTING.md](CONTRIBUTING.md) covers the website, the design studio, the brand assets and the release build.
 
 ## License
 
