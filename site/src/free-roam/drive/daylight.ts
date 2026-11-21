@@ -17,10 +17,11 @@ const DEG = Math.PI / 180
 const SUNRISE = 6.3, DAYLIGHT = 12.3, SUN_PEAK = 62
 export const SOLAR_NOON = SUNRISE + DAYLIGHT / 2
 // Sun rises behind-right of the car and sets ahead-left, over the sea.
-// Azimuth is measured from forward (-z) towards the right (+x).
-export function sunDirection(hour: number, out = new Vector3()) {
+// Azimuth is measured from forward (-z) towards the right (+x). `turn`
+// (radians) swings it off the arc while someone holds the sun.
+export function sunDirection(hour: number, out = new Vector3(), turn = 0) {
   const phi = ((hour - SUNRISE) / DAYLIGHT) * Math.PI
-  const az = (146 - 179 * (phi / Math.PI)) * DEG
+  const az = (146 - 179 * (phi / Math.PI)) * DEG + turn
   const el = SUN_PEAK * Math.sin(phi) * DEG
   return out.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el))
 }
@@ -31,12 +32,13 @@ export function sunHour(el: number, afternoon: boolean) {
   return (SUNRISE + (DAYLIGHT * (afternoon ? Math.PI - phi : phi)) / Math.PI + 24) % 24
 }
 // The moon hangs low over the water ahead so it lays a path on the sea, 4° to
-// 11.5° up. `lift` (degrees) moves it off that path when someone drags it.
+// 11.5° up. `lift` (degrees) and `turn` (radians of azimuth) move it off that
+// path when someone drags it.
 export const MOON_TOP = 40
 export const moonElevation = (hour: number) => 4 + 7.5 * Math.sin(Math.min(1, Math.max(0, ((hour - 19 + 24) % 24) / 10)) * Math.PI)
-export function moonDirection(hour: number, out = new Vector3(), lift = 0) {
+export function moonDirection(hour: number, out = new Vector3(), lift = 0, turn = 0) {
   const p = (((hour - 19 + 24) % 24) / 10)
-  const az = (-34 + 30 * p) * DEG
+  const az = (-34 + 30 * p) * DEG + turn
   const el = Math.min(MOON_TOP, moonElevation(hour) + lift) * DEG
   return out.set(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el))
 }
@@ -60,9 +62,9 @@ const KEYS: Key[] = [
   { h: 5.5, fog: "#3d4064", sky: "#5a6292", ground: "#0e0d12", hemi: 0.6, sun: "#ff8a5a", sunI: 0, moonI: 0.1, exposure: 0.9, lamps: 1, stars: 0.25, water: "#060c1a", turbidity: 3, rayleigh: 2.2, bloom: 0.8, fogD: 1.8},
   { h: 6.4, fog: "#a2808a", sky: "#8d93c4", ground: "#2a2224", hemi: 0.7, sun: "#ff9e6c", sunI: 1.1, moonI: 0, exposure: 0.62, lamps: 0.55, stars: 0, water: "#0d1626", turbidity: 4, rayleigh: 2.6, bloom: 0.65, fogD: 1.6},
   { h: 7.5, fog: "#c4b4a4", sky: "#9fb2d8", ground: "#5a4a36", hemi: 0.75, sun: "#ffcc98", sunI: 2.3, moonI: 0, exposure: 0.6, lamps: 0, stars: 0, water: "#123447", turbidity: 3.5, rayleigh: 1.8, bloom: 0.25, fogD: 1.3},
-  { h: 9.5, fog: "#b5c6d8", sky: "#a2c0e6", ground: "#6e5c40", hemi: 0.75, sun: "#fff0da", sunI: 2.8, moonI: 0, exposure: 0.52, lamps: 0, stars: 0, water: "#0d3b55", turbidity: 2.0, rayleigh: 1.2, bloom: 0.15, fogD: 1.1 },
-  { h: 13, fog: "#b2c5d9", sky: "#a6c4ea", ground: "#74613f", hemi: 0.65, sun: "#fff6e8", sunI: 2.9, moonI: 0, exposure: 0.5, lamps: 0, stars: 0, water: "#0c3d58", turbidity: 1.8, rayleigh: 1.1, bloom: 0.12, fogD: 1.1 },
-  { h: 16.2, fog: "#c5c4ba", sky: "#a9bcd8", ground: "#76603e", hemi: 0.7, sun: "#ffe0b0", sunI: 2.7, moonI: 0, exposure: 0.52, lamps: 0, stars: 0, water: "#123a4e", turbidity: 2.4, rayleigh: 1.4, bloom: 0.18, fogD: 1.3 },
+  { h: 9.5, fog: "#aec4dc", sky: "#a2c0e6", ground: "#6e5c40", hemi: 0.75, sun: "#fff0da", sunI: 2.8, moonI: 0, exposure: 0.6, lamps: 0, stars: 0, water: "#0a4670", turbidity: 2.0, rayleigh: 1.2, bloom: 0.15, fogD: 1.1 },
+  { h: 13, fog: "#a8c3df", sky: "#a6c4ea", ground: "#74613f", hemi: 0.65, sun: "#fff6e8", sunI: 2.9, moonI: 0, exposure: 0.58, lamps: 0, stars: 0, water: "#0a4a78", turbidity: 1.8, rayleigh: 1.1, bloom: 0.12, fogD: 1.1 },
+  { h: 16.2, fog: "#c5c4ba", sky: "#a9bcd8", ground: "#76603e", hemi: 0.7, sun: "#ffe0b0", sunI: 2.7, moonI: 0, exposure: 0.58, lamps: 0, stars: 0, water: "#114664", turbidity: 2.4, rayleigh: 1.4, bloom: 0.18, fogD: 1.3 },
   { h: 17.8, fog: "#dcab7a", sky: "#b4a8b8", ground: "#6a4a2c", hemi: 0.65, sun: "#ffb466", sunI: 2.5, moonI: 0, exposure: 0.42, lamps: 0, stars: 0, water: "#1e2a33", turbidity: 3.6, rayleigh: 2.4, bloom: 0.3, fogD: 1.3},
   { h: 18.5, fog: "#d27a48", sky: "#9a7a98", ground: "#4a2c1c", hemi: 0.6, sun: "#ff8a3c", sunI: 1.5, moonI: 0, exposure: 0.5, lamps: 0.3, stars: 0, water: "#1c1a22", turbidity: 4.2, rayleigh: 3, bloom: 0.4, fogD: 1.5},
   { h: 19.05, fog: "#7c4c56", sky: "#5e5480", ground: "#1e1418", hemi: 0.55, sun: "#ff6a3a", sunI: 0.25, moonI: 0, exposure: 0.8, lamps: 1, stars: 0.05, water: "#100e18", turbidity: 5, rayleigh: 3, bloom: 0.85, fogD: 1.6},

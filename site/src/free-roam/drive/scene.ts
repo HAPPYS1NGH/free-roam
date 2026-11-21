@@ -153,8 +153,8 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
 
   const updateLight = (dt: number) => {
     lightAt(hour, L)
-    sunDirection(hour, sunDir)
-    moonDirection(hour, moonDir, moonLift)
+    sunDirection(hour, sunDir, drag?.turn.sun)
+    moonDirection(hour, moonDir, moonLift, drag?.turn.moon)
     const day = smoothstep(-0.03, 0.05, sunDir.y)
 
     su.sunPosition.value.copy(sunDir)
@@ -183,8 +183,12 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     moon.intensity = L.moonI
     renderer.toneMappingExposure = L.exposure
     post.bloom.strength = L.bloom
-    // Threshold in display terms, so daylight sky never blooms but lamps do.
-    post.bloom.threshold = 3.2 / L.exposure
+    // Threshold in display terms, so lamps bloom. Once the sun is well up the
+    // sky itself runs past that (and the sun's halo far past it), which veiled
+    // the whole frame: lift the threshold over the sky and cap the hot spots.
+    const sunHigh = smoothstep(0.1, 0.3, sunDir.y)
+    post.bloom.threshold = (3.2 + 9.6 * sunHigh) / L.exposure
+    post.bloomCap.value = 2 + 400 * (1 - sunHigh)
 
     const wu = water.material.uniforms
     const sunUp = sunDir.y > -0.02

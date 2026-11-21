@@ -21,7 +21,7 @@
 .ta-grade { position: absolute; inset: 0;
   background:
     radial-gradient(120% 80% at 50% 110%, transparent 40%, oklch(0.1 0.012 255 / 0.4) 80%),
-    linear-gradient(180deg, oklch(0.1 0.012 255 / 0.75) 0%, oklch(0.1 0.012 255 / 0.1) 30%, oklch(0.1 0.012 255 / 0.3) 65%, var(--bg) 100%); }
+    linear-gradient(180deg, oklch(0.1 0.012 255 / 0.55) 0%, oklch(0.1 0.012 255 / 0.05) 26%, oklch(0.1 0.012 255 / 0.3) 65%, var(--bg) 100%); }
 
 .ta-nav { width: min(var(--max), 100% - 2 * var(--gutter)); }
 .ta-nav-cta { margin-left: auto; }

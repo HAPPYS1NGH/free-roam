@@ -45,12 +45,21 @@ export function createPost(renderer: WebGLRenderer, scene: Scene, camera: Camera
   const composer = new EffectComposer(renderer, target)
   composer.addPass(new RenderPass(scene, camera))
   const bloom = new UnrealBloomPass(new Vector2(256, 256), 0.6, 0.55, 0.92)
+  // Bright pixels pass at full colour, capped at uCap times the threshold, so
+  // by day the sun's hot spot glows instead of flooding the frame.
+  const highPass = bloom.materialHighPassFilter
+  const bloomCap = { value: 1e4 }
+  highPass.uniforms.uCap = bloomCap
+  highPass.fragmentShader = highPass.fragmentShader
+    .replace("uniform float smoothWidth;", "uniform float smoothWidth;\nuniform float uCap;")
+    .replace("gl_FragColor = mix( outputColor, texel, alpha );",
+      "gl_FragColor = mix( outputColor, texel * min( 1.0, uCap * luminosityThreshold / max( v, 1e-4 ) ), alpha );")
   composer.addPass(bloom)
   composer.addPass(new OutputPass())
   const film = new ShaderPass(new ShaderMaterial(FilmShader))
   composer.addPass(film)
   return {
-    composer, bloom,
+    composer, bloom, bloomCap,
     setSize(w: number, h: number, dpr: number) {
       composer.setPixelRatio(dpr)
       composer.setSize(w, h)
