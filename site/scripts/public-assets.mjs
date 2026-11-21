@@ -9,6 +9,8 @@ export const publicAssets = [
   'favicon.ico',
   'apple-touch-icon.png',
   'free-roam/coast.jpg',
+  // The hero's coast photo for each time of day; the page loads only the current one.
+  ...['dawn', 'day', 'dusk', 'night'].map(time => `free-roam/scenes/coast-${time}.jpg`),
   'free-roam/badge.png',
   'free-roam/og-image.jpg',
   ...['night', 'indie', 'rap', 'punjabi', 'electronic', 'road', 'currents', 'gods-favorite-0', 'high-0', 'vibe-0', 'vibe-1', 'vibe-2', 'vibe-3', 'culture-truth-0', 'culture-truth-1', 'serbian-0', 'right-eyebrow-0', 'right-eyebrow-1', 'right-eyebrow-2', 'right-eyebrow-3'].map(name => `free-roam/albums/${name}.jpg`),
