@@ -19,6 +19,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/HAPPYS1NGH/free-roam" alt="MIT license"></a>
 </p>
 
+https://github.com/user-attachments/assets/4644947d-9f4c-403b-88ef-29e547737867
+
 Free Roam brings the radio wheel from open-world driving games to your Mac. Hold ⌥Q in any app and your playlists appear on a wheel. Flick toward one, let go, and Music tunes in with a burst of static.
 
 Stations behave like radio. Each playlist plays on a loop, on a clock, as if it has been on air all year. You drop in mid-song, and the wheel shows what's playing on every station before you pick one.
