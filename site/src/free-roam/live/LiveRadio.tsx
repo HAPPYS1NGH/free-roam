@@ -212,11 +212,19 @@ export function LiveRadio({ playing, muted, onChange }: Props) {
     // Safari (and Chrome without prior interaction) can hold unmuted sound
     // back. Nothing pops up: the caption asks for a click and the next click
     // or key starts it.
+    // A slow first load can also leave the player cued but not started, so it
+    // gets one more play() before the caption asks for a click.
     window.clearTimeout(blockedTimer.current)
-    blockedTimer.current = window.setTimeout(() => {
-      const state = player.current?.getPlayerState()
-      if (loaded.current === next && state !== PLAYING && state !== BUFFERING) setNeedsGesture(true)
-    }, BLOCKED_AFTER_MS)
+    const check = (retried: boolean) => {
+      blockedTimer.current = window.setTimeout(() => {
+        const state = player.current?.getPlayerState()
+        if (loaded.current !== next || state === PLAYING || state === BUFFERING) return
+        if (retried) { setNeedsGesture(true); return }
+        player.current?.playVideo()
+        check(true)
+      }, BLOCKED_AFTER_MS)
+    }
+    check(false)
   }
 
   const stop = (how: "pause" | "stop") => {
