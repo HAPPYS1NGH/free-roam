@@ -78,12 +78,12 @@ enum MusicBridgeError: LocalizedError, Equatable {
 
     var errorDescription: String? {
         switch self {
-        case .notPermitted: "Free Roam isn't allowed to control Music."
-        case .notInstalled: "Music isn't installed."
-        case .notRunning: "Music isn't running."
+        case .notPermitted: "Free Roam isn't allowed to control \(MusicApp.current.name)."
+        case .notInstalled: "\(MusicApp.current.name) isn't installed."
+        case .notRunning: "\(MusicApp.current.name) isn't running."
         case .optionHeld: "⌥ stayed down, and Music asks for a library when it starts with ⌥ held."
-        case .invalidPersistentID(let id): "Not a Music persistent ID: \(id)"
-        case .script(let code, let message): "Music error \(code): \(message)"
+        case .invalidPersistentID(let id): "Not a \(MusicApp.current.name) ID: \(id)"
+        case .script(let code, let message): "\(MusicApp.current.name) error \(code): \(message)"
         }
     }
 }
@@ -139,19 +139,26 @@ enum MusicBridge {
     }
 
     private static func permission(askingIfNeeded: Bool) -> MusicPermission {
-        let music = NSAppleEventDescriptor(bundleIdentifier: bundleID)
+        let permission = permission(forApp: bundleID, askingIfNeeded: askingIfNeeded)
+        MusicPermissionMemory.record(permission)
+        return permission
+    }
+
+    /// What macOS says about Free Roam controlling the app with `appID`, which
+    /// has to be running. Records nothing, so each app's bridge keeps its own
+    /// answers.
+    static func permission(forApp appID: String, askingIfNeeded: Bool) -> MusicPermission {
+        let target = NSAppleEventDescriptor(bundleIdentifier: appID)
         let status = AEDeterminePermissionToAutomateTarget(
-            music.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), askingIfNeeded
+            target.aeDesc, AEEventClass(typeWildCard), AEEventID(typeWildCard), askingIfNeeded
         )
-        let permission: MusicPermission = switch Int(status) {
+        return switch Int(status) {
         case Int(noErr): .allowed
         case errAEEventNotPermitted: .denied
         case errAEEventWouldRequireUserConsent: .notAsked
         case procNotFound: .musicNotRunning
         default: .unknown(status)
         }
-        MusicPermissionMemory.record(permission)
-        return permission
     }
 
     /// Never prompts. A Music that has only just started may not be ready to
