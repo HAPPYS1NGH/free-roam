@@ -449,3 +449,11 @@ The user's brief: match the accent colour in System Settings → Appearance, but
 
 - macOS writes `AppleAccentColor` to the global domain for every accent but Multicolor, and Multicolor gives apps system blue, which is darker than `#65B4D4`. So with the key the selected ring and Settings' highlights use `controlAccentColor`, and without it they use `ringColor` from `tokens.json`.
 - The wheel reads it each time it draws, so a change shows on the next open.
+
+## 2026-11-21: The welcome window shows what Screen Recording does
+
+The user asked for real pictures rather than a description. The Screen Recording row now shows the wheel over the same screen without and with the permission, and one line that warns macOS's prompt will say Free Roam can record the screen.
+
+- `scripts/make-welcome-previews.sh` renders both from the app's own `RadioWheelContent`, `Vignette`, wash and `BackdropStill.filter`, over the website's coast photo with the public demo's covers. They're 400 px JPEGs of about 25 KB each.
+- They're as subtle as the real effect, because `backdropSaturation` is 0.45.
+- Without the bundle, as in `swift run`, the frames stay empty and the window keeps its size.

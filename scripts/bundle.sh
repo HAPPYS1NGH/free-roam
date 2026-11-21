@@ -40,9 +40,11 @@ done
 # The caption font and its licence (SIL OFL), which has to travel with it.
 cp Sources/FreeRoam/Resources/SofiaSansExtraCondensed-SemiBold.ttf Sources/FreeRoam/Resources/OFL.txt "$APP/Contents/Resources/"
 # The app icon, menu bar glyph and welcome window badge, from
-# scripts/make-brand-assets.sh.
+# scripts/make-brand-assets.sh, and the welcome window's Screen Recording
+# previews, from scripts/make-welcome-previews.sh.
 cp Sources/FreeRoam/Resources/AppIcon.icns Sources/FreeRoam/Resources/MenuBarIconTemplate.png \
   Sources/FreeRoam/Resources/MenuBarIconTemplate@2x.png Sources/FreeRoam/Resources/FreeRoamBadge.png \
+  Sources/FreeRoam/Resources/WelcomeBefore.jpg Sources/FreeRoam/Resources/WelcomeAfter.jpg \
   "$APP/Contents/Resources/"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"
 
