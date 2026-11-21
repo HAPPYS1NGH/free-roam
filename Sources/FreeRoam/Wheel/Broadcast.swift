@@ -3,7 +3,7 @@ import Foundation
 /// Every station behaves as if it has played its playlist in order, on a
 /// loop, since 2026-01-01 UTC. Tuning in plays the track that's on air
 /// partway in, so it lands mid-song like real radio, and the wheel can show
-/// what's on before you tune in. Ported from `prototype/src/broadcast.ts`.
+/// what's on before you tune in. Ported from `site/src/broadcast.ts`.
 enum Broadcast {
     static let epoch = Date(timeIntervalSince1970: 1_767_225_600)
 

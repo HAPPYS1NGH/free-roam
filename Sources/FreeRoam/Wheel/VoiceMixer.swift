@@ -3,7 +3,7 @@ import os
 
 /// Mixes short sounds sample by sample on the audio thread, so a sound can
 /// fade out at an exact point, as Web Audio's gain ramps did in the
-/// prototype. `AVAudioPlayerNode` can only cut a sound off, which clicks.
+/// website. `AVAudioPlayerNode` can only cut a sound off, which clicks.
 ///
 /// Not main-actor isolated: the render block runs on the audio thread, and
 /// a closure formed on the main actor would trap there.

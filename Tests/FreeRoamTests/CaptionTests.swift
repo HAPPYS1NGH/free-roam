@@ -77,8 +77,8 @@ struct CaptionRenderTests {
     }()
 
     /// Each line's centre, %H from the ring's centre, measured from the
-    /// prototype's caption spans in Chrome: station, artist, title.
-    private static let prototypeCentres = [-5.0, -1.078, 2.322]
+    /// website's caption spans in Chrome: station, artist, title.
+    private static let websiteCentres = [-5.0, -1.078, 2.322]
 
     /// The user's screen, 1512 × 982 pt. Capitals with no descenders, so each
     /// line's ink runs from cap height to baseline.
@@ -132,7 +132,7 @@ struct CaptionRenderTests {
             let capTop = baseline - CTFontGetCapHeight(font) * size
             let lineCentre = Double(ink.lowerBound + ink.upperBound + 1) / 2 - (capTop + baseline) / 2
             let measured = (lineCentre - centre.y) / unit
-            #expect(abs(measured - Self.prototypeCentres[index]) < 0.2, "line \(index): \(measured)%H")
+            #expect(abs(measured - Self.websiteCentres[index]) < 0.2, "line \(index): \(measured)%H")
         }
     }
 }

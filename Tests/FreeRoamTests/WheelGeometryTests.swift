@@ -67,7 +67,7 @@ struct WheelGeometryTests {
         return [sizes.stationSize / sizes.captionSize * pitch, pitch, pitch]
     }
 
-    /// Line centres, %H from the ring's centre, measured from the prototype's
+    /// Line centres, %H from the ring's centre, measured from the website's
     /// caption spans in Chrome: station, artist just above the centre, title.
     @Test func captionLinesSitWhereThePrototypePutsThem() throws {
         let sizes = try TokensFixture.style().sizes
@@ -94,7 +94,7 @@ struct WheelGeometryTests {
         let ring = WheelGeometry.ring(sizes, count: count, screenHeight: screenHeight)
         let heights = captionHeights(sizes, unit: unit)
         let lines = WheelGeometry.captionLines(heights: heights, ring: ring, sizes: sizes, screenHeight: screenHeight)
-        // The prototype's margin: one caption line inside the selected disc's ring.
+        // The website's margin: one caption line inside the selected disc's ring.
         let reach = ring.selectedIcon / 2 + (sizes.ringWidth * unit).rounded() + sizes.captionPitch * unit
         for (line, height) in zip(lines, heights) {
             let gaps = (0..<count).map { slot in

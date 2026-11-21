@@ -32,7 +32,7 @@ cp Sources/FreeRoam/Info.plist "$APP/Contents/Info.plist"
 
 # Resources go in Contents/Resources and are read through Bundle.main. SwiftPM
 # resource bundles expect to sit next to Contents, where codesign rejects them.
-cp prototype/tokens.json "$APP/Contents/Resources/tokens.json"
+cp site/tokens.json "$APP/Contents/Resources/tokens.json"
 # The wheel's sounds, the same files the website publishes.
 cp assets/sounds/{open,close,hover,retune}.wav "$APP/Contents/Resources/"
 # The caption font and its licence (SIL OFL), which has to travel with it.

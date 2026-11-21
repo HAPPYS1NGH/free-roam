@@ -9,7 +9,7 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "wheel"
 /// the highlighted one is opaque and in colour, with the accent ring outside
 /// its disc. Only opening and closing animate. The highlight jumps, as in
 /// GTA, because a scroll sweeps up to 30 stations a second. Ported from
-/// `prototype/src/RadioWheel.tsx` and `radio-wheel.css`.
+/// `site/src/RadioWheel.tsx` and `radio-wheel.css`.
 struct RadioWheelView: View {
     let model: RadioWheelModel
 
@@ -225,7 +225,7 @@ struct StationDisc: View {
     }
 }
 
-/// The "no entry" mark of GTA's Radio Off slot, from `prototype/src/icons.tsx`:
+/// The "no entry" mark of GTA's Radio Off slot, from `site/src/icons.tsx`:
 /// a ring whose stroke is about 5% of its width and a slash that ends square
 /// on the ring's centre line, so its corners hide inside the ring.
 private struct RadioOffGlyph: Shape {

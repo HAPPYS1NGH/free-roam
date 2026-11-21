@@ -1,4 +1,4 @@
-// Exports your Music playlists for the prototype: names, track lists with
+// Exports your Music playlists for the website studio: names, track lists with
 // durations (for the broadcast clock) and up to four album covers each.
 // Output goes to public/library/, which is gitignored, so your library never
 // ends up in the repo. Run with `npm run library`; macOS asks once to allow

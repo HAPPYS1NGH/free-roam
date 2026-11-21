@@ -1,6 +1,6 @@
 import CoreGraphics
 
-/// The brand badge, prototype/public/free-roam/app-icon.png: FREE ROAM in
+/// The brand badge, site/public/free-roam/app-icon.png: FREE ROAM in
 /// ivory inside a cyan ring on a black disc. Every asset draws this raster.
 /// Nothing here redraws the lettering.
 struct Badge {

@@ -8,7 +8,7 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "wheel"
 /// Holding ⌥Q opens the wheel, mouse movement and scrolling pick a station,
 /// and letting go tunes in. Resting on a station tunes in while the wheel is
 /// still open, and a quicker tap skips to the next station without showing
-/// the wheel. Ported from `prototype/src/useWheel.ts`.
+/// the wheel. Ported from `site/src/useWheel.ts`.
 @MainActor @Observable
 final class RadioWheelModel {
     /// Opening fades in from a slightly smaller wheel and closing only fades

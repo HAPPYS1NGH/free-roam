@@ -1,6 +1,6 @@
 #!/bin/bash
 # Regenerates the Free Roam brand assets from the badge,
-# prototype/public/free-roam/app-icon.png. Needs only the Swift toolchain,
+# site/public/free-roam/app-icon.png. Needs only the Swift toolchain,
 # iconutil and sips, which come with macOS and the Command Line Tools.
 #
 #   scripts/make-brand-assets.sh

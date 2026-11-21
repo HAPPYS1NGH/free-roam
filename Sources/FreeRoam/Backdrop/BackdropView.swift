@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The screen behind the wheel, ported from `.wheel-backdrop` in
-/// `prototype/src/styles.css`: the filtered still, a faint blue wash and a
+/// `site/src/styles.css`: the filtered still, a faint blue wash and a
 /// vignette, fading as one layer like CSS opacity. Without Screen Recording
 /// permission there's no still, and the wash and vignette show on their own.
 struct BackdropView: View {

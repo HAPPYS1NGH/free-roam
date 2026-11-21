@@ -1,6 +1,6 @@
 import Foundation
 
-/// Ported from `prototype/src/geometry.ts` and `ringGeometry` in
+/// Ported from `site/src/geometry.ts` and `ringGeometry` in
 /// `RadioWheel.tsx`. Angles are in radians, 0 at the top, increasing
 /// clockwise, and y grows downwards as on screen. Slot 0 is Radio Off at the
 /// bottom of the ring, as in GTA V, and stations run clockwise from it.
@@ -63,13 +63,13 @@ enum WheelGeometry {
     }
 
     /// Stacks the caption's lines, given their heights from the top, as the
-    /// prototype's `RadioWheel.tsx` does. The first is centred `captionRaise`
+    /// website's `RadioWheel.tsx` does. The first is centred `captionRaise`
     /// above the ring's centre, so a one-line caption ("Radio Off") stays put,
     /// and the rest hang below it, which puts the artist just above the
     /// centre. Each line is as wide as it can be at whichever of its top and
     /// bottom is farther from the centre, its corners being the parts nearest
     /// the discs, and stay inside a circle one caption line (`captionPitch`)
-    /// inside the selected disc's ring (`captionWidth` in the prototype).
+    /// inside the selected disc's ring (`captionWidth` on the website).
     static func captionLines(heights: [Double], ring: Ring, sizes: WheelStyle.Sizes, screenHeight: Double) -> [CaptionLine] {
         let unit = screenHeight / 100
         let ringWidth = (sizes.ringWidth * unit).rounded()

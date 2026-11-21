@@ -24,7 +24,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 # Everything that ends up in the app. A release is built from what's committed.
-APP_SOURCES=(Package.swift Sources assets prototype/tokens.json scripts/bundle.sh scripts/FreeRoam.entitlements)
+APP_SOURCES=(Package.swift Sources assets site/tokens.json scripts/bundle.sh scripts/FreeRoam.entitlements)
 if [[ -n "$(git status --porcelain -- "${APP_SOURCES[@]}")" && "${ALLOW_DIRTY:-}" != 1 ]]; then
   echo "error: uncommitted changes to the app's files. Commit them, or set ALLOW_DIRTY=1:" >&2
   git status --short -- "${APP_SOURCES[@]}" >&2
@@ -62,7 +62,7 @@ fi
 
 # Your exported Music library, desktop picture and local sound pack stay on
 # your Mac. No bundled file may be a copy of one, whatever it's called.
-PERSONAL_DIRS=(prototype/public/library prototype/public/wallpaper prototype/public/sounds/local)
+PERSONAL_DIRS=(site/public/library site/public/wallpaper site/public/sounds/local)
 PERSONAL_HASHES="$WORK/personal.txt"
 : > "$PERSONAL_HASHES"
 for dir in "${PERSONAL_DIRS[@]}"; do

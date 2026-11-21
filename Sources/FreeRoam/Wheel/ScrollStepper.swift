@@ -4,7 +4,7 @@ import Foundation
 /// event, so a mouse-wheel notch is one station however hard macOS
 /// accelerates it and a trackpad flick tops out at one per event. The first
 /// event of a gesture steps straight away, so a slow notch moves exactly one
-/// station. Ported from `onWheel` in `prototype/src/useWheel.ts`.
+/// station. Ported from `onWheel` in `site/src/useWheel.ts`.
 struct ScrollStepper {
     /// A pause this long between events starts a new gesture.
     static let gestureGap: TimeInterval = 0.12

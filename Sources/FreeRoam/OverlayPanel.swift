@@ -122,7 +122,7 @@ final class OverlayPanel: NSPanel {
 
     private func scroll(_ event: NSEvent) {
         let unit = event.hasPreciseScrollingDeltas ? 1 : Self.lineHeight
-        // Negated to match browser wheel deltas, which the prototype was tuned
+        // Negated to match browser wheel deltas, which the website was tuned
         // with: scrolling down the page is positive. Trackpads scroll on both
         // axes, so follow whichever one the swipe favours.
         let dx = -event.scrollingDeltaX

@@ -1,4 +1,4 @@
-// Copies your desktop picture into public/wallpaper/ so the prototype can
+// Copies your desktop picture into public/wallpaper/ so the website can
 // show the wheel over it. The folder is gitignored, so the picture never ends
 // up in the repo. Run `npm run wallpaper`; macOS asks once to allow your
 // terminal to control System Events. To use another picture, pass its path:

@@ -5,8 +5,8 @@ import OSLog
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "capture")
 
 /// The screen under the wheel, captured once per press and filtered like the
-/// prototype's `backdrop-filter: saturate(…) brightness(…)` in
-/// `prototype/src/styles.css`. It's a still, so anything moving underneath
+/// website's `backdrop-filter: saturate(…) brightness(…)` in
+/// `site/src/styles.css`. It's a still, so anything moving underneath
 /// freezes while the wheel is open.
 enum BackdropStill {
     /// Browsers apply CSS filters to sRGB-encoded values, but Core Image works
@@ -56,7 +56,7 @@ enum BackdropStill {
     }
 
     /// Both filters as one matrix. Browsers clamp after each filter, but with
-    /// a saturation from 0 to 1, the prototype's range, no channel leaves 0–1
+    /// a saturation from 0 to 1, the website's range, no channel leaves 0–1
     /// before the brightness, so only the end needs clamping, which drawing
     /// into 8 bits does. `CIColorControls` would add the brightness instead.
     static func filter(_ image: CGImage, saturation: Double, brightness: Double) -> CGImage? {

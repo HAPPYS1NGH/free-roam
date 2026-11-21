@@ -45,7 +45,7 @@ struct BackdropStillTests {
 @MainActor
 struct VignetteTests {
     /// `radial-gradient(ellipse farthest-corner, …)` from `.wheel-backdrop` in
-    /// the prototype's styles.css, as (position, opacity).
+    /// the website's styles.css, as (position, opacity).
     static let cssStops: [(Double, Double)] = [(0.46, 0), (0.6, 0.12), (0.74, 0.29), (0.88, 0.54), (1, 0.7)]
 
     /// CSS's farthest-corner ellipse keeps the box's proportions and passes

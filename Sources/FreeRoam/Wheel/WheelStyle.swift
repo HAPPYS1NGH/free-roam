@@ -1,7 +1,7 @@
 import Foundation
 
-/// The wheel's numbers, exported from the prototype's tuning panel as
-/// `prototype/tokens.json`. Sizes are percentages of screen height (%H), the
+/// The wheel's numbers, exported from the website's tuning panel as
+/// `site/tokens.json`. Sizes are percentages of screen height (%H), the
 /// way GTA scales its HUD. Field names match the JSON.
 struct WheelStyle: Decodable, Sendable {
     struct Easing: Decodable, Sendable {

@@ -1,7 +1,7 @@
 import CoreGraphics
 import CoreText
 
-/// The radio wheel as the app draws it, with the numbers in prototype/tokens.json,
+/// The radio wheel as the app draws it, with the numbers in site/tokens.json,
 /// for the launch images. `unit` is 1% of the screen height it stands for.
 /// Station art is cut from the coast photo rather than album covers.
 struct WheelPicture {

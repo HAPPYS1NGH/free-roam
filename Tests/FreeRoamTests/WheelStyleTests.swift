@@ -3,10 +3,10 @@ import Testing
 @testable import FreeRoam
 
 enum TokensFixture {
-    /// The real `prototype/tokens.json`, so a re-export that breaks the format fails here.
+    /// The real `site/tokens.json`, so a re-export that breaks the format fails here.
     static let url = URL(filePath: #filePath)
         .deletingLastPathComponent()
-        .appending(path: "../../prototype/tokens.json")
+        .appending(path: "../../site/tokens.json")
         .standardizedFileURL
 
     static func style() throws -> WheelStyle {

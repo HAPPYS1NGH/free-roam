@@ -5,7 +5,7 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "sound"
 
 /// The wheel's sounds, from the .wav files scripts/bundle.sh copies out of
 /// `assets/sounds`, the same ones the website plays. Ported from
-/// `prototype/src/sound.ts`.
+/// `site/src/sound.ts`.
 @MainActor
 final class WheelSounds {
     enum Name: String, CaseIterable {

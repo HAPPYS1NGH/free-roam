@@ -8,7 +8,7 @@ let repository = URL(fileURLWithPath: arguments[1])
 let work = URL(fileURLWithPath: arguments[2])
 func path(_ relative: String) -> URL { repository.appendingPathComponent(relative) }
 
-let badge = Badge(image: loadImage(path("prototype/public/free-roam/app-icon.png")))
+let badge = Badge(image: loadImage(path("site/public/free-roam/app-icon.png")))
 
 // The app icon. The shell script packs the iconset with iconutil.
 let iconset = AppIcon.iconset(badge)
@@ -22,16 +22,16 @@ write(MenuBarGlyph.image(badge, scale: 2), to: path("Sources/FreeRoam/Resources/
 // The welcome window's badge, shown at 56 pt: 2x pixels.
 write(badge.trimmed(size: 112), to: path("Sources/FreeRoam/Resources/FreeRoamBadge.png"))
 
-// The website's badge and icons, under prototype/public/. The build only
-// publishes files listed in prototype/scripts/public-assets.mjs.
-write(WebAssets.pageBadge(badge), to: path("prototype/public/free-roam/badge.png"))
-write(WebAssets.ico([WebAssets.favicon(badge, size: 16), WebAssets.favicon(badge, size: 32)]), to: path("prototype/public/favicon.ico"))
-write(AppIcon.touchIcon(badge, size: 180), to: path("prototype/public/apple-touch-icon.png"))
+// The website's badge and icons, under site/public/. The build only
+// publishes files listed in site/scripts/public-assets.mjs.
+write(WebAssets.pageBadge(badge), to: path("site/public/free-roam/badge.png"))
+write(WebAssets.ico([WebAssets.favicon(badge, size: 16), WebAssets.favicon(badge, size: 32)]), to: path("site/public/favicon.ico"))
+write(AppIcon.touchIcon(badge, size: 180), to: path("site/public/apple-touch-icon.png"))
 
 // The social card and launch images.
 registerFont(path("Sources/FreeRoam/Resources/SofiaSansExtraCondensed-SemiBold.ttf"))
-let launch = LaunchImages(badge: badge, coast: loadImage(path("prototype/public/free-roam/coast.jpg")))
-write(launch.socialCard(), to: path("prototype/public/free-roam/og-image.jpg"), jpegQuality: 0.82)
+let launch = LaunchImages(badge: badge, coast: loadImage(path("site/public/free-roam/coast.jpg")))
+write(launch.socialCard(), to: path("site/public/free-roam/og-image.jpg"), jpegQuality: 0.82)
 write(launch.githubPreview(), to: path("output/launch/github-social-preview.jpg"), jpegQuality: 0.88)
 write(launch.announcement(), to: path("output/launch/x-announcement-1600x900.jpg"), jpegQuality: 0.9)
 write(launch.portrait(), to: path("output/launch/x-portrait-1080x1350.jpg"), jpegQuality: 0.9)

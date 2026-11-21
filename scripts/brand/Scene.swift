@@ -2,7 +2,7 @@ import CoreGraphics
 import CoreImage
 import CoreText
 
-/// The After Hours look from the website (prototype/src/free-roam/styles.css):
+/// The After Hours look from the website (site/src/free-roam/styles.css):
 /// the coast photo under a dark shade, condensed capitals, monospaced eyebrows.
 /// Positions are measured from the top, as on a web page.
 struct Scene {
