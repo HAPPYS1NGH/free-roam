@@ -43,7 +43,7 @@ test('web wheel settings match the Mac app', () => {
 
 test('approved playlists and public selections have valid tracks and local artwork', () => {
   assert.equal(new Set(catalog.map(station => station.id)).size, catalog.length)
-  assert.deepEqual(catalog.filter(station => station.provenance === 'owner-approved-playlist').map(station => station.name), ["God's Favorite", 'gym', 'PLow', 'Morning Playlist', 'Favourite Songs', 'Veere da Vyah'])
+  assert.deepEqual(catalog.filter(station => station.provenance === 'owner-approved-playlist').map(station => station.name), ["God's Favorite", 'High', 'Vibe', 'Culture Truth', 'Serbian', 'Right Eyebrow'])
   assert.ok(!catalog.some(station => ['pop', 'dance', 'sunset', 'classics'].includes(station.id)))
   for (const station of catalog) {
     if (station.provenance === 'owner-approved-playlist') {

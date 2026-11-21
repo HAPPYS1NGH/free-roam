@@ -476,3 +476,7 @@ The user's brief: use exactly the sounds the Free Roam Mac app plays.
 - `scripts/public-assets.mjs` now applies the same rule: each of open, close, hover and the retune take comes from `sounds/local/` when it's there and from the synthesised file otherwise, published as `sounds/<name>.wav`. The `sounds/local/` path itself still never ships, and the release check no longer rejects copies of it.
 - A test compares the site's four files with the ones in `dist/Free Roam.app` when that build exists.
 - The files stay gitignored, so a host that builds from git falls back to the synthesised sounds. To publish the app's sounds, build on the Mac that has them. This reverses the earlier rule that the site plays only redistributable sounds. That was the user's call, made knowing the repo had marked the local pack as not redistributable.
+
+## 2026-11-21: The owner's stations on the site
+
+The user chose which of their playlists the site shows: God's Favorite, High, Vibe, Culture Truth, Serbian and Right Eyebrow, in their wheel's order, with the seven popular picks after them. gym, PLow, Morning Playlist, Favourite Songs and Veere da Vyah came off, and so did their covers. Thirteen stations matches the owner's own wheel, so the discs come out the size they are in the app. The snapshots came from a fresh `npm run library` export.

@@ -20,7 +20,7 @@ test('landing prerender stays identical across broadcast times and includes appr
   const built = renderToString(createElement(LandingPage))
   Date.now = () => Date.UTC(2026, 9, 26)
   assert.equal(renderToString(createElement(LandingPage)), built)
-  for (const name of ['God&#x27;s Favorite', 'gym', 'PLow', 'Morning Playlist']) {
+  for (const name of ['God&#x27;s Favorite', 'High', 'Vibe', 'Culture Truth', 'Serbian', 'Right Eyebrow']) {
     assert.ok(built.includes(`>${name}</span>`), name)
   }
   assert.ok(built.includes('sound effects from the Mac app'))

@@ -10,7 +10,7 @@ export const publicAssets = [
   'free-roam/coast.jpg',
   'free-roam/badge.png',
   'free-roam/og-image.jpg',
-  ...['night', 'indie', 'rap', 'punjabi', 'electronic', 'road', 'gods-favorite-0', 'gym-0', 'gym-1', 'gym-2', 'gym-3', 'plow-0', 'plow-1', 'plow-2', 'plow-3', 'morning-0', 'favourites-0', 'favourites-1', 'favourites-2', 'favourites-3', 'veere-da-vyah-0', 'veere-da-vyah-1', 'veere-da-vyah-2', 'veere-da-vyah-3', 'currents'].map(name => `free-roam/albums/${name}.jpg`),
+  ...['night', 'indie', 'rap', 'punjabi', 'electronic', 'road', 'currents', 'gods-favorite-0', 'high-0', 'vibe-0', 'vibe-1', 'vibe-2', 'vibe-3', 'culture-truth-0', 'culture-truth-1', 'serbian-0', 'right-eyebrow-0', 'right-eyebrow-1', 'right-eyebrow-2', 'right-eyebrow-3'].map(name => `free-roam/albums/${name}.jpg`),
   ...['open', 'close', 'hover', 'retune'].map(name => `sounds/${name}.wav`),
 ]
 
