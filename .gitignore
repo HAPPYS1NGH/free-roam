@@ -29,3 +29,6 @@ site/public/wallpaper/
 
 # Project notes stay local
 docs/
+
+# Vercel project link (vercel link)
+.vercel/

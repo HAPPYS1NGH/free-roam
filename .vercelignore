@@ -1,0 +1,13 @@
+# Vercel only needs site/ and the shared assets/ to build the website.
+.build/
+dist/
+output/
+docs/
+Sources/
+Tests/
+scripts/
+site/node_modules/
+site/dist/
+site/.site-public/
+site/public/library/
+site/public/wallpaper/
