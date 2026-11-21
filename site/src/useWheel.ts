@@ -21,6 +21,9 @@ type Options = {
   dwellMs: number
   holdDelayMs: number
   keepOpen: boolean
+  // Require ⌥ with Q, like the app's ⌥Q hotkey. Browsers on macOS don't
+  // reserve ⌥Q, so the page can hear it and plain Q stays free for typing.
+  withOption?: boolean
   ignoreSelector?: string
   sounds: { retuneVolumeDb: number; uiVolumeDb: number; hoverVolumeDb: number }
 }
@@ -141,7 +144,7 @@ export function useWheel(options: Options) {
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (isTextField(e.target)) return
-      if (e.code === "KeyQ" && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (e.code === "KeyQ" && !e.metaKey && !e.ctrlKey && e.altKey === Boolean(settings.current.withOption)) {
         e.preventDefault()
         if (e.repeat || pressed.current) return
         pressed.current = true
