@@ -33,7 +33,7 @@ The embedding page's address changes the result. Label-restricted uploads (Jorda
 
 Files:
 
-- `embed-check.mjs`: the check. Writes `embed-check.json` (per track: videoId, embeddable, error code, YouTube duration, every candidate tried) and `stations.json` (what the prototype reads).
+- `embed-check.mjs`: the check. Writes `embed-check.json` (per track: videoId, embeddable, error code, YouTube duration, every candidate tried) and `src/free-roam/live/videos.json`, the videoId and YouTube duration per track that the prototype and the landing page read.
 - `probe.html`: the page the check loads in the player.
 - `search-cache.json` (git-ignored): search results. YouTube search varies between runs, so results accumulate. Delete the file to start over.
 

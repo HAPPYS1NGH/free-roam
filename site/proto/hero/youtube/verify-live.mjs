@@ -1,6 +1,7 @@
 // End-to-end check of the audible stations on 3 A.M. Drive, in a real browser.
 // Start the dev server first (npm run dev, or npx vite --port 5180), then from site/:
-//   PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/verify-live.mjs http://localhost:5180
+//   PLAYWRIGHT=/path/to/playwright/index.mjs node proto/hero/youtube/verify-live.mjs http://localhost:5180 [path]
+// path defaults to the prototype (/proto/hero/?v=5); pass / for the landing page.
 // Use localhost, not 127.0.0.1: label videos refuse to embed on an IP address.
 // Checks: no YouTube request on load; holding ⌥Q and letting go on a station
 // plays its song at the clock's second, with sound; tapping ⌥Q moves to the
@@ -10,10 +11,10 @@
 import { readFileSync } from "node:fs"
 
 const { chromium } = await import(process.env.PLAYWRIGHT ?? "playwright")
-const [base = "http://localhost:5180"] = process.argv.slice(2)
-const url = `${base}/proto/hero/?v=5`
+const [base = "http://localhost:5180", path = "/proto/hero/?v=5"] = process.argv.slice(2)
+const url = `${base}${path}`
 const catalog = JSON.parse(readFileSync(new URL("../../../src/free-roam/catalog.json", import.meta.url), "utf8"))
-const videos = JSON.parse(readFileSync(new URL("stations.json", import.meta.url), "utf8"))
+const videos = JSON.parse(readFileSync(new URL("../../../src/free-roam/live/videos.json", import.meta.url), "utf8"))
 const EPOCH = Date.UTC(2026, 0, 1) / 1000
 const TOLERANCE_S = 1.5
 // The page's own Google Fonts (fonts.googleapis.com / fonts.gstatic.com) aren't YouTube.
@@ -192,7 +193,7 @@ try {
   const { page } = await open()
   const live = onAir("gods-favorite", Date.now() / 1000 + 10)
   const nextSong = videos["gods-favorite"][(live.index + 1) % videos["gods-favorite"].length]
-  await page.route(/\/proto\/hero\/youtube\/stations\.json/, async route => {
+  await page.route(/\/src\/free-roam\/live\/videos\.json/, async route => {
     const response = await route.fetch()
     route.fulfill({ response, body: (await response.text()).replaceAll(live.videoId, "deadvideo00") })
   })
