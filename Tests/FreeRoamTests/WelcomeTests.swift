@@ -46,13 +46,18 @@ struct WelcomeRenderTests {
             .deletingLastPathComponent()
             .appending(path: "../../Sources/FreeRoam/Resources/FreeRoamBadge.png")
         let badge = try #require(NSImage(contentsOf: badgeURL))
+        let resources = badgeURL.deletingLastPathComponent()
+        let previews = try (
+            before: #require(NSImage(contentsOf: resources.appending(path: "WelcomeBefore.jpg"))),
+            after: #require(NSImage(contentsOf: resources.appending(path: "WelcomeAfter.jpg")))
+        )
         let sizes = try [
-            WelcomeContent(badge: badge, musicAllowed: false, screenRecordingAllowed: false),
-            WelcomeContent(badge: badge, musicAllowed: false, screenRecordingAllowed: false, isAskingForMusic: true),
-            WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: false),
-            WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: true),
-            WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: true, launchesAtLogin: true),
-            WelcomeContent(badge: nil, musicAllowed: false, screenRecordingAllowed: false),
+            WelcomeContent(badge: badge, previews: previews, musicAllowed: false, screenRecordingAllowed: false),
+            WelcomeContent(badge: badge, previews: previews, musicAllowed: false, screenRecordingAllowed: false, isAskingForMusic: true),
+            WelcomeContent(badge: badge, previews: previews, musicAllowed: true, screenRecordingAllowed: false),
+            WelcomeContent(badge: badge, previews: previews, musicAllowed: true, screenRecordingAllowed: true),
+            WelcomeContent(badge: badge, previews: previews, musicAllowed: true, screenRecordingAllowed: true, launchesAtLogin: true),
+            WelcomeContent(badge: nil, previews: nil, musicAllowed: false, screenRecordingAllowed: false),
         ].map { content in
             let renderer = ImageRenderer(content: content)
             renderer.scale = 1
