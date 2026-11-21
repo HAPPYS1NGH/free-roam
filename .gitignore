@@ -12,19 +12,19 @@ dist/
 
 # Prototype
 node_modules/
-prototype/dist/
-prototype/.site-public/
+site/dist/
+site/.site-public/
 
 # Env
 .env
 .env.*
 !.env.example
 
-# Your exported Music library (prototype only)
-prototype/public/library/
+# Your exported Music library (website studio only)
+site/public/library/
 
-# Your desktop picture (prototype only)
-prototype/public/wallpaper/
+# Your desktop picture (website studio only)
+site/public/wallpaper/
 
 
 # Project notes stay local
