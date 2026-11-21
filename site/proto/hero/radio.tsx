@@ -363,15 +363,19 @@ export function HowItWorks() {
   </section>
 }
 
-export function Faq() {
+// listenLive: the variant offers opt-in YouTube audio, so the answers about
+// this page and tracking change to stay true.
+export function Faq({ listenLive = false }: { listenLive?: boolean }) {
   return <section className="p-section p-faq" aria-labelledby="faq-title">
     <h2 id="faq-title">A few things to know</h2>
     <div>
       <details><summary>Do I need Apple Music?<span aria-hidden="true">+</span></summary><p>No. Free Roam plays the playlists in the Music app that's already on your Mac, including songs you've imported yourself. You only need a subscription for songs that come from Apple Music. Any Mac on macOS 14 or later works.</p></details>
       <details><summary>Why use it instead of the Music app?<span aria-hidden="true">+</span></summary><p>Because changing the music shouldn't pull you out of what you're doing. Want to watch a YouTube video? Hold ⌥Q, flick to Radio Off, and it's quiet. When you're done, flick back and the station is still on air. No switching apps, no hunting for the pause button.</p></details>
       <details><summary>Can I choose my own stations?<span aria-hidden="true">+</span></summary><p>Yes. Open Settings from the menu bar, drag your playlists into order and click a cover to add or remove one. This page shows the creator's stations; it never touches your library.</p></details>
-      <details><summary>Does this page play music?<span aria-hidden="true">+</span></summary><p>No, only the wheel and its sound effects. The Mac app controls playback in Music.</p></details>
-      <details><summary>What can it see on my Mac?<span aria-hidden="true">+</span></summary><p>Only what it needs to play music. It asks to control the Music app. Screen Recording is optional: it lets the wheel fade the colour of whatever's behind it, and nothing is saved or sent. There's no account and no tracking, and the code is on GitHub for anyone to read.</p></details>
+      <details><summary>Does this page play music?<span aria-hidden="true">+</span></summary><p>{listenLive
+        ? "Only if you press Listen live. Then the station on air plays through YouTube, mid-song, wherever its clock has got to. Nothing loads from YouTube before that. The Mac app plays your own playlists in Music."
+        : "No, only the wheel and its sound effects. The Mac app controls playback in Music."}</p></details>
+      <details><summary>What can it see on my Mac?<span aria-hidden="true">+</span></summary><p>Only what it needs to play music. It asks to control the Music app. Screen Recording is optional: it lets the wheel fade the colour of whatever's behind it, and nothing is saved or sent. There's no account and no tracking, and the code is on GitHub for anyone to read.{listenLive && " This page is different only if you press Listen live: the music then comes from YouTube, under YouTube's own privacy policy."}</p></details>
     </div>
   </section>
 }
