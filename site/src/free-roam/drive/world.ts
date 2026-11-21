@@ -1,25 +1,16 @@
 import {
   AdditiveBlending, BoxGeometry, BufferGeometry, CatmullRomCurve3, Color, CylinderGeometry, DoubleSide,
-  Float32BufferAttribute, Group, IcosahedronGeometry, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshStandardMaterial,
-  Object3D, PlaneGeometry, Points, PointsMaterial, Quaternion, ShaderMaterial, TubeGeometry, UniformsLib, UniformsUtils, Vector3,
+  Float32BufferAttribute, Group, IcosahedronGeometry, InstancedBufferAttribute, InstancedMesh, Matrix4, Mesh, MeshDepthMaterial, MeshStandardMaterial,
+  Object3D, Points, PointsMaterial, Quaternion, ShaderMaterial, TubeGeometry, UniformsLib, UniformsUtils, Vector3,
 } from "three"
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js"
 import { fbm, noise2, rng, smoothstep } from "./noise"
 import { LOOP, ROAD_HALF, SEA, pointAt, roadY, tangent, terrainY } from "./path"
 import { palmGeometry } from "./palm"
 import { asphalt, bark, frond, glow, groundDetail, ROAD_TILE } from "./textures"
-
-export const LAMP_SPACING = 48
-export const LAMP_OFFSET = 10
-export const LAMP_U = 7.6
-const LAMP_REACH = 3.1
-const LAMP_HEIGHT = 9.6
-
-// World position of streetlight k's lamp head (k may run past one loop).
-export function lampHead(k: number, out = new Vector3()) {
-  const s = LAMP_OFFSET + k * LAMP_SPACING
-  return pointAt(s, LAMP_U - LAMP_REACH, terrainY(s, LAMP_U) - roadY(s) + LAMP_HEIGHT - 0.1, out)
-}
+import { gulls } from "./gulls"
+import { sway, type Sway } from "./wind"
+import { LAMP_COUNT, LAMP_HEIGHT, LAMP_OFFSET, LAMP_REACH, LAMP_SPACING, LAMP_U, createLamps, lampHead } from "./lamps"
 
 // Surface normal from finite differences, so both loop copies share edges.
 function groundNormal(s: number, u: number, out: Vector3) {
@@ -102,6 +93,7 @@ function road() {
   })
   const tex = asphalt()
   const mat = new MeshStandardMaterial({ map: tex.map, roughnessMap: tex.roughness, roughness: 1, metalness: 0, envMapIntensity: 0.7 })
+  mat.userData.wet = true
   const mesh = new Mesh(geo, mat)
   mesh.receiveShadow = true
   return mesh
@@ -141,9 +133,7 @@ function guardrail(group: Group) {
   group.add(posts)
 }
 
-export type LampMaterials = { lens: MeshStandardMaterial; pool: MeshBasicMaterial; halo: PointsMaterial }
-
-function streetlights(group: Group): LampMaterials {
+function streetlights(group: Group) {
   const curve = new CatmullRomCurve3([
     new Vector3(0, LAMP_HEIGHT - 0.5, 0), new Vector3(-0.6, LAMP_HEIGHT + 0.05, 0),
     new Vector3(-1.8, LAMP_HEIGHT + 0.2, 0), new Vector3(-LAMP_REACH + 0.3, LAMP_HEIGHT + 0.08, 0),
@@ -154,21 +144,20 @@ function streetlights(group: Group): LampMaterials {
   const base = new CylinderGeometry(0.24, 0.28, 0.5, 10).translate(0, 0.25, 0)
   const body = mergeGeometries([pole, arm, head, base])!
   const lensGeo = new BoxGeometry(0.6, 0.03, 0.24).translate(-LAMP_REACH, LAMP_HEIGHT - 0.07, 0)
+  const index = Float32Array.from({ length: LAMP_COUNT }, (_, k) => k)
+  lensGeo.setAttribute("aLamp", new InstancedBufferAttribute(index, 1))
 
-  const count = LOOP / LAMP_SPACING
+  const lamps = createLamps()
   const metal = new MeshStandardMaterial({ color: "#5d6266", metalness: 0.7, roughness: 0.5 })
-  const lens = new MeshStandardMaterial({ color: "#3a3630", emissive: new Color("#ffad5c"), emissiveIntensity: 0, roughness: 0.3 })
-  const poles = new InstancedMesh(body, metal, count)
-  const lenses = new InstancedMesh(lensGeo, lens, count)
+  const lens = new MeshStandardMaterial({ color: "#3a3630", emissive: new Color("#ffffff"), emissiveIntensity: 14, roughness: 0.3 })
+  lamps.lens(lens)
+  const poles = new InstancedMesh(body, metal, LAMP_COUNT)
+  const lenses = new InstancedMesh(lensGeo, lens, LAMP_COUNT)
   poles.castShadow = true
-
-  const pool = new MeshBasicMaterial({ map: glow(1), color: new Color("#ff9a45"), transparent: true, opacity: 0, blending: AdditiveBlending,
-    depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 })
-  const pools = new InstancedMesh(new PlaneGeometry(19, 22).rotateX(-Math.PI / 2), pool, count)
   const haloPos: number[] = []
 
   const m = new Matrix4(), xa = new Vector3(), ya = new Vector3(0, 1, 0), za = new Vector3(), p = new Vector3()
-  for (let k = 0; k < count; k++) {
+  for (let k = 0; k < LAMP_COUNT; k++) {
     const s = LAMP_OFFSET + k * LAMP_SPACING
     const t = tangent(s)
     xa.set(-t.z, 0, t.x)
@@ -177,23 +166,23 @@ function streetlights(group: Group): LampMaterials {
     m.makeBasis(xa, ya, za).setPosition(p)
     poles.setMatrixAt(k, m)
     lenses.setMatrixAt(k, m)
-    pointAt(s, LAMP_U - LAMP_REACH - 0.6, 0.035, p)
-    m.makeBasis(xa, ya, za).setPosition(p)
-    pools.setMatrixAt(k, m)
     lampHead(k, p)
     haloPos.push(p.x, p.y - 0.15, p.z)
   }
   const haloGeo = new BufferGeometry()
   haloGeo.setAttribute("position", new Float32BufferAttribute(haloPos, 3))
-  const halo = new PointsMaterial({ map: glow(1), color: new Color("#ffb16a"), size: 7, transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false })
-  pools.renderOrder = 1
-  group.add(poles, lenses, pools, new Points(haloGeo, halo))
-  return { lens, pool, halo }
+  haloGeo.setAttribute("aLamp", new Float32BufferAttribute(index, 1))
+  const halo = new PointsMaterial({ map: glow(1), size: 7, transparent: true, opacity: 0.32, blending: AdditiveBlending, depthWrite: false })
+  lamps.halo(halo)
+  group.add(poles, lenses, new Points(haloGeo, halo))
+  return { lamps, lens }
 }
 
-function palms(group: Group, rand: () => number) {
-  const trunkMat = new MeshStandardMaterial({ map: bark(), roughness: 0.95 })
-  const frondMat = new MeshStandardMaterial({ map: frond(), vertexColors: true, alphaTest: 0.45, side: DoubleSide, roughness: 0.95, envMapIntensity: 0.35, color: "#d8d6a0" })
+function palms(group: Group, rand: () => number, time: { value: number }) {
+  const trunkMat = new MeshStandardMaterial({ map: bark(), roughness: 0.95, userData: { sway: "trunk" } })
+  const frondMat = new MeshStandardMaterial({ map: frond(), vertexColors: true, alphaTest: 0.45, side: DoubleSide, roughness: 0.95, envMapIntensity: 0.35, color: "#d8d6a0", userData: { sway: "frond" } })
+  // Shadows sway with the trees; the shadow pass copies map and alphaTest over.
+  const trunkDepth = sway(new MeshDepthMaterial(), "trunk", time), frondDepth = sway(new MeshDepthMaterial(), "frond", time)
   const variants = [palmGeometry(13, 1), palmGeometry(17, 2), palmGeometry(21, 3)]
   const spots: { s: number; u: number; v: number; scale: number; rot: number }[] = []
   // A broken row along the right verge, then scattered palms up the hill.
@@ -219,6 +208,8 @@ function palms(group: Group, rand: () => number) {
       crowns.setMatrixAt(k, o.matrix)
     })
     trunks.castShadow = crowns.castShadow = true
+    trunks.customDepthMaterial = trunkDepth
+    crowns.customDepthMaterial = frondDepth
     group.add(trunks, crowns)
   })
 }
@@ -258,7 +249,7 @@ function shrubs(group: Group, rand: () => number) {
     if (fbm(s / 40, u / 25, 3, LOOP / 40) < 0.12) continue
     spots.push([s, u])
   }
-  const mesh = new InstancedMesh(geo, new MeshStandardMaterial({ roughness: 0.95, color: "#ffffff" }), spots.length)
+  const mesh = new InstancedMesh(geo, new MeshStandardMaterial({ roughness: 0.95, color: "#ffffff", userData: { sway: "shrub" } }), spots.length)
   const o = new Object3D(), p = new Vector3(), col = new Color()
   spots.forEach(([s, u], k) => {
     const size = (0.3 + rand() ** 2 * 0.9) * (Math.abs(u) > 25 ? 1.8 : 1)
@@ -276,7 +267,7 @@ function shrubs(group: Group, rand: () => number) {
 }
 
 // Surf: a foam ribbon along the waterline with swells rolling in to shore.
-function surf(group: Group) {
+function surf(group: Group, time: { value: number }) {
   const step = 3
   const p = new Vector3()
   const shore: number[] = []
@@ -327,6 +318,7 @@ function surf(group: Group) {
         #include <fog_fragment>
       }`,
   })
+  material.uniforms.uTime = time
   group.add(new Mesh(geo, material))
   return material
 }
@@ -360,11 +352,20 @@ export function buildWorld() {
   ground.receiveShadow = true
   group.add(ground, road())
   guardrail(group)
-  const lamps = streetlights(group)
-  palms(group, rand)
+  const { lamps, lens } = streetlights(group)
+  // One clock for the surf, wind and gulls; scene.ts drives it via foam.uniforms.uTime.
+  const time = { value: 0 }
+  palms(group, rand, time)
   shrubs(group, rand)
   const windows = hillLights(group, rand)
-  const foam = surf(group)
+  const foam = surf(group, time)
+  lamps.light(group, lens)
+  // After the lamp hook, which replaces onBeforeCompile; sway chains onto it.
+  const swaying = new Set<MeshStandardMaterial>()
+  group.traverse(o => { const m = (o as Mesh).material; if (m instanceof MeshStandardMaterial && m.userData.sway) swaying.add(m) })
+  swaying.forEach(m => sway(m, m.userData.sway as Sway, time))
+  // Out over the water, beyond the lamp pools.
+  group.add(gulls(time))
   group.traverse(o => { o.matrixAutoUpdate = false; o.updateMatrix() })
   return { group, lamps, windows, foam }
 }

@@ -110,3 +110,7 @@
 /* Live drive: fades in over the photo once three.js has loaded. */
 .ta-drive, .ta-drive .drive-host, .ta-drive .drive-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .ta-drive { animation: ta-fade 900ms var(--ease-out) both; }
+/* The sun and moon can be picked up (drive/sky-drag.ts). While one is held
+   the whole page shows the closed hand and text can't be selected. */
+.ta-hero[data-sky="grab"] { cursor: grab; }
+:root[data-sky-drag], :root[data-sky-drag] * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }

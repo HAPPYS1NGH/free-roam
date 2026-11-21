@@ -9,11 +9,11 @@ import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js"
 const FilmShader = {
   uniforms: {
     tDiffuse: { value: null }, uTime: { value: 0 }, uRes: { value: new Vector2(1, 1) }, uGrain: { value: 0.05 }, uVignette: { value: 0.32 },
-    uCar: { value: new Vector2(0.75, 0.3) }, uBlur: { value: 1 },
+    uCar: { value: new Vector2(0.75, 0.3) }, uVp: { value: new Vector2(0.64, 0.54) }, uBlur: { value: 1 },
   },
   vertexShader: /* glsl */`varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */`
-    uniform sampler2D tDiffuse; uniform float uTime, uGrain, uVignette, uBlur; uniform vec2 uRes, uCar; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float uTime, uGrain, uVignette, uBlur; uniform vec2 uRes, uCar, uVp; varying vec2 vUv;
     float hash(vec2 p) { vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
     void main() {
       vec2 c = vUv - 0.5;
@@ -21,7 +21,7 @@ const FilmShader = {
       vec3 col = vec3(texture2D(tDiffuse, vUv + shift).r, texture2D(tDiffuse, vUv).g, texture2D(tDiffuse, vUv - shift).b);
       // Speed: the near road and verges streak away from the vanishing point,
       // the car (moving with the camera) stays sharp.
-      vec2 vp = vec2(uCar.x - 0.12, uCar.y + 0.22);
+      vec2 vp = uVp;
       vec2 away = vUv - vp;
       vec2 carD = (vUv - uCar) * vec2(uRes.x / uRes.y, 1.0);
       float mask = smoothstep(0.13, 0.24, length(carD * vec2(0.62, 1.0) + vec2(0.0, 0.035)));
@@ -57,9 +57,10 @@ export function createPost(renderer: WebGLRenderer, scene: Scene, camera: Camera
       bloom.resolution.set(w * dpr / 2, h * dpr / 2)
       film.uniforms.uRes.value.set(w * dpr, h * dpr)
     },
-    render(time: number, carX: number, carY: number, blur: number) {
+    render(time: number, carX: number, carY: number, vpX: number, vpY: number, blur: number) {
       film.uniforms.uTime.value = time
       film.uniforms.uCar.value.set(carX, carY)
+      film.uniforms.uVp.value.set(vpX, vpY)
       film.uniforms.uBlur.value = blur
       composer.render()
     },

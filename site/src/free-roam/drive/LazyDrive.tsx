@@ -19,7 +19,8 @@ function canDrive() {
 
 // Starts once the page has painted and the browser is idle, then fades in over
 // the photo. The scene itself pauses when the tab is hidden or scrolled away.
-// A full day passes every 40 seconds, starting from the visitor's own hour.
+// A full day passes every 40 seconds, starting from the visitor's own hour, and
+// the sun or moon can be dragged anywhere on the hero to set the time.
 export function LazyDrive({ className = "", label }: { className?: string; label: string }) {
   const [startHour, setStartHour] = useState<number | null>(null)
   useEffect(() => {
@@ -39,7 +40,7 @@ export function LazyDrive({ className = "", label }: { className?: string; label
   return <div className={className}>
     <Suspense fallback={null}>
       <CoastDrive label={label} paint="Champagne" cycleSeconds={40} lockHour={null} speed={1} still={false}
-        startHour={startHour} onHour={() => {}} fallback={null} />
+        startHour={startHour} onHour={() => {}} fallback={null} grabArea=".ta-hero" />
     </Suspense>
   </div>
 }
