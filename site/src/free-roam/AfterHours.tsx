@@ -7,7 +7,7 @@ import { Details, Header } from "./Shared"
 import { Stations } from "./Stations"
 import { WheelOverlay } from "./WheelOverlay"
 import { catalogSources, demoSlots } from "./demo-stations"
-import { sourceUrl } from "./content"
+import { downloadUrl } from "./content"
 import { useProductAudio } from "./useProductAudio"
 
 export function AfterHours() {
@@ -47,7 +47,7 @@ export function AfterHours() {
           <button ref={opener} className="primary-action" onClick={wheel.show} aria-expanded={wheel.open}>Try the wheel</button>
           <p>or hold <kbd>Q</kbd> on this page</p>
         </div>
-        <a className="text-action" href={`${sourceUrl}#build-the-mac-app`} target="_blank" rel="noreferrer">Build it for your Mac <span aria-hidden="true">↗</span></a>
+        <a className="text-action" href={downloadUrl}>Download for Mac</a>
       </div>
       <div className="now-playing">
         <p role="status">{playing?.kind === "playlist" ? <>On air <strong>{playing.playlist.name}</strong></> : "Radio off"}</p>
