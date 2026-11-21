@@ -3,7 +3,7 @@ import { useReducedMotion } from "motion/react"
 import tokens from "../../tokens.json"
 import { polar, slotAngle } from "../geometry"
 import { RadioWheel, radioWheelControls, ringGeometry, type RadioWheelLook } from "../RadioWheel"
-import { useViewport } from "../useViewport"
+import { useScreenHeight } from "../useViewport"
 import { demoSlots } from "./demo-stations"
 import "./radio-demo.css"
 
@@ -26,7 +26,7 @@ export function WheelFace({ highlighted, onChoose, onPointerMove, autoFocus = fa
   const [width, setWidth] = useState(450)
   const stage = useRef<HTMLDivElement>(null)
   const reduced = useReducedMotion()
-  const unit = useViewport().height / 100
+  const unit = useScreenHeight() / 100
   const { radius, icon, selectedIcon } = ringGeometry(look, demoSlots.length, unit)
   const ringWidth = Math.round(look.ringWidth * unit)
   const size = 2 * Math.ceil(radius + selectedIcon / 2 + ringWidth + 2)
@@ -50,12 +50,13 @@ export function WheelFace({ highlighted, onChoose, onPointerMove, autoFocus = fa
     if (stage.current?.contains(document.activeElement)) focusSelected()
   }, [highlighted])
 
-  return <div className="production-wheel-stage" ref={stage} onPointerMove={onPointerMove}>
+  // Drawn at the app's size, and only shrunk when the window is too small.
+  return <div className="production-wheel-stage" ref={stage} onPointerMove={onPointerMove} style={{ width: `min(${size}px, 100%)` }}>
     <div className="production-wheel-render" style={{ width: size, height: size, transform: `scale(${scale})` }}>
       {/* The native renderer raises the whole wheel relative to its screen. */}
       <div style={{ position: "absolute", top: Math.round(look.raise * unit) }}>
         <RadioWheel slots={demoSlots} highlighted={highlighted} look={reduced ? { ...look, openScale: 1 } : look}
-          idleOpacity={tokens.sizes.idleOpacity} stationSize={tokens.sizes.stationSize} layout="Today"
+          idleOpacity={tokens.sizes.idleOpacity} stationSize={tokens.sizes.stationSize} layout="Today" unit={unit}
           openTransition={{ duration: tokens.animations.open.duration }}
           closeTransition={{ duration: tokens.animations.close.duration }} />
       </div>

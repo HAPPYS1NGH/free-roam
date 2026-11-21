@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import tokens from "../../tokens.json"
 import { useWheel } from "../useWheel"
-import { useViewport } from "../useViewport"
+import { useScreenHeight } from "../useViewport"
 import { AudioToggle } from "./AudioToggle"
 import { Details, Header } from "./Shared"
 import { Stations } from "./Stations"
@@ -16,7 +16,7 @@ export function AfterHours() {
   const wasOpen = useRef(false)
   const wheel = useWheel({
     slots: demoSlots,
-    deadzone: tokens.behaviour.deadzone * useViewport().height / 100,
+    deadzone: tokens.behaviour.deadzone * useScreenHeight() / 100,
     pickRadius: tokens.behaviour.pickRadius,
     scrollStep: tokens.behaviour.scrollStep,
     dwellMs: tokens.behaviour.dwellMs,
@@ -28,7 +28,10 @@ export function AfterHours() {
   const source = catalogSources.find(album => album.id === wheel.playingId)
 
   useEffect(() => {
-    if (wasOpen.current && !wheel.open && document.activeElement === document.body) opener.current?.focus({ preventScroll: true })
+    // Focus is still inside the fading wheel, or on the body after a click on
+    // its pick layer. Either way it goes back to the opener.
+    const lost = document.activeElement === document.body || document.querySelector(".wheel-layer")?.contains(document.activeElement)
+    if (wasOpen.current && !wheel.open && lost) opener.current?.focus({ preventScroll: true })
     wasOpen.current = wheel.open
   }, [wheel.open])
 

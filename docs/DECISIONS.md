@@ -458,3 +458,12 @@ The user's brief: one site, not `/free-roam/` and `/` side by side, with the app
 - Holding Q anywhere on the page opens the overlay from the browser prototype that the Mac app was ported from: a fixed backdrop with the app's saturation, brightness and vignette, the wheel above it, and the app's open, close and filter timings. The sounds were already the four WAVs a release ships.
 - The station list tunes through the same `useWheel` instance, so touch and keyboard users get the same stations without a second wheel. It also keeps every station name in the prerendered HTML, which the release check needs now that the wheel is only in the DOM while open.
 - The unused Passenger Seat and Frequency directions were deleted.
+
+## 2026-11-21: The web wheel behaves like the app's
+
+The user's brief: the page's wheel felt bigger than the app's and didn't sound like it.
+
+- Size: the app measures the wheel in hundredths of the screen's height. The page now does the same with `screen.height`, which is in points on a Mac, and draws it at that size instead of stretching it to fit. It only shrinks when the window is too small.
+- Pointer: the app freezes the pointer while the wheel is open and picks from mouse movement alone. On the page the pointer stayed visible, so aiming at a disc moved the pick somewhere else, ticked, and retuned after the 1 s rest. The page now hides the pointer over the open wheel and a click stands in for letting go of ⌥Q. Touch screens skip that layer and tap the discs.
+- Choosing from outside the wheel, with Radio Off or the station list, no longer plays the close sound, which the app never does.
+- The sound code was already a line-for-line port. Music's volume dip while the wheel is open has nothing to dip on the page, which plays no music.

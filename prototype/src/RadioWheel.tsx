@@ -107,6 +107,8 @@ type Props = {
   layout: RingLayout
   openTransition: Transition
   closeTransition: Transition
+  // 1% of the screen height in px. Defaults to the window's height.
+  unit?: number
 }
 
 function StationArt({ slot }: { slot: Slot }) {
@@ -159,7 +161,7 @@ export function RadioWheel(props: Props) {
   const { slots, highlighted, look, idleOpacity, stationSize, layout, openTransition, closeTransition } = props
   const { height } = useViewport()
   const now = useNow()
-  const unit = height / 100
+  const unit = props.unit ?? height / 100
   const { radius, icon, selectedIcon } = ringGeometry(look, slots.length, unit, layout)
   const ringWidth = Math.round(look.ringWidth * unit)
   // Room for the selected ring and its dark edge. Even, so the centre the

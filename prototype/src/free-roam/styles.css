@@ -85,9 +85,18 @@ button:active, .primary-action:active { scale: .97; }
     rgb(70 120 210 / 0.07);
 }
 .wheel-layer { position: fixed; inset: 0; z-index: 11; display: grid; place-items: center; align-content: center; pointer-events: none; }
-.wheel-layer-face { width: min(72vh, calc(100vw - 32px)); pointer-events: auto; }
+.wheel-layer-face { width: min(calc(100vw - 32px), calc(100dvh - 32px)); display: grid; justify-items: center; pointer-events: auto; }
 .wheel-layer-face .production-wheel-stage { max-width: none; margin: 0; }
-.wheel-close { position: fixed; right: max(20px, env(safe-area-inset-right)); bottom: max(20px, env(safe-area-inset-bottom)); display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding-inline: 12px; border: 0; background: none; font-size: 13px; color: #d7dcd6; pointer-events: auto; }
+.wheel-pick { position: fixed; inset: 0; z-index: 1; cursor: none; pointer-events: auto; }
+.wheel-hint, .wheel-close { position: fixed; bottom: max(20px, env(safe-area-inset-bottom)); font-size: 13px; color: #d7dcd6; }
+.wheel-hint { left: 50%; translate: -50% 0; width: max-content; max-width: calc(100vw - 40px); text-align: center; }
+.wheel-hint kbd { min-width: 20px; min-height: 20px; margin-inline: 2px; }
+.wheel-close { right: max(20px, env(safe-area-inset-right)); display: none; min-height: 44px; padding-inline: 12px; border: 0; background: none; pointer-events: auto; }
+/* Touch: no pointer to hide and no Q to let go of, so tap a station or Close. */
+@media (hover: none), (pointer: coarse) {
+  .wheel-pick, .wheel-hint { display: none; }
+  .wheel-close { display: inline-flex; align-items: center; }
+}
 
 kbd { display: inline-grid; place-items: center; font: inherit; border: 1px solid currentColor; min-width: 23px; min-height: 23px; border-radius: 4px; padding-inline: 4px; }
 .sound-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; border: 0; background: transparent; white-space: nowrap; }

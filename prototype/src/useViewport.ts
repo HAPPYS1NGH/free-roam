@@ -14,3 +14,11 @@ export function useViewport() {
 
   return viewport
 }
+
+// The Mac app sizes the wheel from the screen it opens on, not the window.
+// On a Mac, screen.height in CSS px is the screen's height in points.
+export function useScreenHeight() {
+  const [height, setHeight] = useState(900)
+  useEffect(() => setHeight(window.screen.height), [])
+  return height
+}

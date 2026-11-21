@@ -18,7 +18,7 @@ const filterOut = { duration: tokens.animations.filterOut.duration, ease: tokens
 export function WheelOverlay({ open, highlighted, onChoose, onClose }: Props) {
   return <>
     <AnimatePresence>
-      {open && <motion.div key="backdrop" className="wheel-backdrop" onClick={onClose}
+      {open && <motion.div key="backdrop" className="wheel-backdrop"
         style={{
           "--saturation": tokens.behaviour.backdropSaturation,
           "--brightness": tokens.behaviour.backdropBrightness,
@@ -36,7 +36,12 @@ export function WheelOverlay({ open, highlighted, onChoose, onClose }: Props) {
         <div className="wheel-layer-face">
           <WheelFace autoFocus highlighted={highlighted} onChoose={onChoose} />
         </div>
-        <button className="wheel-close" onClick={onClose}>Close <kbd>Esc</kbd></button>
+        {/* The app freezes the pointer and picks from mouse movement alone, so
+            with a mouse the cursor hides and a click stands in for letting go
+            of ⌥Q. Touch screens skip this layer and tap the stations. */}
+        <div className="wheel-pick" aria-hidden="true" onClick={() => onChoose(highlighted)} />
+        <p className="wheel-hint">Move or scroll to pick. Let go of <kbd>Q</kbd> or click to tune in. <kbd>Esc</kbd> closes.</p>
+        <button className="wheel-close" onClick={onClose}>Close</button>
       </section>}
     </AnimatePresence>
   </>

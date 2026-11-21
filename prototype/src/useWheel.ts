@@ -282,7 +282,8 @@ export function useWheel(options: Options) {
     highlightRef.current = index
     setHighlighted(index)
     tune(index)
-    hide()
+    // Choosing from outside the wheel (Radio Off, a station list) has no close sound.
+    if (openRef.current) hide()
   }
 
   return { open, highlighted, playingId, peek, show, hide, choose }
