@@ -1,14 +1,10 @@
-import OSLog
-import ServiceManagement
 import SwiftUI
-
-private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "menu")
 
 @MainActor @Observable
 final class StatusMenuModel {
     private(set) var musicPermission = MusicBridge.permission()
     private(set) var screenRecordingAllowed = ScreenCapture.isAllowed
-    private(set) var launchesAtLogin = SMAppService.mainApp.status == .enabled
+    private(set) var launchesAtLogin = LaunchAtLogin.isEnabled
 
     init() {
         // Either permission can change in System Settings while Free Roam runs,
@@ -25,22 +21,12 @@ final class StatusMenuModel {
         if music != musicPermission { musicPermission = music }
         let screen = ScreenCapture.isAllowed
         if screen != screenRecordingAllowed { screenRecordingAllowed = screen }
-        // You can also turn it off in System Settings → General → Login Items.
-        let login = SMAppService.mainApp.status == .enabled
+        let login = LaunchAtLogin.isEnabled
         if login != launchesAtLogin { launchesAtLogin = login }
     }
 
     func setLaunchesAtLogin(_ enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            log.error("Couldn't \(enabled ? "turn on" : "turn off", privacy: .public) Launch at Login: \(String(describing: error), privacy: .public)")
-        }
-        launchesAtLogin = SMAppService.mainApp.status == .enabled
+        launchesAtLogin = LaunchAtLogin.set(enabled)
     }
 }
 

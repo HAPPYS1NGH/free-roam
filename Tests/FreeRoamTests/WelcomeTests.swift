@@ -51,6 +51,7 @@ struct WelcomeRenderTests {
             WelcomeContent(badge: badge, musicAllowed: false, screenRecordingAllowed: false, isAskingForMusic: true),
             WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: false),
             WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: true),
+            WelcomeContent(badge: badge, musicAllowed: true, screenRecordingAllowed: true, launchesAtLogin: true),
             WelcomeContent(badge: nil, musicAllowed: false, screenRecordingAllowed: false),
         ].map { content in
             let renderer = ImageRenderer(content: content)

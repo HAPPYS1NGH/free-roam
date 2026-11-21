@@ -11,6 +11,7 @@ final class WelcomeModel {
     private(set) var screenRecordingAllowed = false
     /// Music is launching, or macOS's prompt is up.
     private(set) var isAskingForMusic = false
+    private(set) var launchesAtLogin = LaunchAtLogin.isEnabled
     var dontShowAgain: Bool {
         get { defaults.bool(forKey: Self.dontShowAgainKey) }
         set { defaults.set(newValue, forKey: Self.dontShowAgainKey) }
@@ -50,6 +51,7 @@ final class WelcomeModel {
     /// back from System Settings.
     func refresh() {
         update(music: MusicBridge.permission())
+        launchesAtLogin = LaunchAtLogin.isEnabled
         let screen = ScreenCapture.isAllowed
         if screen != screenRecordingAllowed {
             screenRecordingAllowed = screen
@@ -107,6 +109,10 @@ final class WelcomeModel {
         // with Music closed, once Music takes scripts.
         try await MusicBridge.waitUntilAnswering()
         stations.reload()
+    }
+
+    func setLaunchesAtLogin(_ enabled: Bool) {
+        launchesAtLogin = LaunchAtLogin.set(enabled)
     }
 
     func allowScreenRecording() {

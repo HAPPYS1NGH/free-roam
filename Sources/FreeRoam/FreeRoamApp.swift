@@ -18,11 +18,24 @@ struct FreeRoamApp: App {
             StatusMenu(model: appDelegate.menu)
         } label: {
             MenuBarIcon()
+                .modifier(SettingsOpenerCapture { appDelegate.openSettings = $0 })
         }
         Settings {
             StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style)
         }
         .windowResizability(.contentMinSize)
+    }
+}
+
+/// Hands the Settings scene's opener to the app delegate, which has no
+/// SwiftUI environment of its own. The menu bar label is on screen from
+/// launch, so it's there before anyone reopens the app.
+private struct SettingsOpenerCapture: ViewModifier {
+    @Environment(\.openSettings) private var openSettings
+    let store: (OpenSettingsAction) -> Void
+
+    func body(content: Content) -> some View {
+        content.onAppear { store(openSettings) }
     }
 }
 
@@ -54,6 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let details = StationDetails()
     /// Nil when tokens.json is missing, which turns the wheel off.
     let style = AppDelegate.loadStyle()
+    var openSettings: OpenSettingsAction?
     private var wheel: RadioWheelModel?
     private lazy var welcome = WelcomeWindow(stations: stations)
 
@@ -69,6 +83,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wheel.loadDetails(for: stations.onWheel)
         wheel.start()
         self.wheel = wheel
+    }
+
+    /// Opening Free Roam again from Finder, Spotlight or Raycast while it's
+    /// running would otherwise do nothing visible, as it has no Dock icon.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        log.notice("Opened again while running, so showing Settings")
+        openSettings?()
+        NSApp.activate()
+        return false
     }
 
     func applicationWillTerminate(_ notification: Notification) {

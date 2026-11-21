@@ -13,6 +13,8 @@ struct WelcomeView: View {
             isAskingForMusic: model.isAskingForMusic,
             allowMusic: model.allowMusic,
             allowScreenRecording: model.allowScreenRecording,
+            launchesAtLogin: model.launchesAtLogin,
+            setLaunchesAtLogin: model.setLaunchesAtLogin,
             dontShowAgain: dontShowAgain,
             close: close
         )
@@ -33,6 +35,8 @@ struct WelcomeContent: View {
     var isAskingForMusic = false
     var allowMusic: () -> Void = {}
     var allowScreenRecording: () -> Void = {}
+    var launchesAtLogin = false
+    var setLaunchesAtLogin: (Bool) -> Void = { _ in }
     var dontShowAgain: () -> Void = {}
     var close: () -> Void = {}
 
@@ -86,8 +90,16 @@ struct WelcomeContent: View {
             }
             .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
 
-            Text("You can change these later in System Settings.")
-                .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 8) {
+                // Off until you tick it: a login item needs your say-so.
+                Toggle("Open Free Roam when you log in", isOn: Binding(
+                    get: { launchesAtLogin },
+                    set: { setLaunchesAtLogin($0) }
+                ))
+                .toggleStyle(.checkbox)
+                Text("You can change these later in System Settings or the Free Roam menu.")
+                    .foregroundStyle(.secondary)
+            }
 
             HStack {
                 Button("Don't Show This Again", action: dontShowAgain)
