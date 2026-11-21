@@ -5,7 +5,7 @@ import { createElement } from 'react'
 import { renderToString } from 'react-dom/server'
 import { createServer } from 'vite'
 
-test('landing prerender stays identical across broadcast times and includes approved playlists', async t => {
+test('landing prerender stays identical across times and time zones, and has the hero, stations and FAQ', async t => {
   const server = await createServer({
     root: fileURLToPath(new URL('../', import.meta.url)),
     server: { middlewareMode: true, hmr: false, ws: false },
@@ -15,13 +15,23 @@ test('landing prerender stays identical across broadcast times and includes appr
   t.after(() => server.close())
   const { LandingPage } = await server.ssrLoadModule('/src/free-roam/LandingPage.tsx')
   const now = Date.now
-  t.after(() => { Date.now = now })
+  const zone = process.env.TZ
+  t.after(() => { Date.now = now; process.env.TZ = zone })
   Date.now = () => Date.UTC(2026, 9, 25)
+  process.env.TZ = 'UTC'
   const built = renderToString(createElement(LandingPage))
-  Date.now = () => Date.UTC(2026, 9, 26)
+  Date.now = () => Date.UTC(2026, 9, 26, 15, 30)
+  process.env.TZ = 'Asia/Kolkata'
   assert.equal(renderToString(createElement(LandingPage)), built)
+
+  assert.ok(built.includes('anywhere.</span>'), 'headline')
+  assert.ok(built.includes('Your playlists, as <span>radio stations.</span>'), 'lede')
   for (const name of ['God&#x27;s Favorite', 'High', 'Vibe', 'Culture Truth', 'Serbian', 'Right Eyebrow']) {
     assert.ok(built.includes(`>${name}</span>`), name)
   }
-  assert.ok(built.includes('sound effects from the Mac app'))
+  for (const question of ['Do I need Apple Music?', 'Why use it instead of the Music app?', 'Can I choose my own stations?', 'Does this page play music?', 'What can it see on my Mac?']) {
+    assert.ok(built.includes(question), question)
+  }
+  assert.ok(built.includes('Free and open source. macOS 14 or later.'), 'closing line')
+  assert.ok(!/notari[sz]ed/i.test(built), 'no signed-and-notarized claims')
 })

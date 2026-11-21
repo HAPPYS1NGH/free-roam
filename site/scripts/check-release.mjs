@@ -38,8 +38,12 @@ for (const file of files) {
 }
 for (const file of allowed) assert.ok(files.includes(file), `Missing release asset: ${file}`)
 const landing = readFileSync(`${dist}/index.html`, 'utf8')
-assert.ok(landing.includes('Take the<br/>long way'), 'Landing-page headline must exist without JavaScript')
-assert.ok(landing.includes('Choose Radio Off'), 'Product copy must be statically rendered')
+assert.ok(landing.includes('anywhere.</span>') && landing.includes('Your playlists, as <span>radio stations.</span>'), 'Landing-page headline must exist without JavaScript')
+assert.ok(landing.includes('Pick Radio Off'), 'Product copy must be statically rendered')
+// The prerender has no WebGL scene and nothing from YouTube: those start in the browser.
+for (const marker of ['<canvas', 'youtube.com', 'youtube-nocookie.com', '<iframe']) {
+  assert.ok(!landing.includes(marker), `Prerendered landing page includes ${marker}`)
+}
 const catalog = JSON.parse(readFileSync(new URL('../src/free-roam/catalog.json', import.meta.url), 'utf8'))
 for (const station of catalog) {
   const escapedName = station.name.replaceAll("'", '&#x27;')

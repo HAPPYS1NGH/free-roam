@@ -1,0 +1,110 @@
+/* The hero: 3 A.M. Drive. Minimal and cinematic. */
+.ta { --sodium: oklch(0.8 0.14 66); }
+
+.ta-hero { position: relative; isolation: isolate; min-height: max(620px, 100svh); display: flex; flex-direction: column; overflow: hidden; }
+.ta-scene { position: absolute; inset: 0; z-index: -1; pointer-events: none; background: oklch(0.1 0.012 255); }
+/* The coast photo for the visitor's local time. <html data-time> is set before
+   first paint (index.html), so only that photo loads; dusk without JavaScript. */
+.ta-scene-img { position: absolute; inset: 0; background: url("/free-roam/scenes/coast-dusk.jpg") 60% 70% / cover no-repeat;
+  opacity: 0.82; filter: brightness(0.92) saturate(0.95);
+  transition-property: opacity, filter; transition-duration: 600ms; transition-timing-function: var(--ease-out); }
+:root[data-time="dawn"] .ta-scene-img { background-image: url("/free-roam/scenes/coast-dawn.jpg"); }
+:root[data-time="day"] .ta-scene-img { background-image: url("/free-roam/scenes/coast-day.jpg"); }
+:root[data-time="night"] .ta-scene-img { background-image: url("/free-roam/scenes/coast-night.jpg"); }
+/* Retune: a soft wash of the station's colour, like headlights sweeping past.
+   Remounted per retune; fades out on its own. */
+.ta-retune { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(90% 70% at 50% 60%, oklch(from var(--accent) l c h / 0.22), transparent 70%);
+  animation: ta-wash 420ms var(--ease-out) both; }
+@keyframes ta-wash { from { opacity: 1; } to { opacity: 0; } }
+/* Holding ⌥Q lifts the night a little, like headlights coming up. */
+.ta-hero[data-lift] .ta-scene-img { opacity: 1; filter: brightness(1) saturate(1); transition-duration: 240ms; }
+.ta-grade { position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 50% 110%, transparent 40%, oklch(0.1 0.012 255 / 0.4) 80%),
+    linear-gradient(180deg, oklch(0.1 0.012 255 / 0.75) 0%, oklch(0.1 0.012 255 / 0.1) 30%, oklch(0.1 0.012 255 / 0.3) 65%, var(--bg) 100%); }
+
+.ta-nav { width: min(var(--max), 100% - 2 * var(--gutter)); }
+.ta-nav-cta { margin-left: auto; }
+
+.ta-copy { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 18px; padding-bottom: clamp(48px, 9vh, 104px); }
+.ta-line { font-size: clamp(56px, 8.4vw, 132px); line-height: 0.9; letter-spacing: 0; }
+.ta-line .keycap-xl { font-size: 0.62em; margin-inline: 0.04em; vertical-align: 0.1em; }
+/* The lede borrows the display face in sentence case: same voice as the
+   headline, a step down in size, and no shouting. Two families, no third. */
+.ta-sub { font: 600 clamp(30px, 2.8vw, 42px)/1.15 var(--font-display); letter-spacing: 0; color: oklch(from var(--ink) l c h / 0.82); text-wrap: balance; }
+.ta-sub span { color: var(--accent); transition: color 400ms var(--ease-out); }
+.ta-actions { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+
+.ta-try { min-height: 44px; padding: 0 2px; border: 0; background: none; font-size: 14px; color: var(--muted); text-decoration: underline; text-decoration-color: oklch(from var(--muted) l c h / 0.4); text-underline-offset: 5px; transition: color 150ms ease-out; }
+
+.ta .ta-caption { margin-inline: auto; display: flex; gap: 10px; align-items: center; padding-bottom: 24px; font: 400 12px/1.4 var(--font-mono); letter-spacing: 0.03em; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+.ta-caption-track { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+/* The sound toggle in the caption's own voice, with a full-height hit area. */
+.ta-caption .p-sound { flex: none; min-height: 32px; padding: 0; font: inherit; letter-spacing: inherit; color: var(--muted); }
+.ta-caption-note { color: var(--muted); }
+.ta-caption-time { color: var(--accent); margin-left: 6px; transition: color 400ms var(--ease-out); }
+
+/* Touch has no Q to hold. */
+.ta-touch { display: none; }
+@media (hover: none) { .ta-hover { display: none; } .ta-touch { display: inline; } }
+
+@media (hover: hover) and (pointer: fine) {
+  .ta-try:hover { color: var(--ink); }
+}
+
+/* Intro: fade up from black, then the line resolves. About 1.1 s, on load. */
+@keyframes ta-from-black { from { opacity: 0; } }
+@keyframes ta-resolve { from { opacity: 0; transform: translateY(10px); filter: blur(6px); } }
+@keyframes ta-fade { from { opacity: 0; } }
+.ta .ta-scene-img { animation: ta-from-black 700ms var(--ease-out) both; }
+.ta .ta-line { animation: ta-resolve 550ms var(--ease-out) 400ms both; }
+.ta :is(.ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: ta-fade 400ms var(--ease-out) 700ms both; }
+
+/* Closing */
+.ta-closing { display: grid; justify-items: start; gap: 22px; }
+.ta-closing h2 { font-size: clamp(64px, 9.5vw, 148px); line-height: 0.86; }
+.ta-closing h2 span { color: var(--accent); transition: color 400ms var(--ease-out); }
+.ta-closing p { color: var(--muted); font-size: 16px; }
+
+/* Footer: the end of the drive. Streetlights receding toward a vanishing point,
+   all static gradients. */
+.ta-footer { position: relative; isolation: isolate; margin-top: clamp(32px, 6vw, 80px); min-height: 360px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; border-top: 1px solid var(--line); }
+.ta-lamps { position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle at 14% 22%, oklch(from var(--sodium) l c h / 0.55) 0, oklch(from var(--sodium) l c h / 0.12) 34px, transparent 90px),
+    radial-gradient(circle at 30% 34%, oklch(from var(--sodium) l c h / 0.45) 0, oklch(from var(--sodium) l c h / 0.1) 24px, transparent 64px),
+    radial-gradient(circle at 41% 42%, oklch(from var(--sodium) l c h / 0.4) 0, oklch(from var(--sodium) l c h / 0.08) 16px, transparent 44px),
+    radial-gradient(circle at 48% 47%, oklch(from var(--sodium) l c h / 0.35) 0, transparent 26px),
+    radial-gradient(circle at 52% 50%, oklch(from var(--sodium) l c h / 0.3) 0, transparent 16px),
+    radial-gradient(circle at 86% 22%, oklch(from var(--sodium) l c h / 0.5) 0, oklch(from var(--sodium) l c h / 0.1) 30px, transparent 80px),
+    radial-gradient(circle at 70% 34%, oklch(from var(--sodium) l c h / 0.4) 0, oklch(from var(--sodium) l c h / 0.08) 20px, transparent 56px),
+    radial-gradient(circle at 59% 42%, oklch(from var(--sodium) l c h / 0.32) 0, transparent 32px),
+    radial-gradient(80% 60% at 50% 60%, oklch(from var(--sodium) l c h / 0.08), transparent 70%),
+    linear-gradient(180deg, var(--bg) 0%, oklch(0.12 0.014 255) 100%); }
+.ta-footer-row { display: flex; align-items: center; gap: 24px; padding-block: 28px max(36px, env(safe-area-inset-bottom)); border-top: 1px solid oklch(1 0 0 / 0.08); }
+.ta-footer-row nav { display: flex; gap: 24px; margin-left: auto; font-size: 14px; }
+.ta-footer-row nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); transition: color 150ms ease-out; }
+@media (hover: hover) and (pointer: fine) { .ta-footer-row nav a:hover { color: var(--ink); } }
+
+@media (max-width: 740px) {
+  .ta-nav .p-tally { display: none; }
+  .ta-line { font-size: clamp(52px, 15vw, 88px); }
+  .ta-scene-img { background-position: 64% 70%; }
+  .ta .ta-caption { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .ta-footer { min-height: 300px; }
+  .ta-footer-row { flex-wrap: wrap; gap: 12px; }
+  .ta-footer-row nav { margin-left: 0; width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ta-scene-img { transition-property: opacity; transition-duration: 200ms; }
+  .ta-retune { animation-duration: 200ms; }
+  .ta-hero[data-lift] .ta-scene-img { filter: brightness(0.92) saturate(0.95); }
+  .ta .ta-scene-img,
+  .ta .ta-line,
+  .ta :is(.ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: ta-fade 200ms ease-out both; }
+}
+
+/* Live drive: fades in over the photo once three.js has loaded. */
+.ta-drive, .ta-drive .drive-host, .ta-drive .drive-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ta-drive { animation: ta-fade 900ms var(--ease-out) both; }

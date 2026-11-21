@@ -1,43 +1,32 @@
-import { downloadUrl, sourceUrl } from "./content"
+import type { ReactNode } from "react"
+import { downloadUrl } from "./content"
+import { useRadio } from "./RadioProvider"
 
-export function Brand({ href = "#top" }: { href?: string }) {
-  return <a className="brand" href={href} aria-label="Free Roam home">
-    <img className="brand-logo" src="/free-roam/badge.png" alt="" width="240" height="240" />
-    <span className="brand-wordmark">Free Roam</span>
+export function Brand() {
+  return <a className="p-brand" href="#top" aria-label="Free Roam home">
+    <img src="/free-roam/badge.png" alt="" width="240" height="240" />
+    <span>Free Roam</span>
   </a>
 }
 
-export function Header() {
-  return <header className="site-header"><Brand /><nav aria-label="Main navigation">
-    <a href="#stations">Stations</a>
-    <a href="#how-it-works">How it works</a>
-    <a href={sourceUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
-    <a className="nav-cta" href={downloadUrl}>Download for Mac</a>
-  </nav></header>
+export function OnAirTally() {
+  const { playing } = useRadio()
+  return <p className="p-tally" role="status" data-live={playing ? "" : undefined}>
+    <span className="p-tally-light" aria-hidden="true" />
+    {playing ? <><span className="p-tally-label">On air</span> <strong>{playing.playlist.name}</strong></> : <span className="p-tally-label">Radio off</span>}
+  </p>
 }
 
-export function Details() {
-  return <>
-    <section className="how-section" id="how-it-works" aria-labelledby="how-title">
-      <h2 id="how-title" className="eyebrow">How it works</h2>
-      <ol className="steps">
-        <li><h3>Hold <kbd>⌥</kbd><kbd>Q</kbd></h3><p>The wheel opens over whatever you're doing, on the station that's playing.</p></li>
-        <li><h3>Flick</h3><p>Move the mouse or scroll toward a station. Rest on one for a second and it tunes in.</p></li>
-        <li><h3>Let go</h3><p>The wheel closes and you're back to work. Choose Radio Off when you need quiet.</p></li>
-      </ol>
-      <p className="steps-aside">Just tap <kbd>⌥</kbd><kbd>Q</kbd> to skip to the next station without opening the wheel.</p>
-    </section>
-    <section className="questions" aria-labelledby="questions-title"><h2 id="questions-title">A few things to know</h2><div>
-      <details><summary>What do I need?<span aria-hidden="true">+</span></summary><p>A Mac running macOS 14 or later and the Music app. Free Roam plays the playlists in your Music app. Songs you own, imported or purchased, play without a subscription; Apple Music songs need one.</p></details>
-      <details><summary>Can I choose my own stations?<span aria-hidden="true">+</span></summary><p>Yes. Open Settings from the Mac app's menu bar to choose your playlists and put them in order. This page includes God's Favorite, High, Vibe, Culture Truth, Serbian, and Right Eyebrow, shared by the creator, alongside popular picks. It never accesses a visitor's Music library.</p></details>
-      <details><summary>Does this page play music?<span aria-hidden="true">+</span></summary><p>No, only the wheel. It's the Mac app's wheel with the same sound effects from the Mac app, which start on your first interaction and can be muted. It doesn't access your Music library or play songs. The Mac app controls playback in Music.</p></details>
-      <details><summary>How do I get the Mac app?<span aria-hidden="true">+</span></summary><p>Download the DMG, open it and drag Free Roam to Applications. It's signed and notarized by Apple, so it opens without warnings.</p><a href={downloadUrl}>Download for Mac</a></details>
-    </div></section>
-    <section className="closing" aria-labelledby="closing-title">
-      <h2 id="closing-title">Put it on your Mac.</h2>
-      <p>Free and open source under the MIT license. Signed and notarized by Apple. Needs macOS 14 or later.</p>
-      <a className="primary-action" href={downloadUrl}>Download for Mac</a>
-    </section>
-    <footer className="site-footer"><Brand /><span>Your music. A little more freedom.</span><a href={sourceUrl} target="_blank" rel="noreferrer">An independent Mac app ↗</a></footer>
-  </>
+export function DownloadButton({ size = "lg", children = "Download for Mac" }: { size?: "sm" | "md" | "lg"; children?: ReactNode }) {
+  return <a className={`p-button p-button-${size}`} href={downloadUrl}>
+    <svg className="p-apple" viewBox="0 0 814 1000" aria-hidden="true"><path fill="currentColor" d="M788 341c-6 4-108 62-108 190 0 149 130 201 134 203-1 3-21 72-69 142-43 62-88 124-156 124s-86-40-164-40c-77 0-104 41-167 41s-106-57-156-127C44 791 0 671 0 557c0-184 119-281 237-281 62 0 114 41 153 41 37 0 95-43 166-43 27 0 124 2 188 94zM554 158c29-35 50-83 50-131 0-7-1-13-2-19-47 2-103 32-137 71-27 30-52 78-52 127 0 7 1 15 2 17 3 1 8 1 13 1 42 0 95-28 126-66z" /></svg>
+    {children}
+  </a>
+}
+
+export function SoundToggle() {
+  const { audio } = useRadio()
+  return <button className="p-sound" aria-pressed={audio.enabled && !audio.error} disabled={audio.loading} onClick={audio.toggle}>
+    {audio.loading ? "Loading sounds…" : audio.error ? "Retry sound" : audio.enabled ? "Sound on" : "Sound off"}
+  </button>
 }

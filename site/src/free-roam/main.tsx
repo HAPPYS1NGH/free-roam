@@ -1,7 +1,8 @@
 import { StrictMode } from "react"
 import { createRoot, hydrateRoot } from "react-dom/client"
 import { LandingPage } from "./LandingPage"
-import "./styles.css"
+import "./page.css"
+import "./hero.css"
 
 const root = document.getElementById("root")!
 const page = <StrictMode><LandingPage /></StrictMode>

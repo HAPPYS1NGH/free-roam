@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#101514" />
+    <meta name="theme-color" content="#090f16" />
     <meta name="description" content="Turn your Music playlists into radio stations on your Mac. Hold a shortcut, change the mood, or choose a little quiet. Free Roam keeps your music a flick away." />
     <meta property="og:title" content="Free Roam | A radio for your favorite music" />
     <meta property="og:description" content="Turn your Music playlists into radio stations on your Mac. Hold a shortcut, change the mood, or choose a little quiet. Free Roam keeps your music a flick away." />
@@ -17,11 +17,25 @@
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="preload" href="/fonts/sofia-sans-extra-condensed/latin-600.woff2" as="font" type="font/woff2" crossorigin />
-    <link rel="preload" href="/free-roam/coast.jpg" as="image" />
+    <script>
+      // Picks the hero's coast photo for the visitor's hour before first paint,
+      // so only that one loads. Keep in step with timeOfDay() in Hero.tsx.
+      (function () {
+        var hour = new Date().getHours()
+        var time = hour >= 5 && hour < 8 ? "dawn" : hour >= 8 && hour < 17 ? "day" : hour >= 17 && hour < 20 ? "dusk" : "night"
+        document.documentElement.dataset.time = time
+        var link = document.createElement("link")
+        link.rel = "preload"
+        link.as = "image"
+        link.href = "/free-roam/scenes/coast-" + time + ".jpg"
+        link.setAttribute("fetchpriority", "high")
+        document.head.appendChild(link)
+      })()
+    </script>
     <title>Free Roam | A radio for your favorite music</title>
   </head>
   <body>
-    <noscript><style>.hero-try { display: none; }</style></noscript>
+    <noscript><style>.ta-try { display: none; }</style></noscript>
     <div id="root"></div>
     <script type="module" src="/src/free-roam/main.tsx"></script>
   </body>

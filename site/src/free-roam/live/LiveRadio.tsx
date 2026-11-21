@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import { onAir, useNow } from "../../broadcast"
 import type { Slot, Track } from "../../stations"
+import { useMounted } from "../../useMounted"
 import { loadYouTubeApi, type YouTubePlayer } from "./youtube-api"
 import embeddable from "./videos.json"
 
@@ -97,6 +98,7 @@ export function LiveRadio({ playing, muted, onChange }: Props) {
   // Songs that errored at runtime this visit; skipped from then on.
   const [blocked, setBlocked] = useState<ReadonlySet<string>>(() => new Set())
   const [hearing, setHearing] = useState<Loaded | null>(null)
+  const mounted = useMounted()
 
   const songs = playing ? lineup(playing.id, playing.playlist.tracks, blocked) : []
   const hasVideos = songs.some(Boolean)
@@ -311,8 +313,6 @@ export function LiveRadio({ playing, muted, onChange }: Props) {
   useEffect(() => onChange(state), [key]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // The portal needs document.body, which the prerender doesn't have.
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
   if (!mounted) return null
 
   // Rendered and on screen, so browsers keep it playing, but fully transparent,
