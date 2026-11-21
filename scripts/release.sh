@@ -47,6 +47,8 @@ Contents/Resources/MenuBarIconTemplate.png
 Contents/Resources/MenuBarIconTemplate@2x.png
 Contents/Resources/OFL.txt
 Contents/Resources/SofiaSansExtraCondensed-SemiBold.ttf
+Contents/Resources/WelcomeAfter.jpg
+Contents/Resources/WelcomeBefore.jpg
 Contents/Resources/close.wav
 Contents/Resources/hover.wav
 Contents/Resources/open.wav
