@@ -26,14 +26,8 @@ struct WelcomeContent: View {
     /// the bundle, as in `swift run`, the badge's space stays empty, so the
     /// window keeps its size.
     static let bundledBadge = NSImage(named: "FreeRoamBadge")
-    /// The wheel over the same screen without and with Screen Recording,
-    /// rendered by `scripts/make-welcome-previews.sh`.
-    static let bundledPreviews = NSImage(named: "WelcomeBefore").flatMap { before in
-        NSImage(named: "WelcomeAfter").map { (before: before, after: $0) }
-    }
 
     var badge = WelcomeContent.bundledBadge
-    var previews = WelcomeContent.bundledPreviews
     let musicAllowed: Bool
     let screenRecordingAllowed: Bool
     var isAskingForMusic = false
@@ -77,15 +71,15 @@ struct WelcomeContent: View {
                     name: "Screen Recording",
                     isOptional: true,
                     details: [
-                        "Fades the screen behind the wheel so your stations stand out.",
+                        """
+                        Fades the colour from the screen behind the wheel so your stations stand out. \
+                        Without it, the wheel still works with a light tint.
+                        """,
                         // Captures happen as ⌥Q goes down, and once per display at
                         // launch or when it's connected to warm up. All stay in memory.
-                        """
-                        macOS will say Free Roam can record your screen. It only takes a still as you hold ⌥Q, \
-                        and never saves or sends it. macOS may ask you to reopen Free Roam after you allow it.
-                        """,
+                        "Free Roam only uses the screen to draw the wheel's background. It never saves or sends what it sees.",
+                        "macOS may ask you to reopen Free Roam after you allow it.",
                     ],
-                    preview: AnyView(ScreenRecordingPreview(previews: previews)),
                     isAllowed: screenRecordingAllowed,
                     allow: allowScreenRecording
                 )
@@ -113,8 +107,6 @@ private struct PermissionRow: View {
     let name: String
     var isOptional = false
     let details: [String]
-    /// Between the first line of details and the rest.
-    var preview: AnyView?
     let isAllowed: Bool
     var isAsking = false
     let allow: () -> Void
@@ -144,7 +136,6 @@ private struct PermissionRow: View {
                 }
                 .frame(height: Self.titleHeight)
                 ForEach(details, id: \.self) { detail in
-                    if detail == details.dropFirst().first, let preview { preview }
                     Text(detail)
                         .font(detail == details.first ? .body : .callout)
                         .foregroundStyle(.secondary)
@@ -157,39 +148,4 @@ private struct PermissionRow: View {
 
     /// Tall enough for the Allow button.
     private nonisolated static let titleHeight = 24.0
-}
-
-/// The wheel over the same screen without and with Screen Recording. Without
-/// the bundle, as in `swift run`, the frames stay empty, so the window keeps
-/// its size.
-private struct ScreenRecordingPreview: View {
-    let previews: (before: NSImage, after: NSImage)?
-
-    var body: some View {
-        HStack(spacing: 8) {
-            frame(previews?.before, label: "Without")
-            frame(previews?.after, label: "With")
-        }
-        .padding(.vertical, 2)
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("The wheel over a light tint without Screen Recording, and over a faded screen with it")
-    }
-
-    private func frame(_ image: NSImage?, label: String) -> some View {
-        VStack(spacing: 4) {
-            Group {
-                if let image {
-                    Image(nsImage: image).resizable().interpolation(.high)
-                } else {
-                    Color.clear
-                }
-            }
-            .aspectRatio(1000.0 / 640.0, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 6))
-            .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.separator))
-            Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
 }
