@@ -467,3 +467,12 @@ The user's brief: the page's wheel felt bigger than the app's and didn't sound l
 - Pointer: the app freezes the pointer while the wheel is open and picks from mouse movement alone. On the page the pointer stayed visible, so aiming at a disc moved the pick somewhere else, ticked, and retuned after the 1 s rest. The page now hides the pointer over the open wheel and a click stands in for letting go of ⌥Q. Touch screens skip that layer and tap the discs.
 - Choosing from outside the wheel, with Radio Off or the station list, no longer plays the close sound, which the app never does.
 - The sound code was already a line-for-line port. Music's volume dip while the wheel is open has nothing to dip on the page, which plays no music.
+
+## 2026-11-21: The site plays the app's own sound files
+
+The user's brief: use exactly the sounds the Free Roam Mac app plays.
+
+- The app the user runs bundles the four files in the gitignored `prototype/public/sounds/local/`, because `scripts/bundle.sh` prefers them, so it never sounded like the site's synthesised set.
+- `scripts/public-assets.mjs` now applies the same rule: each of open, close, hover and the retune take comes from `sounds/local/` when it's there and from the synthesised file otherwise, published as `sounds/<name>.wav`. The `sounds/local/` path itself still never ships, and the release check no longer rejects copies of it.
+- A test compares the site's four files with the ones in `dist/Free Roam.app` when that build exists.
+- The files stay gitignored, so a host that builds from git falls back to the synthesised sounds. To publish the app's sounds, build on the Mac that has them. This reverses the earlier rule that the site plays only redistributable sounds. That was the user's call, made knowing the repo had marked the local pack as not redistributable.

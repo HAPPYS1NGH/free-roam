@@ -37,8 +37,8 @@ function loadInto(decoder: BaseAudioContext, buffers: Map<SoundName, AudioBuffer
   )
 }
 
-// The synthesised sounds a release of the app ships. Never the local pack:
-// the public site may only play sounds we can redistribute.
+// The site's four sounds: whatever the Mac app bundles, which
+// scripts/public-assets.mjs copies to /sounds/ under the same names.
 export function preloadProductSounds(): Promise<void> {
   if (productPreloading) return productPreloading
   const decoder = new OfflineAudioContext(1, 1, 44100)

@@ -10,10 +10,11 @@ const dist = fileURLToPath(new URL('../dist/', import.meta.url))
 const files = listFiles(dist)
 const sha256 = path => createHash('sha256').update(readFileSync(path)).digest('hex')
 // Gitignored files on the building Mac that must never ship, even under another
-// name. A host's checkout has neither folder, so there it can only report a skip.
+// name. A host's checkout has no wallpaper, so there it can only report a skip.
+// sounds/local/ isn't here: the site ships the same sounds the Mac app bundles.
 const publicDir = fileURLToPath(new URL('../public/', import.meta.url))
 const privateCopies = new Map()
-for (const folder of ['sounds/local', 'wallpaper']) {
+for (const folder of ['wallpaper']) {
   const root = join(publicDir, folder)
   const privateFiles = existsSync(root) ? listFiles(root) : []
   if (privateFiles.length === 0) {

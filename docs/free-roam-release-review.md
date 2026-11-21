@@ -68,7 +68,7 @@ God's Favorite, gym, PLow, and Morning Playlist use only their approved snapshot
 - On a physical phone, tap stations and check controls around the notch and home indicator, including landscape.
 - With VoiceOver, verify station announcements and keyboard focus.
 - On the deployed domain, open both routes in a private window over cellular and check social previews.
-- Listen to the web demo next to an app built without the local sound pack. File hashes, settings and code match, but nobody has compared them by ear.
+- Superseded on 2026-11-21: the site now plays the same files as the Mac app, local pack included, and a test compares them byte for byte with the built app. Listen to the web demo next to an app built without the local sound pack. File hashes, settings and code match, but nobody has compared them by ear.
 
 ## Needs a human
 
