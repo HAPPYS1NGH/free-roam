@@ -163,3 +163,72 @@ struct StationListTests {
         #expect(stations.onWheel == library(2))
     }
 }
+
+/// Music and Spotify each keep their own stations.
+@MainActor
+struct StationListPerAppTests {
+    private let defaults: UserDefaults
+
+    init() throws {
+        let suite = "StationListPerAppTests.\(UUID().uuidString)"
+        defaults = try #require(UserDefaults(suiteName: suite))
+        defaults.removePersistentDomain(forName: suite)
+    }
+
+    private func playlist(_ id: String) -> Playlist {
+        Playlist(id: id, name: "Playlist \(id)")
+    }
+
+    @Test func musicKeepsItsOriginalKeysAndSpotifyHasItsOwn() {
+        #expect(StationList.defaultsKey(for: .music) == "stations")
+        #expect(StationList.libraryKey(for: .music) == "library")
+        #expect(StationList.defaultsKey(for: .spotify) == "spotify.stations")
+        #expect(StationList.libraryKey(for: .spotify) == "spotify.library")
+    }
+
+    @Test func eachAppSavesToItsOwnKeys() {
+        let music = StationList(defaults: defaults, app: .music)
+        music.update(library: [playlist("A")])
+        music.setOn(false, id: "A")
+        #expect(defaults.data(forKey: "stations") != nil)
+        #expect(defaults.data(forKey: "library") != nil)
+        #expect(defaults.data(forKey: "spotify.stations") == nil)
+        #expect(defaults.data(forKey: "spotify.library") == nil)
+
+        let spotify = StationList(defaults: defaults, app: .spotify)
+        spotify.update(library: [playlist("B")])
+        #expect(defaults.data(forKey: "spotify.library") != nil)
+        // Spotify's list didn't touch Music's.
+        #expect(StationList(defaults: defaults, app: .music).onWheel.isEmpty)
+        #expect(StationList(defaults: defaults, app: .spotify).onWheel == [playlist("B")])
+    }
+
+    @Test func switchingSwapsInTheOtherAppsStations() {
+        let stations = StationList(defaults: defaults, app: .music)
+        stations.update(library: [playlist("A"), playlist("C")])
+        stations.setOn(false, id: "C")
+
+        var wheels: [[Playlist]] = []
+        stations.onChange = { wheels.append($0) }
+        stations.switchApp(to: .spotify)
+        #expect(stations.app == .spotify)
+        #expect(stations.library == nil)
+        #expect(stations.choice == nil)
+        #expect(stations.onWheel.isEmpty)
+        #expect(wheels.last == [])
+
+        stations.update(library: [playlist("B")])
+        stations.switchApp(to: .music)
+        #expect(stations.library == nil)
+        // Music's saved choice is back before its playlists have loaded.
+        #expect(stations.onWheel == [playlist("A")])
+        #expect(wheels.last == [playlist("A")])
+    }
+
+    @Test func switchingToTheSameAppChangesNothing() {
+        let stations = StationList(defaults: defaults, app: .music)
+        stations.update(library: [playlist("A")])
+        stations.switchApp(to: .music)
+        #expect(stations.library == [playlist("A")])
+    }
+}

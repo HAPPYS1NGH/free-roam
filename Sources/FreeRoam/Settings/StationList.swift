@@ -4,17 +4,18 @@ import SwiftUI
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "stations")
 
 /// Which playlists are on the wheel, and in what order. Until you change
-/// anything in Settings, the wheel follows Music's library order, as last
-/// read. From then on your choice is saved by persistent ID, which survives
+/// anything in Settings, the wheel follows the app's library order, as last
+/// read. Music and Spotify each keep their own stations, and the list follows
+/// whichever one is picked. From then on your choice is saved by persistent ID, which survives
 /// renames, with each name. Either way the wheel has its stations before
 /// Music has started.
 @MainActor @Observable
 final class StationList {
     /// A playlist as Settings lists it, on the wheel or switched off.
     struct Entry: Codable, Hashable, Identifiable, Sendable {
-        /// Music's persistent ID.
+        /// The app's persistent ID for the playlist.
         let id: String
-        /// The name Music last listed it with.
+        /// The name the app last listed it with.
         var name: String
         var isOn: Bool
         /// Not in Music's latest list, so it's off the wheel and out of
@@ -25,7 +26,9 @@ final class StationList {
         var isMissing = false
     }
 
-    /// Music's playlists in library order. Nil until they've loaded.
+    /// The app the list follows.
+    private(set) var app: MusicApp
+    /// The app's playlists in library order. Nil until they've loaded.
     private(set) var library: [Playlist]?
     /// The library as Music last listed it, saved for the wheel to follow
     /// until Music's playlists load, while you haven't made a choice.
@@ -43,13 +46,46 @@ final class StationList {
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var loading: Task<Void, Never>?
 
-    private static let defaultsKey = "stations"
-    private static let libraryKey = "library"
+    private var defaultsKey: String { Self.defaultsKey(for: app) }
+    private var libraryKey: String { Self.libraryKey(for: app) }
 
-    init(defaults: UserDefaults = .standard) {
+    /// Music keeps the keys it always had, so a setup from before Spotify
+    /// carries on as it was.
+    nonisolated static func defaultsKey(for app: MusicApp) -> String {
+        switch app {
+        case .music: "stations"
+        case .spotify: "spotify.stations"
+        }
+    }
+
+    nonisolated static func libraryKey(for app: MusicApp) -> String {
+        switch app {
+        case .music: "library"
+        case .spotify: "spotify.library"
+        }
+    }
+
+    init(defaults: UserDefaults = .standard, app: MusicApp = .current) {
         self.defaults = defaults
-        choice = Self.saved([Entry].self, forKey: Self.defaultsKey, in: defaults)
-        lastLibrary = Self.saved([Playlist].self, forKey: Self.libraryKey, in: defaults)
+        self.app = app
+        choice = Self.saved([Entry].self, forKey: Self.defaultsKey(for: app), in: defaults)
+        lastLibrary = Self.saved([Playlist].self, forKey: Self.libraryKey(for: app), in: defaults)
+    }
+
+    /// Follows another app: its saved stations replace the current ones, and
+    /// its playlists load again. A read for the app left behind is dropped
+    /// when it finishes.
+    func switchApp(to newApp: MusicApp) {
+        guard newApp != app else { return }
+        loading?.cancel()
+        loading = nil
+        app = newApp
+        library = nil
+        loadError = nil
+        choice = Self.saved([Entry].self, forKey: defaultsKey, in: defaults)
+        lastLibrary = Self.saved([Playlist].self, forKey: libraryKey, in: defaults)
+        onChange(onWheel)
+        reload()
     }
 
     /// The stations on the wheel, in order.
@@ -61,7 +97,7 @@ final class StationList {
         return entries.filter { $0.isOn && !$0.isMissing }.map { Playlist(id: $0.id, name: $0.name) }
     }
 
-    /// Every playlist in Music: the wheel's order, with the ones that are
+    /// Every playlist in the app: the wheel's order, with the ones that are
     /// off where they were when they went off. Empty until Music's playlists
     /// have loaded.
     var entries: [Entry] {
@@ -74,12 +110,12 @@ final class StationList {
         return choice ?? Self.libraryOrder(library)
     }
 
-    /// Reads Music's playlists again. Does nothing while Music isn't running.
+    /// Reads the app's playlists again. Does nothing while it isn't running.
     func reload() {
         load(launchingMusic: false)
     }
 
-    /// For Settings, which lists every playlist: launches Music without
+    /// For Settings, which lists every playlist: launches the app without
     /// bringing it to the front if it isn't running.
     func loadLaunchingMusic() {
         load(launchingMusic: true)
@@ -112,7 +148,7 @@ final class StationList {
         guard let changed = Self.removingMissingStations(from: allEntries) else { return }
         save(changed)
         onChange(onWheel)
-        log.notice("Took the stations missing from Music off the wheel")
+        log.notice("Took the stations missing from \(self.app.name, privacy: .public) off the wheel")
     }
 
     /// Moves a station to `index` in the wheel's order.
@@ -130,7 +166,7 @@ final class StationList {
         if library != playlists { library = playlists }
         if !playlists.isEmpty, playlists != lastLibrary {
             lastLibrary = playlists
-            save(playlists, forKey: Self.libraryKey)
+            save(playlists, forKey: libraryKey)
         }
         // An empty list is far more likely a library that hasn't loaded than
         // every playlist deleted, and taking it would hide every station.
@@ -242,21 +278,25 @@ final class StationList {
     }
 
     private func load(launchingMusic: Bool) {
-        guard loading == nil, launchingMusic || MusicApp.bridge.isRunning else { return }
+        let loadingApp = app
+        guard loading == nil, launchingMusic || loadingApp.bridge.isRunning else { return }
         loading = Task {
-            defer { loading = nil }
+            defer { if app == loadingApp { loading = nil } }
             do {
-                if !MusicApp.bridge.isRunning {
-                    try await MusicApp.bridge.launch()
-                    log.notice("Launched Music to list its playlists")
+                if !loadingApp.bridge.isRunning {
+                    try await loadingApp.bridge.launch()
+                    log.notice("Launched \(loadingApp.name, privacy: .public) to list its playlists")
                 }
                 let clock = ContinuousClock()
                 let started = clock.now
-                let playlists = try await MusicApp.bridge.playlists()
+                let playlists = try await loadingApp.bridge.playlists()
+                // The app was switched while this read waited.
+                guard app == loadingApp else { return }
                 log.notice("Read \(playlists.count) playlists in \((clock.now - started) / .milliseconds(1), format: .fixed(precision: 0)) ms")
                 update(library: playlists)
                 loadError = nil
             } catch {
+                guard app == loadingApp else { return }
                 loadError = error
                 log.error("Couldn't load the playlists: \(String(describing: error), privacy: .public)")
             }
@@ -274,16 +314,16 @@ final class StationList {
                 continue
             }
             if entry.isMissing, !old.isMissing {
-                log.notice("\(entry.name, privacy: .public) is missing from Music, so it's hidden")
+                log.notice("\(entry.name, privacy: .public) is missing from \(self.app.name, privacy: .public), so it's hidden")
             } else if !entry.isMissing, old.isMissing {
-                log.notice("\(entry.name, privacy: .public) is back in Music, in its old place")
+                log.notice("\(entry.name, privacy: .public) is back in \(self.app.name, privacy: .public), in its old place")
             }
         }
     }
 
     private func save(_ entries: [Entry]) {
         choice = entries
-        save(entries, forKey: Self.defaultsKey)
+        save(entries, forKey: defaultsKey)
     }
 
     private func save(_ value: some Encodable, forKey key: String) {
