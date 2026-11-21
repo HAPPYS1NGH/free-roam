@@ -6,8 +6,8 @@
 
 <p align="center">Your Music playlists on a radio wheel. Hold ⌥Q, flick, let go.</p>
 
-<!-- Demo GIF: save the recording as docs/media/demo.gif, then replace this comment with
-<p align="center"><img src="docs/media/demo.gif" width="720" alt="Holding Option-Q opens the radio wheel over the desktop, a flick picks a playlist, and Music switches to it"></p>
+<!-- Demo GIF: save the recording as media/demo.gif, then replace this comment with
+<p align="center"><img src="media/demo.gif" width="720" alt="Holding Option-Q opens the radio wheel over the desktop, a flick picks a playlist, and Music switches to it"></p>
 -->
 
 Hold ⌥Q and a radio wheel pops up over whatever you're doing. Flick the mouse toward a station, let go, and Apple Music switches playlist with a burst of radio static.
@@ -20,8 +20,6 @@ It's a macOS menu bar app inspired by the radio and weapon wheels in open-world 
 - [ ] Mac app: radio wheel
 - [ ] Weapon wheel (after v1)
 - [ ] v1.0 release
-
-The full plan is in [docs/PLAN.md](docs/PLAN.md).
 
 ## Try the web demo
 
@@ -50,7 +48,7 @@ Set `SITE_URL` to the chosen HTTPS origin, without a path, then run `npm run bui
 
 Publish only `prototype/dist/` to a static host that serves directory `index.html` files. The site is the single page at `/`. Keep missing assets and `/studio.html` as 404s instead of rewriting every URL to the demo. A host's build command is `npm run build:release` with root directory `prototype` and output directory `dist`. Use the committed npm lockfile with `npm ci` for reproducible installation.
 
-The website links to source-build instructions. A downloadable, signed native app is a separate release. See [the launch review](docs/free-roam-release-review.md) for the final device and deployed checks.
+The website links to source-build instructions. A downloadable, signed native app is a separate release.
 
 ## Local design studio
 
@@ -66,8 +64,6 @@ npm run studio    # opens /studio.html with DialKit
 This explicit studio mode serves the original `public/` directory, including any personal exports. Keep it local and never publish that directory. Exported libraries and wallpapers remain gitignored. The studio can export settings to `tokens.json` for the native renderer.
 
 The circular Free Roam badge is `prototype/public/free-roam/app-icon.png`, a transparent PNG with no FM suffix. It's the source for everything else: the website's 48 KB header copy, favicon, home screen icon and social card, the Mac app's icon on a navy plate, its menu bar item, and the launch images. `scripts/make-brand-assets.sh` regenerates them all from the badge and the coast photo. Logo prompts are saved in `output/branding/free-roam/`.
-
-Design decisions and verification are in [docs/free-roam-design.md](docs/free-roam-design.md).
 
 ## Build the Mac app
 

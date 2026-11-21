@@ -26,3 +26,6 @@ prototype/public/library/
 # Your desktop picture (prototype only)
 prototype/public/wallpaper/
 
+
+# Project notes stay local
+docs/
