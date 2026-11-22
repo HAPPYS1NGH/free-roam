@@ -78,6 +78,7 @@ enum SpotifyCLI {
     private static let libraryQueue = DispatchQueue(label: "com.happys1ngh.freeroam.spotify-cli.library")
     /// A command answers in about a quarter of a second.
     private static let timeout: TimeInterval = 15
+    private static let killGrace: TimeInterval = 2
 
     /// Runs the tool with `arguments` and returns what it printed.
     @discardableResult
@@ -96,6 +97,13 @@ enum SpotifyCLI {
     }
 
     private static func runNow(_ tool: URL, _ arguments: [String]) throws -> Data {
+        // The cached check in `executable` says the tool is there. This one,
+        // a few milliseconds before launch, makes sure a copy swapped in since
+        // can't run with Free Roam's permissions.
+        guard isSignedBySpotify(tool) else {
+            log.error("Not running Spotify's command-line tool: Spotify didn't sign it")
+            throw Failure.missing
+        }
         let process = Process()
         process.executableURL = tool
         process.arguments = arguments
@@ -109,6 +117,12 @@ enum SpotifyCLI {
             guard process.isRunning else { return }
             log.error("Spotify's command-line tool took too long, so Free Roam stopped it")
             process.terminate()
+            // A tool that ignores SIGTERM would keep its pipes open and hold
+            // up every command behind it on the lane.
+            let pid = process.processIdentifier
+            DispatchQueue.global().asyncAfter(deadline: .now() + killGrace) {
+                if process.isRunning { kill(pid, SIGKILL) }
+            }
         }
         DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: timer)
         // Both pipes are read before waiting, so a full pipe can't stall the tool.
@@ -305,13 +319,27 @@ extension SpotifyCLI {
         (queue.next_tracks ?? []).prefix { $0.provider == "queue" }.count
     }
 
-    /// Takes every added song out of the queue. A song queued for the last
-    /// station would otherwise play after the next station's song.
+    /// Songs Free Roam put in the queue that may still be there.
+    private static let enqueued = OSAllocatedUnfairLock<Set<String>>(initialState: [])
+
+    /// The indexes of the added songs that Free Roam queued, last first, so
+    /// each removal leaves the indexes before it where they were. Songs you
+    /// queued in Spotify stay.
+    static func indexesToRemove(in queue: Queue, ours: Set<String>) -> [Int] {
+        let added = (queue.next_tracks ?? []).prefix { $0.provider == "queue" }
+        return added.indices.filter { ours.contains(added[$0].uri) }.reversed()
+    }
+
+    /// Takes the songs Free Roam queued out of the queue. A song queued for
+    /// the last station would otherwise play after the next station's song.
     static func clearQueue() async throws {
         let queue = try await decode(Queue.self, ["queue", "list"], lane: .player)
-        for _ in 0..<queuedCount(in: queue) {
-            try await run(["queue", "remove", "0"], lane: .player)
+        let ours = enqueued.withLock { $0 }
+        for index in indexesToRemove(in: queue, ours: ours) {
+            try await run(["queue", "remove", "\(index)"], lane: .player)
         }
+        // The rest have played, or were taken out just now.
+        enqueued.withLock { $0.subtract(ours) }
     }
 
     static func play(_ uri: String) async throws {
@@ -324,6 +352,7 @@ extension SpotifyCLI {
     static func enqueue(_ uri: String) async throws {
         guard SpotifyURI.isTrack(uri) else { throw MusicBridgeError.invalidPersistentID(uri) }
         try await run(["queue", "add", uri], lane: .player)
+        enqueued.withLock { _ = $0.insert(uri) }
     }
 
     /// Spotify answers scripts a moment before the tool can reach it, so a

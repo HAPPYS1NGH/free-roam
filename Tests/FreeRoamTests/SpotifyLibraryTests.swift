@@ -135,6 +135,23 @@ struct SpotifyCLITests {
         #expect(SpotifyCLI.queuedCount(in: try decode(SpotifyCLI.Queue.self, "{}")) == 0)
     }
 
+    @Test func takesOutOnlyTheSongsFreeRoamQueued() throws {
+        let yours = "spotify:track:3z9y6N0U84V1tAF0kaFylH"
+        let ours = "spotify:track:1jFtGMCWES8Z9UfivWVhuy"
+        let later = "spotify:track:7vUfIIQiH3K3J5tmN46HE5"
+        let queue = try decode(SpotifyCLI.Queue.self, """
+            {"next_tracks":[
+               {"uri":"\(ours)","provider":"queue"},
+               {"uri":"\(yours)","provider":"queue"},
+               {"uri":"\(ours)","provider":"queue"},
+               {"uri":"\(later)","provider":"context"}
+             ]}
+            """)
+        // Last first, so each removal leaves the earlier indexes in place.
+        #expect(SpotifyCLI.indexesToRemove(in: queue, ours: [ours, later]) == [2, 0])
+        #expect(SpotifyCLI.indexesToRemove(in: queue, ours: []) == [])
+    }
+
     @Test func tellsSpotifyNotRunningFromOtherFailures() {
         #expect(SpotifyCLI.failure(message: "Spotify desktop client is not running") as? MusicBridgeError == .notRunning)
         #expect(SpotifyCLI.failure(message: "playlist get failed: client connection failed") as? SpotifyCLI.Failure
