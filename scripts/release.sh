@@ -4,12 +4,20 @@
 #
 #   scripts/release.sh
 #
-# Writes dist/Free Roam-<version>.dmg and dist/Free Roam-<version>.dmg.sha256,
-# with the version from Sources/FreeRoam/Info.plist.
+# Writes dist/Free Roam-<version>.dmg, its .sha256 checksum, a copy named
+# dist/FreeRoam.dmg for the stable download link, and dist/appcast.xml, the
+# feed Sparkle checks for updates. The version comes from
+# Sources/FreeRoam/Info.plist. All four go on a GitHub release tagged
+# v<version>, and the script prints the command.
 #
 # Notarization uses the notarytool keychain profile "freeroam-notary". Create
 # it once with `xcrun notarytool store-credentials freeroam-notary`; the
 # credentials stay in the keychain and this script never sees them.
+#
+# Updates are signed with the EdDSA key that Sparkle's generate_keys saved in
+# the keychain under SPARKLE_ACCOUNT, whose public half is SUPublicEDKey in
+# Info.plist. Back it up with `generate_keys --account <account> -x <file>`:
+# without it, copies already installed can never be sent another update.
 #
 # ALLOW_DIRTY=1 builds even with uncommitted changes to the app's files.
 set -euo pipefail
@@ -17,14 +25,17 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 NOTARY_PROFILE="freeroam-notary"
+SPARKLE_ACCOUNT="com.happys1ngh.freeroam"
+REPO="HAPPYS1NGH/free-roam"
 VERSION="$(plutil -extract CFBundleShortVersionString raw Sources/FreeRoam/Info.plist)"
+MIN_MACOS="$(plutil -extract LSMinimumSystemVersion raw Sources/FreeRoam/Info.plist)"
 APP="$PWD/dist/Free Roam.app"
 DMG="$PWD/dist/Free Roam-$VERSION.dmg"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
 # Everything that ends up in the app. A release is built from what's committed.
-APP_SOURCES=(Package.swift Sources assets site/tokens.json scripts/bundle.sh scripts/FreeRoam.entitlements)
+APP_SOURCES=(Package.swift Package.resolved Sources assets site/tokens.json scripts/bundle.sh scripts/FreeRoam.entitlements)
 if [[ -n "$(git status --porcelain -- "${APP_SOURCES[@]}")" && "${ALLOW_DIRTY:-}" != 1 ]]; then
   echo "error: uncommitted changes to the app's files. Commit them, or set ALLOW_DIRTY=1:" >&2
   git status --short -- "${APP_SOURCES[@]}" >&2
@@ -38,7 +49,9 @@ scripts/bundle.sh --release
 # so anything else means a copy step picked up something it shouldn't have.
 EXPECTED="$WORK/expected.txt"
 ACTUAL="$WORK/actual.txt"
-sort > "$EXPECTED" <<'EOF'
+SPARKLE_SOURCE="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)/Sparkle.framework"
+{
+cat <<'EOF'
 Contents/Info.plist
 Contents/MacOS/FreeRoam
 Contents/Resources/AppIcon.icns
@@ -56,6 +69,12 @@ Contents/Resources/retune.wav
 Contents/Resources/tokens.json
 Contents/_CodeSignature/CodeResources
 EOF
+# Plus Sparkle's own files as SwiftPM downloaded them, less the parts
+# bundle.sh leaves out.
+(cd "$SPARKLE_SOURCE" && find . -type f | sed 's|^\./||') \
+  | grep -Ev '^Versions/B/(XPCServices|Headers|PrivateHeaders|Modules)/' \
+  | sed 's|^|Contents/Frameworks/Sparkle.framework/|'
+} | sort > "$EXPECTED"
 (cd "$APP" && find . -type f | sed 's|^\./||' | sort) > "$ACTUAL"
 if ! diff -u "$EXPECTED" "$ACTUAL" >&2; then
   echo "error: the app bundle's files don't match the release allowlist above" >&2
@@ -123,5 +142,45 @@ notarize "$DMG"
 xcrun stapler staple "$DMG"
 
 (cd dist && shasum -a 256 "$(basename "$DMG")" > "$(basename "$DMG").sha256")
+cp "$DMG" dist/FreeRoam.dmg
+
+# --- Appcast -----------------------------------------------------------------
+# The feed lists only this release. Sparkle compares CFBundleVersion, the
+# commit count, so each release from main is newer than the one before.
+BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"
+SIGN_UPDATE=".build/artifacts/sparkle/Sparkle/bin/sign_update"
+GENERATE_KEYS=".build/artifacts/sparkle/Sparkle/bin/generate_keys"
+# A different key in the keychain would sign an update that every installed
+# copy rejects, so the keychain's key must match the one the app ships with.
+APP_KEY="$(plutil -extract SUPublicEDKey raw "$APP/Contents/Info.plist")"
+KEYCHAIN_KEY="$("$GENERATE_KEYS" --account "$SPARKLE_ACCOUNT" -p)"
+if [[ "$KEYCHAIN_KEY" != "$APP_KEY" ]]; then
+  echo "error: the Sparkle key in the keychain ($KEYCHAIN_KEY) isn't SUPublicEDKey in Info.plist ($APP_KEY)" >&2
+  exit 1
+fi
+# Prints sparkle:edSignature="…" length="…", the enclosure's attributes.
+SIGNATURE="$("$SIGN_UPDATE" --account "$SPARKLE_ACCOUNT" dist/FreeRoam.dmg)"
+cat > dist/appcast.xml <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
+  <channel>
+    <title>Free Roam</title>
+    <item>
+      <title>$VERSION</title>
+      <pubDate>$(LC_ALL=C date -u "+%a, %d %b %Y %H:%M:%S +0000")</pubDate>
+      <sparkle:version>$BUILD</sparkle:version>
+      <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
+      <sparkle:minimumSystemVersion>$MIN_MACOS</sparkle:minimumSystemVersion>
+      <link>https://github.com/$REPO/releases/tag/v$VERSION</link>
+      <enclosure url="https://github.com/$REPO/releases/download/v$VERSION/FreeRoam.dmg" type="application/octet-stream" $SIGNATURE />
+    </item>
+  </channel>
+</rss>
+EOF
+xmllint --noout dist/appcast.xml
+
 echo "Released $DMG"
 cat "$DMG.sha256"
+echo "Publish it with:"
+echo "  gh release create v$VERSION -R $REPO --target $(git rev-parse HEAD) --title \"Free Roam $VERSION\" \\"
+echo "    dist/FreeRoam.dmg dist/appcast.xml \"dist/$(basename "$DMG")\" \"dist/$(basename "$DMG").sha256\""

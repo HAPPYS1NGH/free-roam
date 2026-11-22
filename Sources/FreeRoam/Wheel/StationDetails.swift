@@ -120,7 +120,8 @@ final class StationDetails {
     }
 
     private func startLoading() {
-        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicBridge.isRunning else { return }
+        // Never the first script to reach the app, so it doesn't prompt.
+        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicApp.bridge.canReadPlaylistsWithoutAsking else { return }
         loading = Task {
             await loadQueued()
             loading = nil
@@ -129,7 +130,7 @@ final class StationDetails {
 
     /// Stations first, then the logos Settings asked for.
     private func loadQueued() async {
-        while MusicBridge.isRunning, !Task.isCancelled {
+        while MusicApp.bridge.canReadPlaylists, !Task.isCancelled {
             if !queued.isEmpty {
                 await loadStations()
             } else if let id = requested.first {
@@ -152,9 +153,9 @@ final class StationDetails {
             let started = clock.now
             let batch = queued
             for id in batch {
-                guard MusicBridge.isRunning else { break }
+                guard MusicApp.bridge.canReadPlaylists else { break }
                 do {
-                    let stationTracks = try await MusicBridge.tracks(playlistID: id)
+                    let stationTracks = try await MusicApp.bridge.tracks(playlistID: id)
                     // An empty playlist isn't kept, so it's read again on the
                     // next open in case it has tracks by then.
                     tracks[id] = stationTracks.isEmpty ? nil : stationTracks
@@ -167,7 +168,7 @@ final class StationDetails {
             let tracksLoaded = clock.now
             var covers = 0
             for id in batch {
-                guard MusicBridge.isRunning, let stationTracks = tracks[id] else { continue }
+                guard MusicApp.bridge.canReadPlaylists, let stationTracks = tracks[id] else { continue }
                 let data = await coverData(id, tracks: Self.coverTracks(stationTracks))
                 covers += data.count
                 logos[id] = await Self.logo(from: data)
@@ -188,7 +189,7 @@ final class StationDetails {
         guard await mayRead(for: id) else { return }
         let summary: (trackCount: Int, albums: [String])
         do {
-            summary = try await MusicBridge.trackCountAndAlbums(playlistID: id)
+            summary = try await MusicApp.bridge.trackCountAndAlbums(playlistID: id)
         } catch {
             log.error("Couldn't read the albums of \(id, privacy: .public) for Settings: \(String(describing: error), privacy: .public)")
             // Tried again when its tile next comes on screen.
@@ -229,7 +230,7 @@ final class StationDetails {
                 return false
             }
         }
-        return queued.isEmpty && requested.contains(id) && MusicBridge.isRunning
+        return queued.isEmpty && requested.contains(id) && MusicApp.bridge.canReadPlaylists
     }
 
     /// The covers of the given 1-based tracks that have one.
@@ -237,7 +238,7 @@ final class StationDetails {
         var covers: [Data] = []
         for track in picks {
             do {
-                if let data = try await MusicBridge.artwork(playlistID: id, track: track) { covers.append(data) }
+                if let data = try await MusicApp.bridge.artwork(playlistID: id, track: track) { covers.append(data) }
             } catch {
                 log.error("Couldn't read the artwork of track \(track) in \(id, privacy: .public): \(String(describing: error), privacy: .public)")
             }

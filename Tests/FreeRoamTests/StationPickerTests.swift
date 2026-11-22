@@ -71,6 +71,7 @@ struct StationPickerTests {
     @Test func saysHowManyStationsMusicDidNotList() {
         #expect(StationPicker.countText(stations: 12, missing: 0) == "12 of 25 on the wheel")
         #expect(StationPicker.countText(stations: 23, missing: 2) == "23 of 25 on the wheel · 2 not found in Music")
+        #expect(StationPicker.countText(stations: 23, missing: 2, app: .spotify) == "23 of 25 on the wheel · 2 not found in Spotify")
     }
 
     // MARK: Reordering

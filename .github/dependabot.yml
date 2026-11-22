@@ -1,0 +1,29 @@
+# Opens PRs for dependency updates. Security fixes come as soon as GitHub
+# knows about them; version bumps are grouped weekly to keep the noise down.
+version: 2
+updates:
+  # Sparkle, the app's only dependency, pinned to an exact version.
+  - package-ecosystem: swift
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build(deps)
+
+  # The website.
+  - package-ecosystem: npm
+    directory: /site
+    schedule:
+      interval: weekly
+    groups:
+      site:
+        patterns: ["*"]
+    commit-message:
+      prefix: build(site)
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

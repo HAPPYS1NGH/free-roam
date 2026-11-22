@@ -1,0 +1,32 @@
+# Builds the app and runs its tests on every pull request and on main. The
+# "Build and test" job is a required check in the main branch ruleset, so it
+# runs on every PR, site-only ones too: a path filter would leave those PRs
+# waiting on a check that never starts.
+name: App
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and test
+    # Xcode 26 brings Swift 6.2, which Package.swift needs.
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Swift version
+        run: swift --version
+      - name: Build
+        run: swift build
+      - name: Test
+        run: swift test

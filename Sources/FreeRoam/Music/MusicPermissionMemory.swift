@@ -9,22 +9,29 @@ private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "music"
 /// up: each permission check, including the menu's, each script Music ran,
 /// and each one it refused.
 enum MusicPermissionMemory {
-    private static let key = "musicControlAllowed"
+    /// Each app has its own answer. Music's key stays the one it always was.
+    private static func key(for app: MusicApp) -> String {
+        switch app {
+        case .music: "musicControlAllowed"
+        case .spotify: "spotifyControlAllowed"
+        }
+    }
 
-    static func lastAnswer(in defaults: UserDefaults = .standard) -> Bool {
-        defaults.bool(forKey: key)
+    static func lastAnswer(for app: MusicApp = .music, in defaults: UserDefaults = .standard) -> Bool {
+        defaults.bool(forKey: key(for: app))
     }
 
     /// Ignores a check that couldn't reach Music.
-    static func record(_ permission: MusicPermission, in defaults: UserDefaults = .standard) {
+    static func record(_ permission: MusicPermission, for app: MusicApp = .music, in defaults: UserDefaults = .standard) {
         guard let allowed = permission.isAllowed else { return }
-        record(allowed: allowed, in: defaults)
+        record(allowed: allowed, for: app, in: defaults)
     }
 
-    static func record(allowed: Bool, in defaults: UserDefaults = .standard) {
+    static func record(allowed: Bool, for app: MusicApp = .music, in defaults: UserDefaults = .standard) {
+        let key = key(for: app)
         // Every script lands here, so it only writes a change.
         guard defaults.object(forKey: key) as? Bool != allowed else { return }
         defaults.set(allowed, forKey: key)
-        log.notice("Music now says Free Roam \(allowed ? "may" : "may not", privacy: .public) control it")
+        log.notice("\(app.name, privacy: .public) now says Free Roam \(allowed ? "may" : "may not", privacy: .public) control it")
     }
 }

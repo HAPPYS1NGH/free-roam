@@ -1,17 +1,20 @@
 import AppKit
 import SwiftUI
 
-/// Settings' only pane: the stations on the wheel, in order, above every
-/// playlist in Music as a grid of covers. Every change is saved at once, as
+/// Settings' Stations tab: the stations on the wheel, in order, above every
+/// playlist in the app as a grid of covers. Every change is saved at once, as
 /// in System Settings.
 struct StationsSettingsView: View {
     let stations: StationList
     let details: StationDetails
     let style: WheelStyle?
+    let selectApp: (MusicApp) -> Void
     @State private var search = ""
 
     var body: some View {
         StationPicker(
+            app: stations.app,
+            selectApp: selectApp,
             phase: phase,
             library: stations.library ?? [],
             stations: stations.library == nil ? [] : stations.onWheel,
@@ -26,10 +29,11 @@ struct StationsSettingsView: View {
             removeMissing: stations.removeMissingStations,
             requestLogo: details.requestLogo,
             cancelLogo: details.cancelLogo,
-            retry: stations.loadLaunchingMusic
+            reload: stations.loadLaunchingMusic
         )
         // Listing every playlist needs Music, so it opens in the background.
         .onAppear { stations.loadLaunchingMusic() }
+        .onChange(of: stations.app) { stations.loadLaunchingMusic() }
         // A closed window reads no more covers and lets go of the ones that
         // aren't stations. The window closing is the sure sign, and leaving
         // the window covers anything else that takes the pane away.
@@ -49,7 +53,7 @@ struct StationsSettingsView: View {
 struct StationPicker: View {
     enum Phase: Equatable {
         case loading
-        /// Free Roam isn't allowed to control Music.
+        /// Free Roam isn't allowed to control the app.
         case denied
         case failed(String)
         case ready
@@ -63,12 +67,15 @@ struct StationPicker: View {
     nonisolated static let minWidth = 760.0
     nonisolated static let margin = 20.0
 
+    var app = MusicApp.music
+    var selectApp: (MusicApp) -> Void = { _ in }
+
     let phase: Phase
-    /// Music's playlists in library order.
+    /// The app's playlists in library order.
     let library: [Playlist]
     /// The stations on the wheel, in order.
     let stations: [Playlist]
-    /// Stations Music didn't list, which still hold their places.
+    /// Stations the app didn't list, which still hold their places.
     var missingStationCount = 0
     let logos: [String: CGImage]
     let songCounts: [String: Int]
@@ -80,21 +87,24 @@ struct StationPicker: View {
     var removeMissing: () -> Void = {}
     var requestLogo: (String) -> Void = { _ in }
     var cancelLogo: (String) -> Void = { _ in }
-    var retry: () -> Void = {}
+    var reload: () -> Void = {}
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
+            appSwitch
                 .padding(.horizontal, Self.margin)
                 .padding(.top, Self.margin)
+                .padding(.bottom, 12)
+            header
+                .padding(.horizontal, Self.margin)
                 .padding(.bottom, 12)
             // Each state fills the rest of the window. Left to its own size, a
             // ContentUnavailableView sat in the top left corner.
             switch phase {
             case .loading:
-                ProgressView("Loading your playlists from Music…")
+                ProgressView("Loading your playlists from \(app.name)…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .denied:
                 denied
@@ -104,16 +114,16 @@ struct StationPicker: View {
                 } description: {
                     Text(message)
                 } actions: {
-                    Button("Try Again", action: retry)
+                    Button("Try Again", action: reload)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .ready where library.isEmpty:
                 ContentUnavailableView {
-                    Label("No Playlists in Music", systemImage: "music.note.list")
+                    Label("No Playlists in \(app.name)", systemImage: "music.note.list")
                 } description: {
-                    Text("Your stations are Music playlists. Make one in Music, then check again.")
+                    Text("Your stations are \(app.name) playlists. Make one in \(app.name), then check again.")
                 } actions: {
-                    Button("Check Again", action: retry)
+                    Button("Check Again", action: reload)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .ready:
@@ -127,20 +137,30 @@ struct StationPicker: View {
         stations.count + missingStationCount >= RadioWheelModel.maxStations
     }
 
+    private var appSwitch: some View {
+        Picker("Play from", selection: Binding(get: { app }, set: { selectApp($0) })) {
+            ForEach(MusicApp.allCases, id: \.self) { app in
+                Text(app.name).tag(app)
+            }
+        }
+        .pickerStyle(.segmented)
+        .fixedSize()
+    }
+
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             Text("Stations")
                 .font(.title2.weight(.semibold))
             Spacer()
             if phase == .ready, !library.isEmpty {
-                Text(Self.countText(stations: stations.count, missing: missingStationCount))
+                Text(Self.countText(stations: stations.count, missing: missingStationCount, app: app))
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
                 if missingStationCount > 0 {
                     Button("Remove", action: { animated(removeMissing) })
                         .buttonStyle(.link)
-                        .help("Music didn't list these playlists. If you deleted them, remove them to free their places.")
-                        .accessibilityLabel("Remove the stations not found in Music")
+                        .help("\(app.name) didn't list these playlists. If you deleted them, remove them to free their places.")
+                        .accessibilityLabel("Remove the stations not found in \(app.name)")
                 }
             }
         }
@@ -148,20 +168,20 @@ struct StationPicker: View {
 
     /// "23 of 25 on the wheel · 2 not found in Music". Missing stations
     /// count toward the 25, because they come back in their places.
-    nonisolated static func countText(stations: Int, missing: Int) -> String {
+    nonisolated static func countText(stations: Int, missing: Int, app: MusicApp = .music) -> String {
         let onWheel = "\(stations) of \(RadioWheelModel.maxStations) on the wheel"
-        return missing > 0 ? "\(onWheel) · \(missing) not found in Music" : onWheel
+        return missing > 0 ? "\(onWheel) · \(missing) not found in \(app.name)" : onWheel
     }
 
     private var denied: some View {
         ContentUnavailableView {
-            Label("Free Roam Can't Control Music", systemImage: "music.note")
+            Label("Free Roam Can't Control \(app.name)", systemImage: "music.note")
         } description: {
-            Text("Free Roam needs to control Music to list your playlists. Switch it on in Privacy & Security under Automation, then try again.")
+            Text("Free Roam needs to control \(app.name) to list your playlists. Switch it on in Privacy & Security under Automation, then try again.")
         } actions: {
             Button("Open Privacy & Security…") { PrivacyPane.automation.open() }
                 .keyboardShortcut(.defaultAction)
-            Button("Try Again", action: retry)
+            Button("Try Again", action: reload)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

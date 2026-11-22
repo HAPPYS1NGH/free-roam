@@ -14,7 +14,7 @@ body:
     attributes:
       label: Free Roam version
       description: Select Free Roam in Finder and choose File → Get Info.
-      placeholder: "0.1.0"
+      placeholder: "0.2.0"
     validations:
       required: true
   - type: input
@@ -25,12 +25,14 @@ body:
     validations:
       required: true
   - type: dropdown
-    id: subscription
+    id: player
     attributes:
-      label: Do you have an Apple Music subscription?
+      label: Which app do you play from?
       options:
-        - "Yes"
-        - "No, I play songs I own"
+        - "Music, with an Apple Music subscription"
+        - "Music, with songs I own"
+        - "Spotify Premium"
+        - "Spotify Free"
     validations:
       required: true
   - type: checkboxes
@@ -38,7 +40,7 @@ body:
     attributes:
       label: Permissions you've allowed
       options:
-        - label: Control Music (System Settings → Privacy & Security → Automation)
+        - label: Control Music or Spotify (System Settings → Privacy & Security → Automation)
         - label: Screen Recording
   - type: textarea
     id: logs

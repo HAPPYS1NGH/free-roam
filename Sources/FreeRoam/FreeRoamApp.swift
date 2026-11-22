@@ -15,13 +15,19 @@ struct FreeRoamApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenu(model: appDelegate.menu)
+            StatusMenu(
+                model: appDelegate.menu, stations: appDelegate.stations, updater: appDelegate.updater,
+                settings: appDelegate.settings, selectApp: appDelegate.selectApp
+            )
         } label: {
             MenuBarIcon()
                 .modifier(SettingsOpenerCapture { appDelegate.openSettings = $0 })
         }
         Settings {
-            StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style)
+            SettingsView(
+                navigation: appDelegate.settings, stations: appDelegate.stations, details: appDelegate.details,
+                style: appDelegate.style, status: appDelegate.menu, updater: appDelegate.updater, selectApp: appDelegate.selectApp
+            )
         }
         .windowResizability(.contentMinSize)
     }
@@ -65,11 +71,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let stations = StationList()
     /// Shared by the wheel and Settings, which show the same logos.
     let details = StationDetails()
+    let updater = Updater()
     /// Nil when tokens.json is missing, which turns the wheel off.
     let style = AppDelegate.loadStyle()
+    /// Which tab Settings opens on, so the menu can go straight to one.
+    let settings = SettingsNavigation()
     var openSettings: OpenSettingsAction?
     private var wheel: RadioWheelModel?
-    private lazy var welcome = WelcomeWindow(stations: stations)
+    private lazy var welcome = WelcomeWindow(stations: stations, selectApp: selectApp)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         CaptionFont.register()
@@ -83,6 +92,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         wheel.loadDetails(for: stations.onWheel)
         wheel.start()
         self.wheel = wheel
+    }
+
+    /// Switches between Music and Spotify, from Settings or the menu. The app
+    /// you leave is paused, so two never play at once, and the wheel opens on
+    /// Radio Off until it reads the new one.
+    func selectApp(_ app: MusicApp) {
+        let previous = MusicApp.current
+        guard app != previous else { return }
+        MusicApp.current = app
+        log.notice("Switched from \(previous.name, privacy: .public) to \(app.name, privacy: .public)")
+        stations.switchApp(to: app)
+        wheel?.appChanged()
+        menu.refreshPermissions()
+        // A script to an app Free Roam hasn't been allowed to control would
+        // raise macOS's prompt for the app you just left.
+        guard previous.bridge.isRunning, previous.bridge.permission() == .allowed else { return }
+        Task {
+            do {
+                try await previous.bridge.pause()
+            } catch MusicBridgeError.notRunning {
+                // It quit while the pause waited its turn.
+            } catch {
+                log.error("Couldn't pause \(previous.name, privacy: .public): \(String(describing: error), privacy: .public)")
+            }
+        }
     }
 
     /// Opening Free Roam again from Finder, Spotlight or Raycast while it's

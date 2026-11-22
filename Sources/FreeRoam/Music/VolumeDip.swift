@@ -18,6 +18,9 @@ final class VolumeDip {
     private let restoreSeconds: Double
     /// Music's volume before the dip, while it's lowered or on its way back.
     private var before: Int?
+    /// The app `before` came from. Switching apps mid-dip mustn't give
+    /// Spotify Music's volume, or leave Music turned down.
+    private var dipped: MusicApp?
     /// The volume Free Roam last set.
     private var level = 0
     private var lastChange: ContinuousClock.Instant?
@@ -43,10 +46,11 @@ final class VolumeDip {
                 await rampVolume(to: lowered(before), over: lowerSeconds)
                 return
             }
-            guard MusicBridge.isRunning else { return }
+            let app = MusicApp.current
+            guard app.bridge.isRunning else { return }
             let volume: Int
             do {
-                volume = try await MusicBridge.volume()
+                volume = try await app.bridge.volume()
             } catch {
                 log.error("Couldn't read Music's volume: \(String(describing: error), privacy: .public)")
                 return
@@ -54,6 +58,7 @@ final class VolumeDip {
             // Closed before Music answered.
             guard !Task.isCancelled else { return }
             before = volume
+            dipped = app
             level = volume
             await rampVolume(to: lowered(volume), over: lowerSeconds)
         }
@@ -68,6 +73,7 @@ final class VolumeDip {
             await rampVolume(to: before, over: restoreSeconds)
             guard !Task.isCancelled else { return }
             self.before = nil
+            dipped = nil
         }
     }
 
@@ -75,10 +81,11 @@ final class VolumeDip {
     /// no time to ramp.
     func restoreNow() {
         ramp?.cancel()
-        guard let before, MusicBridge.isRunning else { return }
+        guard let before, let dipped, dipped.bridge.isRunning else { return }
         do {
-            try MusicBridge.setVolumeNow(before, after: Self.changeGap)
+            try dipped.bridge.setVolumeNow(before, after: Self.changeGap)
             self.before = nil
+            self.dipped = nil
             log.notice("Restored Music's volume to \(before) on quit")
         } catch {
             log.error("Couldn't restore Music's volume on quit: \(String(describing: error), privacy: .public)")
@@ -93,9 +100,10 @@ final class VolumeDip {
     /// ramp should be by the next one. So the 150 ms dip is a single change and
     /// the 450 ms restore takes three, 150 ms apart.
     private func rampVolume(to target: Int, over seconds: Double) async {
+        let bridge = (dipped ?? MusicApp.current).bridge
         let start = level
         let started = clock.now
-        while !Task.isCancelled, MusicBridge.isRunning {
+        while !Task.isCancelled, bridge.isRunning {
             if let lastChange {
                 do {
                     try await Task.sleep(until: lastChange + Self.changeGap, clock: clock)
@@ -107,7 +115,7 @@ final class VolumeDip {
             let next = start + Int((Double(target - start) * progress).rounded())
             if next != level {
                 do {
-                    try await MusicBridge.setVolume(next)
+                    try await bridge.setVolume(next)
                 } catch {
                     // A change that timed out still reaches Music once it
                     // answers again, so it counts as made and a restore

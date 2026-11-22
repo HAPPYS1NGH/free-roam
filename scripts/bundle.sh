@@ -46,6 +46,25 @@ cp Sources/FreeRoam/Resources/AppIcon.icns Sources/FreeRoam/Resources/MenuBarIco
   "$APP/Contents/Resources/"
 plutil -replace CFBundleVersion -string "$BUILD_NUMBER" "$APP/Contents/Info.plist"
 
+# Sparkle, for updates. Its XPC services are only for sandboxed apps, and the
+# headers only for building against it, so neither ships.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
+mkdir -p "$APP/Contents/Frameworks"
+ditto "$BIN_DIR/Sparkle.framework" "$SPARKLE"
+rm -rf "$SPARKLE"/{XPCServices,Headers,PrivateHeaders,Modules} \
+  "$SPARKLE"/Versions/B/{XPCServices,Headers,PrivateHeaders,Modules}
+
+# Signs Sparkle's helpers from the inside out, then the app, as codesign
+# --deep is unreliable for nested code. The helpers get the hardened runtime
+# too, which notarization requires.
+sign_app() {
+  local flags=(--force --sign "$1" "${@:2}")
+  codesign "${flags[@]}" "$SPARKLE/Versions/B/Autoupdate"
+  codesign "${flags[@]}" "$SPARKLE/Versions/B/Updater.app"
+  codesign "${flags[@]}" "$SPARKLE"
+  codesign "${flags[@]}" --entitlements scripts/FreeRoam.entitlements "$APP"
+}
+
 if [[ "$MODE" == "--release" ]]; then
   # Matched by team, so a renewed certificate still works. The SHA-1 avoids
   # ambiguity if the keychain ever holds two with the same name.
@@ -55,8 +74,7 @@ if [[ "$MODE" == "--release" ]]; then
     echo "error: no Developer ID Application certificate for team R5NM7593WP in the keychain" >&2
     exit 1
   fi
-  codesign --force --options runtime --timestamp \
-    --entitlements scripts/FreeRoam.entitlements --sign "$RELEASE_IDENTITY" "$APP"
+  sign_app "$RELEASE_IDENTITY" --options runtime --timestamp
   echo "Built $APP (release, build $BUILD_NUMBER, $(lipo -archs "$APP/Contents/MacOS/FreeRoam"))"
   exit 0
 fi
@@ -66,10 +84,10 @@ fi
 # identity. errSecInternalComponent means codesign couldn't reach the keychain,
 # e.g. from an SSH or sandboxed shell.
 if security find-identity -p codesigning | grep -q "\"$SIGN_IDENTITY\""; then
-  codesign --force --sign "$SIGN_IDENTITY" "$APP"
+  sign_app "$SIGN_IDENTITY"
 else
   echo "warning: no \"$SIGN_IDENTITY\" certificate, so signing ad hoc and Screen Recording permission resets on every build. Run scripts/make-signing-cert.sh once to keep it." >&2
-  codesign --force --sign - "$APP"
+  sign_app -
 fi
 echo "Built $APP (build $BUILD_NUMBER)"
 

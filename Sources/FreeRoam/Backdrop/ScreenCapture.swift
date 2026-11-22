@@ -16,8 +16,8 @@ enum ScreenCapture {
 
     /// Adds Free Roam to the Screen Recording list in System Settings. macOS
     /// shows its own prompt only the first time. Free Roam only asks when you
-    /// choose Allow in the menu or the welcome window, never by itself,
-    /// because the backdrop works without it.
+    /// choose Turn On in Settings or Allow in the welcome window, never by
+    /// itself, because the backdrop works without it.
     static func requestAccess() {
         let allowed = CGRequestScreenCaptureAccess()
         log.notice("Asked for Screen Recording: \(allowed ? "allowed" : "not allowed yet", privacy: .public)")
