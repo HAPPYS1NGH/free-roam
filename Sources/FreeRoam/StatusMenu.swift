@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// What the menu and Settings' General tab show about permissions and
+/// Launch at Login, so the two always agree.
 @MainActor @Observable
 final class StatusMenuModel {
     private(set) var musicPermission = MusicApp.bridge.permission()
@@ -16,7 +18,8 @@ final class StatusMenuModel {
         }
     }
 
-    /// For a switch of app, whose permission is the one the menu shows.
+    /// For a switch of app, whose permission is the one the menu shows, and
+    /// for Settings, which opening the menu doesn't cover.
     func refreshPermissions() {
         checkPermissions()
     }
@@ -39,17 +42,13 @@ struct StatusMenu: View {
     let model: StatusMenuModel
     let stations: StationList
     let updater: Updater
+    let settings: SettingsNavigation
     let selectApp: (MusicApp) -> Void
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        Button("Settings…") {
-            openSettings()
-            // Free Roam has no Dock icon and isn't the active app, so the window
-            // would otherwise open behind the app you're in.
-            NSApp.activate()
-        }
-        .keyboardShortcut(",")
+        Button("Settings…", action: showSettings)
+            .keyboardShortcut(",")
         if updater.isAvailable {
             Button(updater.hasUnseenUpdate ? "Update Available…" : "Check for Updates…") {
                 updater.checkForUpdates()
@@ -72,13 +71,11 @@ struct StatusMenu: View {
             Button("Allow Free Roam to Control \(stations.app.name)…") { PrivacyPane.automation.open() }
         }
         if !model.screenRecordingAllowed {
-            Button("Allow Screen Recording…") {
-                ScreenCapture.requestAccess()
-                PrivacyPane.screenRecording.open()
+            // Settings explains what macOS's prompt means before it asks.
+            Button("Turn On Cinematic Backdrop…") {
+                settings.tab = .general
+                showSettings()
             }
-            // macOS keeps showing the switch on for an earlier build it no
-            // longer recognises, so a switch that's on can still mean no.
-            Text("Already on in System Settings? Switch it off and on again.")
         }
 
         Divider()
@@ -90,5 +87,12 @@ struct StatusMenu: View {
         Divider()
         Button("Quit Free Roam") { NSApp.terminate(nil) }
             .keyboardShortcut("q")
+    }
+
+    private func showSettings() {
+        openSettings()
+        // Free Roam has no Dock icon and isn't the active app, so the window
+        // would otherwise open behind the app you're in.
+        NSApp.activate()
     }
 }

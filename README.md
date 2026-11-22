@@ -36,7 +36,7 @@ Stations behave like radio. Each playlist plays on a loop, on a clock, as if it 
 | Pick Radio Off | Pauses the music |
 | Press <kbd>Esc</kbd> while holding <kbd>⌥</kbd> | Closes the wheel without changing station |
 
-Choose your stations in **Settings**, from the menu bar icon. Drag them into order, and click a cover to add or remove a playlist. **Launch at Login** is in the same menu. Free Roam plays from Music or Spotify, never both. Switch with **Play from** in Settings or in the menu. Free Roam has no Dock icon.
+Choose your stations in **Settings → Stations**, from the menu bar icon. Drag them into order, and click a cover to add or remove a playlist. **Settings → General** has the cinematic backdrop, opening at login and update checks. **Launch at Login** is in the menu too. Free Roam plays from Music or Spotify, never both. Switch with **Play from** in Settings or in the menu. Free Roam has no Dock icon.
 
 ## Install
 
@@ -48,16 +48,16 @@ The app is signed and notarized by Apple, so it opens without a warning. Older v
 
 **Requirements:** macOS 14 or later, and the Music app or the Spotify desktop app. In Music, songs you own play without a subscription and Apple Music songs need one. Spotify works with Free and Premium.
 
-**Updating:** The second time you open Free Roam, it asks whether to check for updates on its own. Say yes and it checks once a day. Or choose **Check for Updates…** in the menu bar menu. Your stations and permissions carry over.
+**Updating:** The second time you open Free Roam, it asks whether to check for updates on its own. Say yes and it checks once a day. Or choose **Check for Updates…** in the menu bar menu. You can turn the daily check on or off in **Settings → General**. Your stations and permissions carry over.
 
 ## Permissions and privacy
 
 Free Roam asks for at most two things:
 
 - **Control Music** or **Control Spotify** (required, for the app you pick). Lets Free Roam switch playlists and turn the volume down while the wheel is open. macOS asks the first time you use each one, or when you choose Allow in the welcome window.
-- **Screen Recording** (optional, for the cinematic backdrop). Fades the colour out of the screen behind the wheel. Free Roam only asks if you turn the backdrop on in the welcome window or the menu. Without it, the wheel works the same over a tinted background.
+- **Screen Recording** (optional), for the **Cinematic backdrop**, which fades the screen behind the wheel so your stations stand out. Turn it on in the welcome window or in **Settings → General**, where you can see the wheel with and without it. **Turn On Cinematic Backdrop…** in the menu opens the same tab. Free Roam never asks by itself, and without it the wheel works the same over a tinted background. Only System Settings can turn it off again.
 
-The welcome window shows at launch until Free Roam may control the app you play from, or until you choose Don't Show This Again. Screen Recording doesn't count.
+The welcome window shows at launch until Free Roam may control the app you play from, or until you choose Don't Show This Again. The backdrop doesn't count.
 
 What it doesn't do:
 

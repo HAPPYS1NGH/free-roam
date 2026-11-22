@@ -4,8 +4,8 @@ import ServiceManagement
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "login")
 
 /// Whether macOS opens Free Roam when you log in. It's off until you turn
-/// it on, in the menu or the welcome window, and System Settings → General
-/// → Login Items can change it too, so it's always read fresh.
+/// it on, in the menu, Settings or the welcome window, and System Settings
+/// → General → Login Items can change it too, so it's always read fresh.
 enum LaunchAtLogin {
     static var isEnabled: Bool { SMAppService.mainApp.status == .enabled }
 

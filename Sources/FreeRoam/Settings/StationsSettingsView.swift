@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// Settings' only pane: the stations on the wheel, in order, above every
+/// Settings' Stations tab: the stations on the wheel, in order, above every
 /// playlist in the app as a grid of covers. Every change is saved at once, as
 /// in System Settings.
 struct StationsSettingsView: View {

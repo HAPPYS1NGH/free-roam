@@ -15,13 +15,19 @@ struct FreeRoamApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenu(model: appDelegate.menu, stations: appDelegate.stations, updater: appDelegate.updater, selectApp: appDelegate.selectApp)
+            StatusMenu(
+                model: appDelegate.menu, stations: appDelegate.stations, updater: appDelegate.updater,
+                settings: appDelegate.settings, selectApp: appDelegate.selectApp
+            )
         } label: {
             MenuBarIcon()
                 .modifier(SettingsOpenerCapture { appDelegate.openSettings = $0 })
         }
         Settings {
-            StationsSettingsView(stations: appDelegate.stations, details: appDelegate.details, style: appDelegate.style, selectApp: appDelegate.selectApp)
+            SettingsView(
+                navigation: appDelegate.settings, stations: appDelegate.stations, details: appDelegate.details,
+                style: appDelegate.style, status: appDelegate.menu, updater: appDelegate.updater, selectApp: appDelegate.selectApp
+            )
         }
         .windowResizability(.contentMinSize)
     }
@@ -68,6 +74,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let updater = Updater()
     /// Nil when tokens.json is missing, which turns the wheel off.
     let style = AppDelegate.loadStyle()
+    /// Which tab Settings opens on, so the menu can go straight to one.
+    let settings = SettingsNavigation()
     var openSettings: OpenSettingsAction?
     private var wheel: RadioWheelModel?
     private lazy var welcome = WelcomeWindow(stations: stations, selectApp: selectApp)

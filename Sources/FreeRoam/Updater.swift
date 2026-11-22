@@ -15,9 +15,13 @@ final class Updater: NSObject, @preconcurrency SPUStandardUserDriverDelegate {
     /// A background check found a version the person hasn't looked at yet.
     /// Free Roam has no window to show it over, so the menu shows it instead.
     private(set) var hasUnseenUpdate = false
+    /// Whether Sparkle checks once a day by itself. Its second-launch
+    /// question sets it, and Settings can change it any time.
+    private(set) var automaticallyChecksForUpdates = false
 
     @ObservationIgnored private var controller: SPUStandardUpdaterController?
     @ObservationIgnored private var canCheckObservation: NSKeyValueObservation?
+    @ObservationIgnored private var automaticChecksObservation: NSKeyValueObservation?
 
     override init() {
         super.init()
@@ -32,6 +36,10 @@ final class Updater: NSObject, @preconcurrency SPUStandardUserDriverDelegate {
             // Sparkle changes it on the main thread.
             MainActor.assumeIsolated { self?.canCheckForUpdates = updater.canCheckForUpdates }
         }
+        automaticChecksObservation = controller.updater.observe(\.automaticallyChecksForUpdates, options: [.initial, .new]) { [weak self] updater, _ in
+            // Sparkle only allows it to change on the main thread.
+            MainActor.assumeIsolated { self?.automaticallyChecksForUpdates = updater.automaticallyChecksForUpdates }
+        }
         self.controller = controller
     }
 
@@ -41,6 +49,12 @@ final class Updater: NSObject, @preconcurrency SPUStandardUserDriverDelegate {
         // The update window would otherwise open behind the app you're in.
         NSApp.activate()
         controller?.checkForUpdates(nil)
+    }
+
+    func setAutomaticallyChecksForUpdates(_ enabled: Bool) {
+        guard let controller else { return }
+        controller.updater.automaticallyChecksForUpdates = enabled
+        log.notice("Automatic update checks are \(enabled ? "on" : "off", privacy: .public)")
     }
 
     // MARK: SPUStandardUserDriverDelegate
