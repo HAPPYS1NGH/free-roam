@@ -6,10 +6,10 @@ import { useWheel } from "../useWheel"
 import { WheelOverlay } from "./WheelOverlay"
 import { demoSlots } from "./demo-stations"
 import { useProductAudio } from "./useProductAudio"
-import { useRadioTracking } from "./useRadioTracking"
+import { useRadioTracking, type TrackedWheel } from "./useRadioTracking"
 
 type Radio = {
-  wheel: ReturnType<typeof useWheel>
+  wheel: TrackedWheel
   audio: ReturnType<typeof useProductAudio>
   playing: Extract<Slot, { kind: "playlist" }> | undefined
   // Bumps on every retune, so the hero can key its one-shot wash off it.
@@ -26,8 +26,8 @@ export function useRadio() {
   return radio
 }
 
-// One wheel for the whole page: ⌥Q, the station list and the touch button all
-// tune it, and the overlay renders once, above everything.
+// One wheel for the whole page: ⌥Q, the station list, the touch button and a
+// touch hold all tune it, and the overlay renders once, above everything.
 export function RadioProvider({ children }: { children: ReactNode }) {
   const audio = useProductAudio()
   const wheel = useWheel({
@@ -53,6 +53,12 @@ export function RadioProvider({ children }: { children: ReactNode }) {
     setRetunes(count => count + 1)
   }, [wheel.playingId])
 
+  // While the wheel is open nothing on the page can be selected, so a resting
+  // finger on touch never starts an iOS text selection (see page.css).
+  useEffect(() => {
+    document.documentElement.toggleAttribute("data-wheel-open", wheel.open)
+  }, [wheel.open])
+
   // Focus goes back to whatever opened the wheel: it's either still inside the
   // fading wheel or on the body after a click on the pick layer.
   const opener = useRef<Element | null>(null)
@@ -64,7 +70,8 @@ export function RadioProvider({ children }: { children: ReactNode }) {
 
   return <RadioContext.Provider value={{ wheel: trackedWheel, audio, playing, retunes, stationRgb }}>
     {children}
-    <WheelOverlay open={wheel.open} highlighted={wheel.highlighted} onChoose={wheel.choose} onClose={wheel.hide} />
+    <WheelOverlay open={wheel.open} highlighted={wheel.highlighted} onChoose={wheel.choose} onClose={wheel.hide}
+      onMove={wheel.move} onCommit={wheel.commit} />
   </RadioContext.Provider>
 }
 

@@ -91,6 +91,8 @@ export function useWheel(options: Options) {
     highlightRef.current = index
     setHighlighted(index)
     playSound("hover", settings.current.sounds.hoverVolumeDb)
+    // A haptic tick where the device has one (Android phones); a no-op elsewhere.
+    navigator.vibrate?.(6)
     window.clearTimeout(dwellTimer.current)
     dwellTimer.current = window.setTimeout(() => tune(index), settings.current.dwellMs)
   }
@@ -127,6 +129,24 @@ export function useWheel(options: Options) {
     let next = (playingIndex() + 1) % slots.length
     if (slots[next].kind === "off") next = (next + 1) % slots.length
     tune(next)
+  }
+
+  // Mouse movement, or a finger on the page's touch pad, moves the virtual
+  // cursor. Clamped to pickRadius so a flick sticks until you push elsewhere.
+  const move = (dx: number, dy: number) => {
+    if (!openRef.current) return
+    const c = cursor.current
+    c.x += dx
+    c.y += dy
+    const length = Math.hypot(c.x, c.y)
+    const { pickRadius } = settings.current
+    if (length > pickRadius) {
+      c.x *= pickRadius / length
+      c.y *= pickRadius / length
+    }
+    // Inside the dead zone the current pick stays, so a jittery hand on
+    // release doesn't change station.
+    if (length >= settings.current.deadzone) highlight(slotForVector(c.x, c.y, settings.current.slots.length))
   }
 
   const step = (direction: 1 | -1) => {
@@ -185,18 +205,7 @@ export function useWheel(options: Options) {
 
     const onMouseMove = (e: MouseEvent) => {
       if (!openRef.current || isIgnoredTarget(e.target)) return
-      const c = cursor.current
-      c.x += e.movementX
-      c.y += e.movementY
-      const length = Math.hypot(c.x, c.y)
-      const { pickRadius } = settings.current
-      if (length > pickRadius) {
-        c.x *= pickRadius / length
-        c.y *= pickRadius / length
-      }
-      // Inside the dead zone the current pick stays, so a jittery hand on
-      // release doesn't change station.
-      if (length >= settings.current.deadzone) highlight(slotForVector(c.x, c.y, settings.current.slots.length))
+      move(e.movementX, e.movementY)
     }
 
     const onWheel = (e: WheelEvent) => {
@@ -287,5 +296,5 @@ export function useWheel(options: Options) {
     if (openRef.current) hide()
   }
 
-  return { open, highlighted, playingId, peek, show, hide, choose }
+  return { open, highlighted, playingId, peek, show, hide, choose, move, commit }
 }

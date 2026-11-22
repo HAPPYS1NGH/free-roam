@@ -47,6 +47,23 @@
 /* Touch has no Q to hold. */
 .ta-touch { display: none; }
 @media (hover: none) { .ta-hover { display: none; } .ta-touch { display: inline; } }
+/* On touch, trying the radio comes first and sending it to a Mac second. */
+@media (hover: none) {
+  .ta-actions { gap: 12px; }
+  .ta-actions .ta-try { order: -1; min-height: 48px; padding: 0 24px; border-radius: 999px; background: var(--accent); color: var(--on-accent); font-weight: 600; text-decoration: none; transition: scale 150ms ease-out; }
+  .ta-actions .ta-try:active { scale: 0.97; }
+  .ta-actions .p-button { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px oklch(1 0 0 / 0.3); }
+}
+/* Holding the hero opens the wheel (useHoldToTune), so a long press mustn't
+   select the headline or bring up the iOS callout. */
+@media (hover: none) { .ta-hero { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; } }
+/* On a phone the hero's text sits right behind the wheel and the touch pad,
+   so it steps back while the wheel is open. filter, because the intro
+   animations already own opacity on these. */
+@media (hover: none) {
+  .ta-hero :is(.ta-nav, .ta-copy, .ta-caption) { transition: filter 200ms var(--ease-out); }
+  :root[data-wheel-open] .ta-hero :is(.ta-nav, .ta-copy, .ta-caption) { filter: opacity(0.12); }
+}
 
 @media (hover: hover) and (pointer: fine) {
   .ta-try:hover { color: var(--ink); }

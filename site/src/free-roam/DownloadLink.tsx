@@ -23,7 +23,7 @@ export function DownloadLink({ className, children, elsewhere }: Props) {
 
   const send = async (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
-    const placement = sectionName(event.currentTarget.closest("header, footer, section"))
+    const placement = sectionName(event.currentTarget.closest("header, footer, section, aside"))
     const url = `${location.origin}/`
     if (navigator.share) {
       try {

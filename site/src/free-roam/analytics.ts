@@ -25,10 +25,12 @@ function visitorOptedOut() {
 // Sections are named by their heading id, so rewording the copy doesn't rename them.
 const sectionNames: Record<string, string> = {
   "ta-title": "hero",
+  "mac-title": "on-your-mac",
   "dial-title": "stations",
   "how-title": "how-it-works",
   "faq-title": "faq",
   "ta-closing-title": "closing",
+  "nudge-title": "nudge",
 }
 
 export function sectionName(element: Element | null) {

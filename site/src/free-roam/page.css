@@ -185,11 +185,50 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
 .wheel-hint { left: 50%; translate: -50% 0; width: max-content; max-width: calc(100vw - 40px); text-align: center; }
 .wheel-hint kbd, .wheel-layer kbd { display: inline-grid; place-items: center; font: inherit; border: 1px solid currentColor; min-width: 20px; min-height: 20px; border-radius: 4px; padding-inline: 4px; margin-inline: 2px; }
 .wheel-close { right: max(20px, env(safe-area-inset-right)); display: none; min-height: 44px; padding-inline: 12px; border: 0; background: none; pointer-events: auto; color: inherit; font: inherit; }
-@media (hover: none), (pointer: coarse) { .wheel-pick, .wheel-hint { display: none; } .wheel-close { display: inline-flex; align-items: center; } }
+.wheel-pad { display: none; }
+@media (hover: none), (pointer: coarse) {
+  .wheel-pick, .wheel-hint { display: none; }
+  /* The touch pad takes the bottom of the screen; the wheel centres in the rest. */
+  .wheel-layer { --pad-height: clamp(168px, 32dvh, 280px); --pad-space: calc(var(--pad-height) + max(20px, env(safe-area-inset-bottom)) + 16px); padding-bottom: var(--pad-space); }
+  .wheel-layer-face { width: min(calc(100vw - 32px), calc(100dvh - 32px - var(--pad-space))); }
+  .wheel-close { display: inline-flex; align-items: center; top: max(16px, env(safe-area-inset-top)); bottom: auto; }
+  .wheel-pad { position: fixed; left: 50%; translate: -50% 0; bottom: max(20px, env(safe-area-inset-bottom)); width: min(400px, 100vw - 32px); height: var(--pad-height);
+    display: grid; place-content: center; justify-items: center; gap: 6px; pointer-events: auto; touch-action: none; overflow: hidden;
+    border-radius: 22px; background: rgb(255 255 255 / 0.07); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.16), 0 10px 30px rgb(0 0 0 / 0.3);
+    -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); font-size: 13px; color: rgb(236 232 222 / 0.7);
+    transition: background-color 120ms ease-out; }
+  .wheel-pad[data-touched] { background: rgb(255 255 255 / 0.11); }
+  .wheel-pad strong { font-size: 16px; font-weight: 600; color: #ece8de; }
+  .wheel-pad-keys { position: absolute; top: 12px; left: 14px; display: inline-flex; align-items: center; gap: 2px; font-size: 12px; color: rgb(236 232 222 / 0.55); }
+  .wheel-pad::after { content: ""; position: absolute; left: var(--thumb-x, 50%); top: var(--thumb-y, 50%); width: 44px; height: 44px; margin: -22px 0 0 -22px; border-radius: 50%;
+    background: radial-gradient(circle, rgb(255 255 255 / 0.32), rgb(255 255 255 / 0.08) 60%, transparent 72%); opacity: 0; transition: opacity 120ms ease-out; pointer-events: none; }
+  .wheel-pad[data-touched]::after { opacity: 1; }
+  /* A resting finger mustn't select the page or open the iOS callout. */
+  :root[data-wheel-open], :root[data-wheel-open] *, .p-dial-row, .p-nudge { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+}
 .production-wheel-stage { --font-caption: "Sofia Condensed", "Avenir Next Condensed", "Arial Narrow", sans-serif; --font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; position: relative; width: 100%; max-width: 520px; aspect-ratio: 1; margin: 24px auto; }
 .production-wheel-render { position: absolute; inset: 0 auto auto 0; transform-origin: top left; }
 .production-station-target { position: absolute; translate: -50% -50%; border: 0; border-radius: 50%; background: transparent; padding: 0; cursor: pointer; }
 .production-station-target:focus-visible { outline: 2px solid white; outline-offset: 3px; }
+
+/* ---------------------------------------------------------------- on your Mac (touch only; see OnYourMac.tsx) */
+.p-mac { display: none; }
+@media (hover: none) { .p-mac { display: grid; gap: 28px; justify-items: start; } }
+.p-mac h2 .keycap { font-size: 0.5em; font-family: var(--font-display); }
+.p-mac-video { display: block; width: min(100%, 420px); height: auto; aspect-ratio: 9 / 16; justify-self: center; border-radius: 22px; background: var(--bg-raised); box-shadow: 0 0 0 1px var(--line), 0 24px 60px oklch(0 0 0 / 0.45); object-fit: cover; }
+
+/* ---------------------------------------------------------------- send nudge (touch only; see SendNudge.tsx) */
+.p-nudge { display: none; }
+@media (hover: none) {
+  .p-nudge { position: fixed; z-index: 9; left: 50%; bottom: max(16px, env(safe-area-inset-bottom)); translate: -50% 0; width: min(560px, 100% - 24px);
+    display: flex; align-items: center; gap: 12px; padding: 8px 6px 8px 16px; border-radius: 999px;
+    background: oklch(0.205 0.02 255 / 0.92); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+    box-shadow: 0 0 0 1px oklch(1 0 0 / 0.1), 0 12px 32px oklch(0 0 0 / 0.45); }
+}
+.p-nudge p { flex: 1; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.p-nudge .keycap { color: var(--ink); }
+.p-nudge .p-button { flex: none; }
+.p-nudge-close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin-left: -4px; border: 0; border-radius: 50%; background: none; color: var(--faint); }
 
 /* ---------------------------------------------------------------- responsive */
 @media (max-width: 1050px) { .p-dial { grid-template-columns: 1fr; } }
