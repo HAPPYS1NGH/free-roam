@@ -192,6 +192,7 @@ enum SpotifyScan {
     private static func readTracks(playlistID: String, progress: @MainActor @Sendable (Int) -> Void) async throws -> [SpotifyTrack] {
         let clock = ContinuousClock()
         let started = clock.now
+        await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
         try await SpotifyBridge.run("""
             set sound volume to 0
             set shuffling to false
@@ -289,6 +290,7 @@ enum SpotifyScan {
     private static func putBack(_ snapshot: Snapshot) async {
         do {
             if snapshot.wasPlaying, SpotifyURI.isPlayableTrack(snapshot.uri) {
+                await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
                 try await SpotifyBridge.run("play track \"\(snapshot.uri)\"") { _ in }
                 try await seekBack(to: snapshot)
             } else {

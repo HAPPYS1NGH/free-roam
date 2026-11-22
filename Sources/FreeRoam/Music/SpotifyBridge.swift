@@ -46,6 +46,8 @@ enum SpotifyBridge: MusicAppBridge {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
         configuration.hides = true
+        // Spotify shows its window during a launch anyway.
+        await SpotifyWindow.keepHidden(for: SpotifyWindow.launchWatch)
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
         // Spotify is listed as running before it takes scripts.
         try await MusicBridge.retryWhileStarting(for: .seconds(20)) {
@@ -110,6 +112,7 @@ enum SpotifyBridge: MusicAppBridge {
         let uri = tracks[number - 1].uri
         guard SpotifyURI.isPlayableTrack(uri) else { throw MusicBridgeError.invalidPersistentID(uri) }
         lastTuned.withLock { $0 = playlistID }
+        await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
         try await run("""
             set shuffling to false
             set repeating to true
@@ -141,6 +144,7 @@ enum SpotifyBridge: MusicAppBridge {
     static func play(playlistID: String) async throws -> (orderChanged: Bool, track: Int) {
         let tracks = try await savedPlaylist(playlistID).tracks
         lastTuned.withLock { $0 = playlistID }
+        await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
         let orderChanged = try await run("""
             set alreadyOnAir to shuffling is true and repeating is true
             set shuffling to true
