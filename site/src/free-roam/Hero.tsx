@@ -29,7 +29,7 @@ export function Hero() {
   return <section ref={hero} className="ta-hero" data-lift={q && alt ? "" : undefined} aria-labelledby="ta-title">
     <div className="ta-scene" aria-hidden="true">
       <div className="ta-scene-img" />
-      <LazyDrive className="ta-drive" label="A coupe drives a coastal highway beside the sea" />
+      <LazyDrive className="ta-drive" />
       <div className="ta-grade" />
       {retunes > 0 && <div key={retunes} className="ta-retune" />}
     </div>

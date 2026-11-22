@@ -13,8 +13,7 @@
 
 @media (max-width: 740px) { .fx-base { gap: 12px; } .fx-base .fx-small { margin-left: 0; width: 100%; } }
 /* 72 rows of 4px pixels (3px under 600px), held before the canvas arrives. */
-.fx-road { display: block; width: 100%; min-height: 288px; margin: -8px 0 0; padding: 0; border: 0; background: none; cursor: pointer; touch-action: pan-y; overflow: hidden; }
-.p-page .fx-road:focus-visible { outline-offset: -4px; border-radius: 0; }
+.fx-road { display: block; width: 100%; min-height: 288px; margin: -8px 0 0; cursor: pointer; touch-action: pan-y; overflow: hidden; }
 /* The sky has no edge: stars and the horizon glow come up out of the page. */
 .fx-road canvas { display: block; image-rendering: pixelated; -webkit-mask-image: linear-gradient(180deg, transparent, #000 26%); mask-image: linear-gradient(180deg, transparent, #000 26%); }
 

@@ -13,7 +13,7 @@ import "./footer.css"
 // lamp's head breaks it.
 export function Footer() {
   const { retunes, stationRgb, audio } = useRadio()
-  const stripRef = useRef<HTMLButtonElement>(null)
+  const stripRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const sceneRef = useRef<Scene | null>(null)
   const paletteRef = useRef<Palette | null>(null)
@@ -112,13 +112,13 @@ export function Footer() {
     }
   }, [])
 
-  const trackPointer = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const trackPointer = (event: React.PointerEvent<HTMLDivElement>) => {
     const box = event.currentTarget.getBoundingClientRect()
     pointerRef.current = (event.clientX - box.left) / pixelRef.current
   }
   // A press on a lamp head breaks it instead of sending a car.
   const hitLampRef = useRef(false)
-  const pressRoad = (event: React.PointerEvent<HTMLButtonElement>) => {
+  const pressRoad = (event: React.PointerEvent<HTMLDivElement>) => {
     trackPointer(event)
     const scene = sceneRef.current
     const canvas = canvasRef.current
@@ -175,11 +175,11 @@ export function Footer() {
 
   return <footer className="fx-footer">
     <Billboard onLink={onLink} onPress={sendCar} headlights={carLights} />
-    <button
+    {/* A pointer toy, not a control: kept out of the tab order and the accessibility tree. */}
+    <div
       ref={stripRef}
-      type="button"
       className="fx-road"
-      aria-label="Send a car down the coast road"
+      aria-hidden="true"
       onPointerMove={trackPointer}
       onPointerDown={pressRoad}
       onPointerLeave={() => { pointerRef.current = null }}

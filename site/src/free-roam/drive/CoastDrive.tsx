@@ -3,11 +3,11 @@ import { createDrive, type Drive, type DriveOptions } from "./scene"
 
 // Live WebGL coast drive. Renders `fallback` if WebGL can't start.
 // `grabArea` selects the ancestor whose pointers can drag the sun and moon.
-export function CoastDrive({ startHour, onHour, fallback, label, grabArea, ...options }: DriveOptions & {
+// Decorative: the hero hides it from assistive tech, so it carries no label.
+export function CoastDrive({ startHour, onHour, fallback, grabArea, ...options }: DriveOptions & {
   startHour: number
   onHour: (hour: number) => void
   fallback: ReactNode
-  label: string
   grabArea?: string
 }) {
   const host = useRef<HTMLDivElement>(null)
@@ -34,5 +34,5 @@ export function CoastDrive({ startHour, onHour, fallback, label, grabArea, ...op
   useEffect(() => { drive.current?.setOptions({ paint, cycleSeconds, lockHour, speed, still }) }, [paint, cycleSeconds, lockHour, speed, still])
 
   if (failed) return <>{fallback}</>
-  return <div ref={host} className="drive-host" role="img" aria-label={label} />
+  return <div ref={host} className="drive-host" />
 }
