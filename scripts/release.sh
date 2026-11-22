@@ -149,6 +149,15 @@ cp "$DMG" dist/FreeRoam.dmg
 # commit count, so each release from main is newer than the one before.
 BUILD="$(plutil -extract CFBundleVersion raw "$APP/Contents/Info.plist")"
 SIGN_UPDATE=".build/artifacts/sparkle/Sparkle/bin/sign_update"
+GENERATE_KEYS=".build/artifacts/sparkle/Sparkle/bin/generate_keys"
+# A different key in the keychain would sign an update that every installed
+# copy rejects, so the keychain's key must match the one the app ships with.
+APP_KEY="$(plutil -extract SUPublicEDKey raw "$APP/Contents/Info.plist")"
+KEYCHAIN_KEY="$("$GENERATE_KEYS" --account "$SPARKLE_ACCOUNT" -p)"
+if [[ "$KEYCHAIN_KEY" != "$APP_KEY" ]]; then
+  echo "error: the Sparkle key in the keychain ($KEYCHAIN_KEY) isn't SUPublicEDKey in Info.plist ($APP_KEY)" >&2
+  exit 1
+fi
 # Prints sparkle:edSignature="…" length="…", the enclosure's attributes.
 SIGNATURE="$("$SIGN_UPDATE" --account "$SPARKLE_ACCOUNT" dist/FreeRoam.dmg)"
 cat > dist/appcast.xml <<EOF

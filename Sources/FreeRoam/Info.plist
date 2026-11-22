@@ -37,6 +37,10 @@
 	<string>https://github.com/HAPPYS1NGH/free-roam/releases/latest/download/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>StkoHMCr8mwOKSxE1m+q6KkzHwu0N9G2tvWyCc4CbOk=</string>
+	<!-- Checks an update's signature before mounting its DMG, so a
+	     swapped release asset never reaches the disk image parser. -->
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
