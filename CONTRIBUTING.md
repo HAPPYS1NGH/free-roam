@@ -78,10 +78,10 @@ Commit first. The script won't build with uncommitted changes to the app's files
 Then check:
 
 ```sh
-spctl -a -vvv -t install "dist/Free Roam-0.1.0.dmg"   # source=Notarized Developer ID
-xcrun stapler validate "dist/Free Roam-0.1.0.dmg"
+spctl -a -vvv -t install "dist/Free Roam-0.2.0.dmg"   # source=Notarized Developer ID
+xcrun stapler validate "dist/Free Roam-0.2.0.dmg"
 codesign --verify --deep --strict --verbose=2 "dist/Free Roam.app"
-(cd dist && shasum -a 256 -c "Free Roam-0.1.0.dmg.sha256")
+(cd dist && shasum -a 256 -c "Free Roam-0.2.0.dmg.sha256")
 ```
 
 ### Publish
@@ -89,8 +89,8 @@ codesign --verify --deep --strict --verbose=2 "dist/Free Roam.app"
 The site and README link to `releases/latest/download/FreeRoam.dmg`, and the app reads `releases/latest/download/appcast.xml`. So every release must include both files under those exact names, and it must not be a pre-release, which `latest` skips. Tag the commit the DMG was built from:
 
 ```sh
-gh release create v0.1.0 --target <commit> --title "Free Roam 0.1.0" \
-  dist/FreeRoam.dmg dist/appcast.xml "dist/Free Roam-0.1.0.dmg" "dist/Free Roam-0.1.0.dmg.sha256"
+gh release create v0.2.0 --target <commit> --title "Free Roam 0.2.0" \
+  dist/FreeRoam.dmg dist/appcast.xml "dist/Free Roam-0.2.0.dmg" "dist/Free Roam-0.2.0.dmg.sha256"
 ```
 
 Copies of 0.1.0 and earlier have no updater, so tell those people to download the new DMG once.

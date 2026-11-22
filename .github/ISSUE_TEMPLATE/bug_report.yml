@@ -14,7 +14,7 @@ body:
     attributes:
       label: Free Roam version
       description: Select Free Roam in Finder and choose File → Get Info.
-      placeholder: "0.1.0"
+      placeholder: "0.2.0"
     validations:
       required: true
   - type: input
