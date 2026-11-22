@@ -1,6 +1,6 @@
 # Security
 
-Free Roam is a menu bar app that controls the Music app and, if you allow it, captures the screen behind the wheel. If you find a way to misuse either of those, or any other security problem, please report it privately.
+Free Roam is a menu bar app that controls the Music app or Spotify and, if you turn on the cinematic backdrop, captures the screen behind the wheel. It updates itself with [Sparkle](https://sparkle-project.org), and only installs updates signed with the project's key. If you find a way to misuse any of those, or any other security problem, please report it privately.
 
 ## Reporting a vulnerability
 
