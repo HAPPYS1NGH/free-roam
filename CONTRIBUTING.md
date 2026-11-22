@@ -41,6 +41,8 @@ Only files listed in `site/scripts/public-assets.mjs` get into the build, so you
 
 To deploy, run `SITE_URL=https://freeroam.happys1ngh.com npm run build:release` and publish only `site/dist/`. On Vercel, set the root directory to `site`, the build command to `npm run build:release`, the output directory to `dist`, and add the `SITE_URL` environment variable. `site/vercel.json` sets the headers and caching.
 
+Every push to `main` that touches the site also deploys it to IPFS at [freeroam.happysingh.eth.limo](https://freeroam.happysingh.eth.limo) (`.github/workflows/ipfs.yml`). Omnipin pins the build to Pinata, then to Lighthouse when that key is set. `site/scripts/publish-ens.mjs` then points the Namespace offchain subname `freeroam.happysingh.eth` at the new CID, keeping its other records. Each run keeps the CAR file as an artifact for 90 days, so any pinning service can restore that exact CID. Repository secrets: `PINATA_JWT`, `NAMESPACE_API_KEY` and, optionally, `LIGHTHOUSE_API_KEY`.
+
 ## Design studio
 
 The tuning panel for the wheel runs locally and never ships.

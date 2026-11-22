@@ -1,0 +1,80 @@
+name: Deploy site to IPFS and ENS
+
+# Builds the landing page, pins it to IPFS and points freeroam.happysingh.eth at it.
+# The ENS record is a Namespace offchain subname, so updating it is an API call, not a transaction.
+on:
+  push:
+    branches: [main]
+    paths: [site/**, assets/sounds/**, .github/workflows/ipfs.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ipfs-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      ENS_NAME: freeroam.happysingh.eth
+      SITE_URL: https://freeroam.happys1ngh.com
+      OMNIPIN: omnipin@4.0.1
+      HAS_LIGHTHOUSE: ${{ secrets.LIGHTHOUSE_API_KEY != '' }}
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npm run build:release
+
+      # eth.limo has no clean-URL or SPA fallback; this makes unknown paths serve the 404 page.
+      - name: Serve 404.html for missing paths on IPFS gateways
+        run: printf '/* /404.html 404\n' > dist/_redirects
+
+      # Pinata takes the upload and must succeed. Every other provider pins the same CID by hash.
+      - name: Pin to Pinata
+        id: pin
+        env:
+          OMNIPIN_PINATA_TOKEN: ${{ secrets.PINATA_JWT }}
+        run: |
+          set -o pipefail
+          npx -y "$OMNIPIN" deploy dist --providers Pinata --strict --name free-roam -d "$RUNNER_TEMP" | tee "$RUNNER_TEMP/pin.log"
+          cid=$(grep -oE 'Root CID: [a-z0-9]+' "$RUNNER_TEMP/pin.log" | cut -d' ' -f3)
+          test -n "$cid"
+          echo "cid=$cid" >> "$GITHUB_OUTPUT"
+
+      - name: Pin to Lighthouse
+        if: env.HAS_LIGHTHOUSE == 'true'
+        continue-on-error: true
+        env:
+          OMNIPIN_LIGHTHOUSE_TOKEN: ${{ secrets.LIGHTHOUSE_API_KEY }}
+        run: npx -y "$OMNIPIN" deploy dist --providers Lighthouse --name free-roam -d "$RUNNER_TEMP"
+
+      # The CAR file rebuilds the exact same CID anywhere, so any pinning service can restore the site.
+      - uses: actions/upload-artifact@v7
+        with:
+          name: free-roam-${{ steps.pin.outputs.cid }}
+          path: ${{ runner.temp }}/free-roam.car
+          retention-days: 90
+
+      - name: Point ${{ env.ENS_NAME }} at the new CID
+        env:
+          NAMESPACE_API_KEY: ${{ secrets.NAMESPACE_API_KEY }}
+        run: node scripts/publish-ens.mjs "$ENS_NAME" "${{ steps.pin.outputs.cid }}"
+
+      - name: Summary
+        run: |
+          {
+            echo "### Deployed ipfs://${{ steps.pin.outputs.cid }}"
+            echo "- ENS: https://${ENS_NAME}.limo"
+            echo "- Gateway: https://${{ steps.pin.outputs.cid }}.ipfs.dweb.link"
+          } >> "$GITHUB_STEP_SUMMARY"
