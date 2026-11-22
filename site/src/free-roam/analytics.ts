@@ -73,7 +73,9 @@ export function startAnalytics() {
   // Loaded after the page renders so analytics never delays it.
   import("posthog-js").then(({ default: client }) => {
     client.init(projectKey, {
-      api_host: "/ingest",
+      // /ingest is a Vercel rewrite. ENS gateways (name.eth.limo) serve the IPFS build
+      // with no proxy, so there events go straight to PostHog.
+      api_host: /\.eth\.(limo|link)$/.test(location.hostname) ? "https://us.i.posthog.com" : "/ingest",
       ui_host: "https://us.posthog.com",
       persistence: "memory",
       person_profiles: "identified_only",
