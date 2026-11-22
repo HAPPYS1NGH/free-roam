@@ -58,6 +58,9 @@ final class SpotifyLibrary {
             log.notice("Spotify has no command-line tool, so the stations are the playlists last listed")
             return playlists.map { Playlist(id: $0.id, name: $0.name) }
         }
+        // Spotify lists none while it's still signing in, so an empty list
+        // keeps the saved songs, which are the fallback without the tool.
+        guard !listed.isEmpty else { return [] }
         playlists = Self.merging(listed, into: playlists)
         save()
         return listed.map { Playlist(id: $0.id, name: $0.name) }
