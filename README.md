@@ -87,10 +87,11 @@ Not yet. If another app already uses ⌥Q, quit that app or turn its shortcut of
 
 ### How do I uninstall it?
 
-Quit Free Roam from the menu bar and move it to the Trash. To also forget its stations and permissions:
+Quit Free Roam from the menu bar and move it to the Trash. To also forget its stations, its copy of your Spotify playlists and its permissions:
 
 ```sh
 defaults delete com.happys1ngh.freeroam
+rm -f ~/Library/Application\ Support/Free\ Roam/spotify-playlists.json
 tccutil reset All com.happys1ngh.freeroam
 ```
 
