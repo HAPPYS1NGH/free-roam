@@ -54,8 +54,10 @@ The app is signed and notarized by Apple, so it opens without a warning. Older v
 
 Free Roam asks for at most two things:
 
-- **Control Music** or **Control Spotify** (required, for the app you pick). Lets Free Roam switch playlists and turn the volume down while the wheel is open. macOS asks the first time you use each one.
-- **Screen Recording** (optional). Fades the colour out of the screen behind the wheel. Free Roam only asks if you choose Allow. Without it, the wheel works the same over a tinted background.
+- **Control Music** or **Control Spotify** (required, for the app you pick). Lets Free Roam switch playlists and turn the volume down while the wheel is open. macOS asks the first time you use each one, or when you choose Allow in the welcome window.
+- **Screen Recording** (optional, for the cinematic backdrop). Fades the colour out of the screen behind the wheel. Free Roam only asks if you turn the backdrop on in the welcome window or the menu. Without it, the wheel works the same over a tinted background.
+
+The welcome window shows at launch until Free Roam may control the app you play from, or until you choose Don't Show This Again. Screen Recording doesn't count.
 
 What it doesn't do:
 

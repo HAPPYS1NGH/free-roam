@@ -8,22 +8,25 @@ struct WelcomeView: View {
 
     var body: some View {
         WelcomeContent(
-            musicAllowed: model.musicAllowed,
-            screenRecordingAllowed: model.screenRecordingAllowed,
-            isAskingForMusic: model.isAskingForMusic,
-            allowMusic: model.allowMusic,
-            allowScreenRecording: model.allowScreenRecording,
+            picked: model.picked,
+            statuses: model.statuses,
+            backdropOn: model.backdropOn,
+            pick: model.pick,
+            allow: model.allow,
+            turnOnBackdrop: model.turnOnBackdrop,
             launchesAtLogin: model.launchesAtLogin,
             setLaunchesAtLogin: model.setLaunchesAtLogin,
             dontShowAgain: dontShowAgain,
             close: close
         )
+        // Also when Settings or the menu picks the app.
+        .onChange(of: model.picked) { model.refresh() }
     }
 }
 
 /// The welcome window drawn from plain values, so a test can render each state.
 struct WelcomeContent: View {
-    nonisolated static let width = 480.0
+    nonisolated static let width = 520.0
     /// From Contents/Resources, which scripts/bundle.sh copies in. Without
     /// the bundle, as in `swift run`, the badge's space stays empty, so the
     /// window keeps its size.
@@ -31,20 +34,21 @@ struct WelcomeContent: View {
 
     var badge = WelcomeContent.bundledBadge
     var previews = BackdropPreview.bundled
-    let musicAllowed: Bool
-    let screenRecordingAllowed: Bool
-    var isAskingForMusic = false
-    var allowMusic: () -> Void = {}
-    var allowScreenRecording: () -> Void = {}
+    var icons = PlayFromSection.installedIcons
+    let picked: MusicApp
+    let statuses: [MusicApp: AppControlStatus]
+    let backdropOn: Bool
+    var pick: (MusicApp) -> Void = { _ in }
+    var allow: (MusicApp) -> Void = { _ in }
+    var turnOnBackdrop: () -> Void = {}
     var launchesAtLogin = false
     var setLaunchesAtLogin: (Bool) -> Void = { _ in }
     var dontShowAgain: () -> Void = {}
     var close: () -> Void = {}
 
     var body: some View {
-        // 16 rather than 20 keeps the window under 700 pt with the previews.
-        VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 18) {
+            HStack(spacing: 14) {
                 Group {
                     if let badge {
                         Image(nsImage: badge).resizable().interpolation(.high)
@@ -52,55 +56,57 @@ struct WelcomeContent: View {
                         Color.clear
                     }
                 }
-                .frame(width: 56, height: 56)
-                .padding(.bottom, 8)
+                .frame(width: 48, height: 48)
                 .accessibilityHidden(true)
-                Text("Welcome to Free Roam")
-                    .font(.title2.weight(.semibold))
-                Text("Hold ⌥Q anywhere to open the radio wheel. Move the mouse towards a station and let go to tune in.")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Welcome to Free Roam")
+                        .font(.title2.weight(.semibold))
+                    Text("Your Music or Spotify playlists on a radio wheel.")
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            WelcomeSection(number: 1, title: "Play from") {
+                PlayFromSection(icons: icons, picked: picked, statuses: statuses, pick: pick, allow: allow)
+            }
+
+            WelcomeSection(number: 2, title: "Cinematic backdrop (optional)") {
+                if backdropOn {
+                    Label("On", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                } else {
+                    Button("Turn On…", action: turnOnBackdrop)
+                        .accessibilityLabel("Turn on the cinematic backdrop")
+                }
+            } content: {
+                Text("Fades the screen behind the wheel so your stations stand out.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                // The previews' own width at 2×, so they're never scaled up.
+                BackdropPreview(previews: previews)
+                    .frame(maxWidth: 408)
+                // Captures happen as ⌥Q goes down, and once per display at
+                // launch or when it's connected to warm up. All stay in memory.
+                Text("""
+                    It needs Screen Recording, so macOS will say Free Roam can record your screen. \
+                    It only takes a still as you hold ⌥Q, and never saves or sends it.
+                    """)
+                    .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            VStack(spacing: 0) {
-                PermissionRow(
-                    symbol: "music.note",
-                    name: "Control Music",
-                    details: ["Free Roam plays your playlists in the Music app and turns Music down while the wheel is open."],
-                    isAllowed: musicAllowed,
-                    isAsking: isAskingForMusic,
-                    allow: allowMusic
-                )
-                Divider().padding(.leading, 52)
-                PermissionRow(
-                    symbol: "display",
-                    name: "Screen Recording",
-                    isOptional: true,
-                    details: [
-                        "Fades the screen behind the wheel so your stations stand out.",
-                        // Captures happen as ⌥Q goes down, and once per display at
-                        // launch or when it's connected to warm up. All stay in memory.
-                        """
-                        macOS will say Free Roam can record your screen. It only takes a still as you hold ⌥Q, \
-                        and never saves or sends it.
-                        """,
-                    ],
-                    preview: AnyView(BackdropPreview(previews: previews)),
-                    isAllowed: screenRecordingAllowed,
-                    allow: allowScreenRecording
-                )
-            }
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
-
-            VStack(alignment: .leading, spacing: 8) {
+            WelcomeSection(number: 3, title: "Try it") {
                 // Off until you tick it: a login item needs your say-so.
                 Toggle("Open Free Roam when you log in", isOn: Binding(
                     get: { launchesAtLogin },
                     set: { setLaunchesAtLogin($0) }
                 ))
                 .toggleStyle(.checkbox)
-                Text("You can change these later in System Settings or the Free Roam menu.")
+            } content: {
+                Text("Hold ⌥Q anywhere to open the radio wheel. Move the mouse towards a station and let go to tune in.")
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             HStack {
@@ -115,54 +121,49 @@ struct WelcomeContent: View {
     }
 }
 
-/// One permission: what it's for, whether it's allowed, and a button to allow it.
-private struct PermissionRow: View {
-    let symbol: String
-    let name: String
-    var isOptional = false
-    let details: [String]
-    /// Between the first line of details and the rest.
-    var preview: AnyView?
-    let isAllowed: Bool
-    var isAsking = false
-    let allow: () -> Void
+/// A numbered part of the window, with an optional control on the title's line.
+private struct WelcomeSection<Accessory: View, Content: View>: View {
+    let number: Int
+    let title: String
+    let accessory: Accessory
+    let content: Content
 
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol)
-                .font(.title2)
-                .foregroundStyle(.secondary)
-                .frame(width: 28, height: Self.titleHeight)
-            VStack(alignment: .leading, spacing: 6) {
-                // The status shares the title's line, so the text below keeps
-                // its width, and the window its size, whatever the state.
-                HStack(spacing: 10) {
-                    Text(isOptional ? "\(name) (optional)" : name).font(.headline)
-                    Spacer(minLength: 0)
-                    if isAllowed {
-                        Label("Allowed", systemImage: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
-                    } else {
-                        Text("Not yet").foregroundStyle(.secondary)
-                        Button("Allow…", action: allow)
-                            .disabled(isAsking)
-                            // Both rows' buttons read "Allow…".
-                            .accessibilityLabel("Allow \(name)")
-                    }
-                }
-                .frame(height: Self.titleHeight)
-                ForEach(details, id: \.self) { detail in
-                    if detail == details.dropFirst().first, let preview { preview }
-                    Text(detail)
-                        .font(detail == details.first ? .body : .callout)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-        }
-        .padding(12)
+    init(number: Int, title: String, @ViewBuilder accessory: () -> Accessory, @ViewBuilder content: () -> Content) {
+        self.number = number
+        self.title = title
+        self.accessory = accessory()
+        self.content = content()
     }
 
-    /// Tall enough for the Allow button.
-    private nonisolated static let titleHeight = 24.0
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text("\(number)")
+                .font(.callout.weight(.semibold).monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 20, height: 20)
+                .background(.quaternary, in: Circle())
+                .frame(height: Self.titleHeight)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 8) {
+                // The control shares the title's line, so the text below keeps
+                // its width, and the window its size, whatever the state.
+                HStack(spacing: 10) {
+                    Text(title).font(.headline)
+                    Spacer(minLength: 0)
+                    accessory
+                }
+                .frame(height: Self.titleHeight)
+                content
+            }
+        }
+    }
+
+    /// Tall enough for a button.
+    private nonisolated static var titleHeight: Double { 24 }
+}
+
+extension WelcomeSection where Accessory == EmptyView {
+    init(number: Int, title: String, @ViewBuilder content: () -> Content) {
+        self.init(number: number, title: title, accessory: { EmptyView() }, content: content)
+    }
 }

@@ -70,7 +70,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let style = AppDelegate.loadStyle()
     var openSettings: OpenSettingsAction?
     private var wheel: RadioWheelModel?
-    private lazy var welcome = WelcomeWindow(stations: stations)
+    private lazy var welcome = WelcomeWindow(stations: stations, selectApp: selectApp)
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         CaptionFont.register()

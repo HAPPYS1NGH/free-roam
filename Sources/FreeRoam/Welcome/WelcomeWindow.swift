@@ -5,24 +5,27 @@ import SwiftUI
 
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "welcome")
 
-/// Explains Free Roam's two permissions at launch, until you choose Don't
-/// Show This Again or both are allowed. Closing it any other way is fine:
-/// nothing nags, and it shows again at the next launch, since people often
-/// open an app, close it straight away and come back later.
+/// Picks the app you play from and explains Free Roam's permissions at
+/// launch, until you choose Don't Show This Again or Free Roam may control
+/// the app you play from. The cinematic backdrop is optional, so it never
+/// brings the window back. Closing it any other way is fine: nothing nags,
+/// and it shows again at the next launch, since people often open an app,
+/// close it straight away and come back later.
 @MainActor
 final class WelcomeWindow: NSObject, NSWindowDelegate {
     private let model: WelcomeModel
     private var window: NSWindow?
     private var activationObserver: (any NSObjectProtocol)?
 
-    init(stations: StationList) {
-        model = WelcomeModel(stations: stations)
+    /// `selectApp` switches app as Settings and the menu do.
+    init(stations: StationList, selectApp: @escaping @MainActor (MusicApp) -> Void) {
+        model = WelcomeModel(stations: stations, selectApp: selectApp)
     }
 
     func showIfNeeded() {
         model.refresh()
         guard model.shouldShow else {
-            let reason = model.dontShowAgain ? "you chose Don't Show This Again" : "both permissions are allowed"
+            let reason = model.dontShowAgain ? "you chose Don't Show This Again" : "Control \(model.picked.name) is allowed"
             log.notice("Didn't show the welcome window: \(reason, privacy: .public)")
             return
         }
@@ -58,9 +61,11 @@ final class WelcomeWindow: NSObject, NSWindowDelegate {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.model.refresh() }
         }
+        let statuses = MusicApp.allCases.map { "Control \($0.name) \(String(describing: model.checked[$0] ?? .notAsked))" }
         log.notice("""
-            Showed the welcome window: Control Music \(self.model.musicAllowed ? "allowed" : "not allowed", privacy: .public), \
-            Screen Recording \(self.model.screenRecordingAllowed ? "allowed" : "not allowed", privacy: .public)
+            Showed the welcome window: playing from \(self.model.picked.name, privacy: .public), \
+            \(statuses.joined(separator: ", "), privacy: .public), \
+            cinematic backdrop \(self.model.backdropOn ? "on" : "off", privacy: .public)
             """)
     }
 
@@ -71,7 +76,7 @@ final class WelcomeWindow: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        model.stopAskingForMusic()
+        model.stopAsking()
         if !model.dontShowAgain {
             log.notice("Closed the welcome window, so it shows again at the next launch")
         }
