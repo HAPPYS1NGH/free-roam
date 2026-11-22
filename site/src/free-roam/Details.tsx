@@ -1,7 +1,6 @@
-import { sourceUrl } from "./content"
-import { DownloadLink } from "./DownloadLink"
+import { Footer } from "./footer/Footer"
 import { Keycap, useAltHeld, useKeyHeld } from "./keys"
-import { Brand, DownloadButton } from "./Shared"
+import { DownloadButton } from "./Shared"
 
 // Everything below the station list: how it works, questions, the closing
 // pitch and the footer.
@@ -14,18 +13,7 @@ export function Details() {
       <p>Free and open source. macOS 14 or later.</p>
       <DownloadButton />
     </section>
-    <footer className="ta-footer">
-      <div className="ta-lamps" aria-hidden="true" />
-      <div className="ta-footer-row p-wrap">
-        <Brand />
-        <p className="p-footer-line">Hold ⌥Q anywhere.</p>
-        <nav aria-label="Footer">
-          <DownloadLink elsewhere="Send to your Mac">Download</DownloadLink>
-          <a href={sourceUrl} target="_blank" rel="noreferrer">GitHub ↗</a>
-          <a href="https://x.com/HAPPYS1NGH" target="_blank" rel="noreferrer">X ↗</a>
-        </nav>
-      </div>
-    </footer>
+    <Footer />
   </>
 }
 

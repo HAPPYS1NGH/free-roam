@@ -85,34 +85,11 @@
 .ta-closing h2 span { color: var(--accent); transition: color 400ms var(--ease-out); }
 .ta-closing p { color: var(--muted); font-size: 16px; }
 
-/* Footer: the end of the drive. Streetlights receding toward a vanishing point,
-   all static gradients. */
-.ta-footer { position: relative; isolation: isolate; margin-top: clamp(32px, 6vw, 80px); min-height: 360px; display: flex; flex-direction: column; justify-content: flex-end; overflow: hidden; border-top: 1px solid var(--line); }
-.ta-lamps { position: absolute; inset: 0; z-index: -1; pointer-events: none;
-  background:
-    radial-gradient(circle at 14% 22%, oklch(from var(--sodium) l c h / 0.55) 0, oklch(from var(--sodium) l c h / 0.12) 34px, transparent 90px),
-    radial-gradient(circle at 30% 34%, oklch(from var(--sodium) l c h / 0.45) 0, oklch(from var(--sodium) l c h / 0.1) 24px, transparent 64px),
-    radial-gradient(circle at 41% 42%, oklch(from var(--sodium) l c h / 0.4) 0, oklch(from var(--sodium) l c h / 0.08) 16px, transparent 44px),
-    radial-gradient(circle at 48% 47%, oklch(from var(--sodium) l c h / 0.35) 0, transparent 26px),
-    radial-gradient(circle at 52% 50%, oklch(from var(--sodium) l c h / 0.3) 0, transparent 16px),
-    radial-gradient(circle at 86% 22%, oklch(from var(--sodium) l c h / 0.5) 0, oklch(from var(--sodium) l c h / 0.1) 30px, transparent 80px),
-    radial-gradient(circle at 70% 34%, oklch(from var(--sodium) l c h / 0.4) 0, oklch(from var(--sodium) l c h / 0.08) 20px, transparent 56px),
-    radial-gradient(circle at 59% 42%, oklch(from var(--sodium) l c h / 0.32) 0, transparent 32px),
-    radial-gradient(80% 60% at 50% 60%, oklch(from var(--sodium) l c h / 0.08), transparent 70%),
-    linear-gradient(180deg, var(--bg) 0%, oklch(0.12 0.014 255) 100%); }
-.ta-footer-row { display: flex; align-items: center; gap: 24px; padding-block: 28px max(36px, env(safe-area-inset-bottom)); border-top: 1px solid oklch(1 0 0 / 0.08); }
-.ta-footer-row nav { display: flex; gap: 24px; margin-left: auto; font-size: 14px; }
-.ta-footer-row nav a { display: inline-flex; align-items: center; min-height: 44px; color: var(--muted); transition: color 150ms ease-out; }
-@media (hover: hover) and (pointer: fine) { .ta-footer-row nav a:hover { color: var(--ink); } }
-
 @media (max-width: 740px) {
   .ta-nav .p-tally { display: none; }
   .ta-line { font-size: clamp(52px, 15vw, 88px); }
   .ta-scene-img { background-position: 64% 70%; }
   .ta .ta-caption { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
-  .ta-footer { min-height: 300px; }
-  .ta-footer-row { flex-wrap: wrap; gap: 12px; }
-  .ta-footer-row nav { margin-left: 0; width: 100%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
