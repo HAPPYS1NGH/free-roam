@@ -74,7 +74,7 @@
 /* The download is the headline and takes the widest column; the rest are the
    small print beside it. */
 .bb-copy {
-  display: grid; grid-template-columns: minmax(0, 1.9fr) repeat(3, minmax(0, 1fr)); gap: 28px 32px;
+  display: grid; grid-template-columns: minmax(0, 1.9fr) repeat(2, minmax(0, 1fr)); gap: 28px 32px;
   padding: clamp(32px, 3.6vw, 48px) var(--bb-pad) clamp(44px, 4.4vw, 60px);
 }
 .bb-title {
