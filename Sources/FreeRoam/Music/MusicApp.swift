@@ -1,3 +1,4 @@
+import CoreServices
 import Foundation
 
 /// The app Free Roam plays stations in. You pick one in Settings, and the
@@ -45,8 +46,17 @@ protocol MusicAppBridge {
 
     /// Never prompts. The app has to be running for macOS to answer.
     static func permission() -> MusicPermission
+    /// Shows macOS's prompt if you haven't answered it yet, and waits for
+    /// your answer. The app has to be running.
+    static func requestPermission() async -> MusicPermission
     /// Opens the app hidden and waits until it answers scripts.
     static func launch() async throws
+    /// The first half of `launch()`, so macOS can be asked before a script
+    /// raises its prompt, as the welcome window does.
+    static func openHidden() async throws
+    /// The second half of `launch()`. The first script raises macOS's prompt
+    /// if Free Roam hasn't been allowed or refused yet.
+    static func waitUntilAnswering() async throws
 
     /// The playlists Settings lists, in order.
     static func playlists() async throws -> [Playlist]
@@ -91,6 +101,21 @@ protocol MusicAppBridge {
 extension MusicAppBridge {
     /// Whether playlists and tracks can be read now, without launching the app.
     static var canReadPlaylists: Bool { listsSavedPlaylists || isRunning }
+
+    /// Never prompts. An app that has only just started may not be ready to
+    /// be asked, so this waits for it as scripts do. Throws `notRunning` if
+    /// the app quits meanwhile.
+    static func permissionOnceStarted() async throws -> MusicPermission {
+        var answer = MusicPermission.musicNotRunning
+        try await MusicBridge.retryWhileStarting(for: .seconds(15)) {
+            guard isRunning else { throw MusicBridgeError.notRunning }
+            answer = permission()
+            if answer == .musicNotRunning {
+                throw MusicBridgeError.script(code: Int(procNotFound), message: "The app can't be asked yet")
+            }
+        }
+        return answer
+    }
 }
 
 extension MusicBridge: MusicAppBridge {

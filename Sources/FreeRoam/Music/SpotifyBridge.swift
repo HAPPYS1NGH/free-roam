@@ -41,10 +41,29 @@ enum SpotifyBridge: MusicAppBridge {
         return permission
     }
 
+    /// Shows macOS's prompt to let Free Roam control Spotify if you haven't
+    /// answered it yet, and waits for your answer. Spotify has to be running.
+    static func requestPermission() async -> MusicPermission {
+        // The check blocks its thread for as long as the prompt is up.
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                let permission = MusicBridge.permission(forApp: bundleID, askingIfNeeded: true)
+                MusicPermissionMemory.record(permission, for: .spotify)
+                continuation.resume(returning: permission)
+            }
+        }
+    }
+
     /// Opens Spotify hidden, so the app you're in stays active and in front,
     /// and waits until it answers scripts. The first script raises macOS's
     /// prompt if Free Roam hasn't been allowed or refused yet.
     static func launch() async throws {
+        try await openHidden()
+        try await waitUntilAnswering()
+    }
+
+    /// Opens Spotify hidden without waiting for it to answer scripts.
+    static func openHidden() async throws {
         guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
             throw MusicBridgeError.notInstalled
         }
@@ -54,7 +73,12 @@ enum SpotifyBridge: MusicAppBridge {
         // Spotify shows its window during a launch anyway.
         await SpotifyWindow.keepHidden(for: SpotifyWindow.launchWatch)
         _ = try await NSWorkspace.shared.openApplication(at: url, configuration: configuration)
-        // Spotify is listed as running before it takes scripts.
+    }
+
+    /// Spotify is listed as running before it takes scripts, so this waits
+    /// until it answers one, and then for the command-line tool. The script
+    /// raises macOS's prompt if Free Roam hasn't been allowed or refused yet.
+    static func waitUntilAnswering() async throws {
         try await MusicBridge.retryWhileStarting(for: .seconds(20)) {
             try await run("return sound volume") { _ in }
         }

@@ -161,21 +161,6 @@ enum MusicBridge {
         }
     }
 
-    /// Never prompts. A Music that has only just started may not be ready to
-    /// be asked, so this waits for it as scripts do. Throws `notRunning` if
-    /// Music quits meanwhile.
-    static func permissionOnceStarted() async throws -> MusicPermission {
-        var answer = MusicPermission.musicNotRunning
-        try await retryWhileStarting(for: .seconds(15)) {
-            guard isRunning else { throw MusicBridgeError.notRunning }
-            answer = permission()
-            if answer == .musicNotRunning {
-                throw MusicBridgeError.script(code: Int(procNotFound), message: "Music can't be asked yet")
-            }
-        }
-        return answer
-    }
-
     /// User playlists in library order, without folders or Music's own lists.
     static func playlists() async throws -> [Playlist] {
         // Variable names have to avoid Music's own terms: `names` is one of
