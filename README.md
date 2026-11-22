@@ -60,14 +60,14 @@ Free Roam asks for at most two things:
 What it doesn't do:
 
 - It never saves or sends what's on your screen. It uses the capture only to draw the backdrop.
-- It has no analytics, and makes no network requests except to read a Spotify playlist's name and cover when you add one.
+- It has no analytics, and makes no network requests except to download Spotify song covers from Spotify's image server.
 - It doesn't need Accessibility or Input Monitoring. ⌥Q is a standard macOS global shortcut, so other keys never pass through Free Roam.
 
 ## FAQ
 
 ### Does it work with Spotify?
 
-Yes. Pick Spotify under **Play from** in Settings. Spotify doesn't let other apps list your playlists, so the stations are the playlists you add: paste a playlist link (or drop it) into Settings. Free Roam then tunes it, which means stepping through the playlist with Spotify muted to learn its songs. It takes about half a second a song, up to 300 songs, and Spotify goes back to what you were playing when it's done. Right-click a playlist to tune it again after you edit it, or to remove it. It works with Free and Premium.
+Yes. Pick Spotify under **Play from** in Settings, and your Spotify playlists show up there like Music's. Free Roam uses the command-line tool that comes inside the Spotify app, so changing station plays in the background without bringing Spotify forward or switching desktops. Use the latest Spotify (1.3.10 or later), on Apple silicon or Intel. On an older Spotify, Free Roam can't find your playlists. It works with Free and Premium.
 
 ### Why does a station start in the middle of a song?
 
