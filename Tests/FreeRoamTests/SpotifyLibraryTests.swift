@@ -186,6 +186,20 @@ struct SpotifyRelayTests {
         #expect(SpotifyRelay.event(state: "Playing", trackID: nil, airing: airing(at: 0)) == .ignored)
     }
 
+    @Test func asksTheQueueWhenAOneSongStationComesRound() throws {
+        let one = SpotifyRelay.Airing(playlistID: "61JX6jLHrIaT57YeiJgKlF", index: 0, uris: [songs[0]], tune: UUID())
+        #expect(SpotifyRelay.event(state: "Playing", trackID: songs[0], airing: one) == .sameSongAgain)
+        #expect(SpotifyRelay.event(state: "Paused", trackID: songs[0], airing: one) == .ignored)
+        let twice = SpotifyRelay.Airing(playlistID: "61JX6jLHrIaT57YeiJgKlF", index: 0, uris: [songs[0], songs[0], songs[1]], tune: UUID())
+        #expect(SpotifyRelay.event(state: "Playing", trackID: songs[0], airing: twice) == .sameSongAgain)
+
+        let queued = try JSONDecoder().decode(SpotifyCLI.Queue.self, from: Data("""
+            {"next_tracks":[{"uri":"\(songs[0])","provider":"queue"},{"uri":"\(songs[1])","provider":"context"}]}
+            """.utf8))
+        #expect(SpotifyCLI.isQueued(songs[0], in: queued))
+        #expect(!SpotifyCLI.isQueued(songs[1], in: queued))
+    }
+
     @Test func stopsFollowingASongItDidntQueue() {
         #expect(SpotifyRelay.event(state: "Playing", trackID: songs[2], airing: airing(at: 0)) == .otherTrack)
     }

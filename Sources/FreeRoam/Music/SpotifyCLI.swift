@@ -319,6 +319,11 @@ extension SpotifyCLI {
         (queue.next_tracks ?? []).prefix { $0.provider == "queue" }.count
     }
 
+    /// Whether `uri` is among the songs added to the front of the queue.
+    static func isQueued(_ uri: String, in queue: Queue) -> Bool {
+        (queue.next_tracks ?? []).prefix { $0.provider == "queue" }.contains { $0.uri == uri }
+    }
+
     /// Songs Free Roam put in the queue that may still be there.
     private static let enqueued = OSAllocatedUnfairLock<Set<String>>(initialState: [])
 

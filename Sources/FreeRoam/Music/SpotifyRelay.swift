@@ -32,6 +32,10 @@ final class SpotifyRelay {
         /// Spotify is playing something the station didn't queue, such as
         /// a song you picked in Spotify.
         case otherTrack
+        /// The song on air started again, and it's also the next one, as on
+        /// a one-song station. That's either its queued copy starting or a
+        /// resume after a pause, which only the queue tells apart.
+        case sameSongAgain
         case ignored
     }
 
@@ -66,11 +70,9 @@ final class SpotifyRelay {
         guard MusicApp.current == .spotify, let airing else { return }
         switch Self.event(state: state, trackID: trackID, airing: airing) {
         case .advanced:
-            var next = airing
-            next.index = airing.nextIndex
-            self.airing = next
-            log.notice("Spotify moved on to song \(next.index + 1) of \(next.uris.count) in playlist \(next.playlistID, privacy: .public)")
-            queueNext(after: next)
+            advance(from: airing)
+        case .sameSongAgain:
+            advanceIfQueuedCopyStarted(airing)
         case .otherTrack:
             self.airing = nil
             log.notice("Spotify is playing a song Free Roam didn't queue, so the station stops following its clock")
@@ -84,8 +86,33 @@ final class SpotifyRelay {
     /// songs on a free account, and the queued song follows them.
     nonisolated static func event(state: String?, trackID: String?, airing: Airing) -> Event {
         guard state == "Playing", let trackID, !trackID.hasPrefix("spotify:ad:") else { return .ignored }
-        if trackID == airing.uris[airing.index] { return .ignored }
-        return trackID == airing.uris[airing.nextIndex] ? .advanced : .otherTrack
+        let next = airing.uris[airing.nextIndex]
+        if trackID == airing.uris[airing.index] { return trackID == next ? .sameSongAgain : .ignored }
+        return trackID == next ? .advanced : .otherTrack
+    }
+
+    private func advance(from airing: Airing) {
+        var next = airing
+        next.index = airing.nextIndex
+        self.airing = next
+        log.notice("Spotify moved on to song \(next.index + 1) of \(next.uris.count) in playlist \(next.playlistID, privacy: .public)")
+        queueNext(after: next)
+    }
+
+    /// The queued copy leaves the queue once it starts, and stays there
+    /// through a pause and resume. A station never goes quiet, so a copy
+    /// that never made it into the queue counts as started and is queued again.
+    private func advanceIfQueuedCopyStarted(_ airing: Airing) {
+        let next = airing.uris[airing.nextIndex]
+        Task { [weak self] in
+            do {
+                let queue = try await SpotifyCLI.decode(SpotifyCLI.Queue.self, ["queue", "list"], lane: .player)
+                guard let self, self.airing == airing, !SpotifyCLI.isQueued(next, in: queue) else { return }
+                self.advance(from: airing)
+            } catch {
+                log.error("Couldn't read Spotify's queue: \(String(describing: error), privacy: .public)")
+            }
+        }
     }
 
     private func queueNext(after airing: Airing) {
