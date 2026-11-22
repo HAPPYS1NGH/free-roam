@@ -28,7 +28,7 @@ export function DownloadLink({ children, elsewhere, ...anchor }: Props) {
     const url = `${location.origin}/`
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Free Roam", text: "A radio for your Mac. Download it there.", url })
+        await navigator.share({ title: "Free Roam", text: "A radio wheel for your Music or Spotify playlists. Open this on your Mac to download it.", url })
         track("download_link_sent", { method: "share", placement })
         return
       } catch (error) {

@@ -44,6 +44,6 @@ export function FooterBase() {
   return <div className="fx-base p-wrap">
     <Brand />
     <p className="p-footer-line">Hold ⌥Q anywhere.</p>
-    <p className="fx-small">Free and open source · macOS 14 or later</p>
+    <p className="fx-small">Free and open source · Music&nbsp;or&nbsp;Spotify · macOS&nbsp;14&nbsp;or&nbsp;later</p>
   </div>
 }

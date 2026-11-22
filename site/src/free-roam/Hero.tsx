@@ -43,7 +43,7 @@ export function Hero() {
         <span className="ta-hover">Hold <Keycap size="xl" down={alt}>⌥</Keycap><Keycap size="xl" down={q}>Q</Keycap> anywhere.</span>
         <span className="ta-touch">Radio for your Mac.</span>
       </h1>
-      <p className="ta-sub">Your playlists, as <span>radio stations.</span></p>
+      <p className="ta-sub">Flick to a Music or Spotify playlist and it plays, <span>without switching apps.</span></p>
       <div className="ta-actions">
         <DownloadButton size="md" />
         <TryButton />
