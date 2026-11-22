@@ -15,7 +15,7 @@ struct FreeRoamApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            StatusMenu(model: appDelegate.menu, stations: appDelegate.stations, selectApp: appDelegate.selectApp)
+            StatusMenu(model: appDelegate.menu, stations: appDelegate.stations, updater: appDelegate.updater, selectApp: appDelegate.selectApp)
         } label: {
             MenuBarIcon()
                 .modifier(SettingsOpenerCapture { appDelegate.openSettings = $0 })
@@ -65,6 +65,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let stations = StationList()
     /// Shared by the wheel and Settings, which show the same logos.
     let details = StationDetails()
+    let updater = Updater()
     /// Nil when tokens.json is missing, which turns the wheel off.
     let style = AppDelegate.loadStyle()
     var openSettings: OpenSettingsAction?

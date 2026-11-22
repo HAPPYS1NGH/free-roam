@@ -38,6 +38,7 @@ final class StatusMenuModel {
 struct StatusMenu: View {
     let model: StatusMenuModel
     let stations: StationList
+    let updater: Updater
     let selectApp: (MusicApp) -> Void
     @Environment(\.openSettings) private var openSettings
 
@@ -49,6 +50,12 @@ struct StatusMenu: View {
             NSApp.activate()
         }
         .keyboardShortcut(",")
+        if updater.isAvailable {
+            Button(updater.hasUnseenUpdate ? "Update Available…" : "Check for Updates…") {
+                updater.checkForUpdates()
+            }
+            .disabled(!updater.canCheckForUpdates)
+        }
 
         Divider()
         Picker("Play from", selection: Binding(get: { stations.app }, set: { selectApp($0) })) {

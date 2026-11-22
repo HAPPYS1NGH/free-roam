@@ -30,6 +30,13 @@
 	<true/>
 	<key>NSAppleEventsUsageDescription</key>
 	<string>Free Roam switches playlists and sets the volume in Music or Spotify.</string>
+	<!-- Sparkle reads the appcast that scripts/release.sh attaches to the
+	     latest GitHub release, and only installs updates signed with this
+	     key. Sparkle asks on the second launch before checking on its own. -->
+	<key>SUFeedURL</key>
+	<string>https://github.com/HAPPYS1NGH/free-roam/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>StkoHMCr8mwOKSxE1m+q6KkzHwu0N9G2tvWyCc4CbOk=</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>
