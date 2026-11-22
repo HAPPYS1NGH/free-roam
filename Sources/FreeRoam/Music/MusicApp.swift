@@ -105,8 +105,7 @@ extension MusicAppBridge {
     /// For reads Free Roam starts by itself, at launch or in the background.
     /// Reading Music is a script, and a script raises macOS's prompt if
     /// Free Roam hasn't been asked yet, so those reads wait until you've
-    /// answered: from the welcome window, Settings or the wheel. Spotify's
-    /// playlists are Free Roam's own copies, so they never ask.
+    /// answered: from the welcome window, Settings or the wheel.
     static var canReadPlaylistsWithoutAsking: Bool {
         listsSavedPlaylists || (isRunning && permission() != .notAsked)
     }

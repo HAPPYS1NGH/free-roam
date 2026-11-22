@@ -105,7 +105,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         stations.switchApp(to: app)
         wheel?.appChanged()
         menu.refreshPermissions()
-        guard previous.bridge.isRunning else { return }
+        // A script to an app Free Roam hasn't been allowed to control would
+        // raise macOS's prompt for the app you just left.
+        guard previous.bridge.isRunning, previous.bridge.permission() == .allowed else { return }
         Task {
             do {
                 try await previous.bridge.pause()
