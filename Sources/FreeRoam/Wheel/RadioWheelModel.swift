@@ -296,6 +296,9 @@ final class RadioWheelModel {
         tunedID = nil
         nowPlaying = nil
         relay.airing = nil
+        // The new app can have fewer stations, and the caption reads the
+        // highlighted slot from them, so it goes back to Radio Off first.
+        highlighted = 0
         stations = Array(stationList.onWheel.prefix(Self.maxStations))
     }
 
