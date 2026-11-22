@@ -1,12 +1,11 @@
 import { Footer } from "./footer/Footer"
 import { Keycap, useAltHeld, useKeyHeld } from "./keys"
+import { MacDemoVideo } from "./MacDemoVideo"
 import { DownloadButton } from "./Shared"
 
-// Everything below the station list: how it works, questions, the closing
-// pitch and the footer.
+// Everything below the station list: questions, the closing pitch and the footer.
 export function Details() {
   return <>
-    <HowItWorks />
     <Faq />
     <section className="p-section ta-closing" aria-labelledby="ta-closing-title">
       <h2 id="ta-closing-title" className="p-display">The road’s empty.<br /><span>The radio’s on.</span></h2>
@@ -17,7 +16,9 @@ export function Details() {
   </>
 }
 
-function HowItWorks() {
+// On desktop the steps sit beside the Mac app on film; touch sees that clip
+// in its own section above (OnYourMac), so here it shows only with a mouse.
+export function HowItWorks() {
   const q = useKeyHeld("q")
   const alt = useAltHeld()
   return <section className="p-section p-how" id="how-it-works" aria-labelledby="how-title">
@@ -28,6 +29,7 @@ function HowItWorks() {
       <li><h3>Let go</h3><p>The wheel closes and you're back to it. Pick Radio Off when you need quiet.</p></li>
     </ol>
     <p className="p-aside">Tap <Keycap size="sm">⌥</Keycap><Keycap size="sm">Q</Keycap> to skip to the next station without opening the wheel.</p>
+    <MacDemoVideo media="(hover: hover)" placement="how-it-works" className="p-how-video" />
   </section>
 }
 

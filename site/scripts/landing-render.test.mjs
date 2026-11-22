@@ -25,7 +25,7 @@ test('landing prerender stays identical across times and time zones, and has the
   assert.equal(renderToString(createElement(LandingPage)), built)
 
   assert.ok(built.includes('anywhere.</span>'), 'headline')
-  assert.ok(built.includes('Flick to a Music or Spotify playlist and it plays, <span>without switching apps.</span>'), 'lede')
+  assert.ok(built.includes('Flick to a playlist and it plays, <span>without switching apps.</span>'), 'lede')
   for (const name of ['God&#x27;s Favorite', 'High', 'Vibe', 'Culture Truth', 'Serbian', 'Right Eyebrow']) {
     assert.ok(built.includes(`>${name}</span>`), name)
   }

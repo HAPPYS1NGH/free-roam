@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react"
-import { Details } from "./Details"
+import { Details, HowItWorks } from "./Details"
 import { Hero } from "./Hero"
 import { OnYourMac } from "./OnYourMac"
 import { RadioProvider, useRadio } from "./RadioProvider"
@@ -19,6 +19,7 @@ function Page() {
   return <main className="p-page ta" id="top" style={stationRgb ? { "--station": stationRgb } as CSSProperties : undefined}>
     <Hero />
     <OnYourMac />
+    <HowItWorks />
     <Stations />
     <Details />
     <SendNudge />

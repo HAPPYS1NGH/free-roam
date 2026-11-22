@@ -248,3 +248,16 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
   .p-dial-progress span { transition: none; }
 }
 
+
+/* ---------------------------------------------------------------- how it works beside the Mac demo (mouse only; touch has .p-mac) */
+.p-how-video { display: none; }
+@media (hover: hover) {
+  .p-how { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: clamp(48px, 6vw, 96px); align-items: start; }
+  .p-how > :not(.p-how-video) { grid-column: 1; }
+  .p-how .p-steps { grid-template-columns: 1fr; gap: 40px; }
+  .p-how-video { display: block; grid-column: 2; grid-row: 1 / span 3; justify-self: center; width: min(100%, 360px); height: auto; aspect-ratio: 9 / 16; border-radius: 22px; background: var(--bg-raised); box-shadow: 0 0 0 1px var(--line), 0 24px 60px oklch(0 0 0 / 0.45); object-fit: cover; }
+}
+@media (hover: hover) and (max-width: 860px) {
+  .p-how { grid-template-columns: 1fr; }
+  .p-how-video { grid-column: 1; grid-row: auto; width: min(100%, 340px); margin-top: 48px; justify-self: center; }
+}

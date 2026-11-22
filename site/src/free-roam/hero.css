@@ -108,3 +108,12 @@
    the whole page shows the closed hand and text can't be selected. */
 .ta-hero[data-sky="grab"] { cursor: grab; }
 :root[data-sky-drag], :root[data-sky-drag] * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
+
+/* Works with: muted, one size down from the buttons, so it reads as a fact
+   about the download rather than another action. */
+.ta-works { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; margin-top: 2px; font-size: 13px; color: var(--faint); }
+.ta-works-app { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 500; }
+.ta-works-app svg { flex: none; }
+/* Desktop's try: the page answers ⌥Q, which nothing else on it says. */
+.ta-hint { font-size: 14px; color: var(--muted); }
+.ta-hint .keycap { color: var(--ink); }
