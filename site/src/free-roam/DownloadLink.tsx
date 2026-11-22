@@ -1,4 +1,4 @@
-import { useEffect, useState, type MouseEvent, type ReactNode } from "react"
+import { useEffect, useState, type AnchorHTMLAttributes, type MouseEvent, type ReactNode } from "react"
 import { useMounted } from "../useMounted"
 import { sectionName, track } from "./analytics"
 import { downloadUrl, releaseUrl } from "./content"
@@ -6,12 +6,13 @@ import { downloadUrl, releaseUrl } from "./content"
 // iPads report a Macintosh user agent, so touch points tell them apart.
 const onMacDesktop = () => /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints === 0
 
-type Props = { className?: string; children: ReactNode; elsewhere: ReactNode }
+// Other anchor props (pointer and focus handlers, data attributes) pass through.
+type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick" | "children"> & { children: ReactNode; elsewhere: ReactNode }
 
 // On a Mac this downloads the DMG. Anywhere else a DMG is a dead end, so it
 // hands the page to the share sheet (AirDrop, Messages) or copies the link.
 // The prerender is the Mac version; the label switches once the page hydrates.
-export function DownloadLink({ className, children, elsewhere }: Props) {
+export function DownloadLink({ children, elsewhere, ...anchor }: Props) {
   const mounted = useMounted()
   const [copied, setCopied] = useState(false)
   useEffect(() => {
@@ -19,7 +20,7 @@ export function DownloadLink({ className, children, elsewhere }: Props) {
     const id = window.setTimeout(() => setCopied(false), 2000)
     return () => window.clearTimeout(id)
   }, [copied])
-  if (!mounted || onMacDesktop()) return <a className={className} href={downloadUrl}>{children}</a>
+  if (!mounted || onMacDesktop()) return <a {...anchor} href={downloadUrl}>{children}</a>
 
   const send = async (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
@@ -44,7 +45,7 @@ export function DownloadLink({ className, children, elsewhere }: Props) {
       location.href = releaseUrl
     }
   }
-  return <a className={className} href={releaseUrl} onClick={send}>
+  return <a {...anchor} href={releaseUrl} onClick={send}>
     <span className="p-download-label" aria-live="polite">{copied ? "Link copied" : elsewhere}</span>
   </a>
 }

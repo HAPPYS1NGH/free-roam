@@ -1,4 +1,5 @@
 import { useEffect, useRef, type FocusEvent, type PointerEvent } from "react"
+import { DownloadLink } from "../DownloadLink"
 import { linkGroups, type LinkSignal } from "./links"
 import "./billboard.css"
 
@@ -229,29 +230,29 @@ export function Billboard({ onLink, onPress, headlights }: BillboardProps) {
         {linkGroups.map((group, g) => <div key={group.title} className="bb-group" data-lamp="">
           <h2 className="bb-title"><span className="bb-title-num">{String(g + 1).padStart(2, "0")}</span>{group.title}</h2>
           <ul className="bb-list">
-            {group.links.map((link, l) => <li key={link.label} className="bb-item">
-              <a
-                className="bb-link"
-                data-hero={g === 0 && l === 0 ? "" : undefined}
-                href={link.href}
-                {...(link.external && { target: "_blank", rel: "noreferrer" })}
-                onPointerEnter={enter}
-                onPointerLeave={leave}
-                onFocus={focus}
-                onBlur={leave}
-                onPointerDown={event => { pointerAt.current = performance.now(); surge(true); onPress(event.currentTarget) }}
-                onPointerUp={() => surge(false)}
-                onPointerCancel={() => surge(false)}
-              >
-                <span className="bb-label">
-                  {link.label}
-                  {/* The lit copy fades in over the resting one: opacity, not colour. */}
-                  <span className="bb-label-lit" aria-hidden="true">{link.label}</span>
-                </span>
+            {group.links.map((link, l) => {
+              const anchor = {
+                className: "bb-link",
+                "data-hero": g === 0 && l === 0 ? "" : undefined,
+                onPointerEnter: enter,
+                onPointerLeave: leave,
+                onFocus: focus,
+                onBlur: leave,
+                onPointerDown: (event: PointerEvent<HTMLAnchorElement>) => { pointerAt.current = performance.now(); surge(true); onPress(event.currentTarget) },
+                onPointerUp: () => surge(false),
+                onPointerCancel: () => surge(false),
+              }
+              const content = <>
+                {label(link.label)}
                 {link.external && <span className="bb-arrow" aria-hidden="true">↗</span>}
                 {link.note && <span className="bb-note">{link.note}</span>}
-              </a>
-            </li>)}
+              </>
+              return <li key={link.label} className="bb-item">
+                {link.elsewhere
+                  ? <DownloadLink {...anchor} elsewhere={label(link.elsewhere)}>{content}</DownloadLink>
+                  : <a {...anchor} href={link.href} {...(link.external && { target: "_blank", rel: "noreferrer" })}>{content}</a>}
+              </li>
+            })}
           </ul>
         </div>)}
       </div>
@@ -268,4 +269,12 @@ export function Billboard({ onLink, onPress, headlights }: BillboardProps) {
       <span className="bb-leg" data-side="right" />
     </div>
   </nav>
+}
+
+// The lit copy fades in over the resting one: opacity, not colour.
+function label(text: string) {
+  return <span className="bb-label">
+    {text}
+    <span className="bb-label-lit" aria-hidden="true">{text}</span>
+  </span>
 }

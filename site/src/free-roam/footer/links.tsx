@@ -1,7 +1,8 @@
 import { downloadUrl, sourceUrl } from "../content"
 import { Brand } from "../Shared"
 
-export type FooterLink = { label: string; href: string; external: boolean; note?: string }
+// `elsewhere` marks the download: off a Mac it offers to send the link instead.
+export type FooterLink = { label: string; href: string; external: boolean; note?: string; elsewhere?: string }
 
 export type LinkSignal = (element: HTMLAnchorElement | null) => void
 
@@ -10,7 +11,7 @@ export const linkGroups: { title: string; links: FooterLink[] }[] = [
   {
     title: "Get it",
     links: [
-      { label: "Download for Mac", href: downloadUrl, external: false, note: "macOS 14+" },
+      { label: "Download for Mac", href: downloadUrl, external: false, note: "macOS 14+", elsewhere: "Send to your Mac" },
       { label: "Release notes", href: `${sourceUrl}/releases`, external: true },
     ],
   },
