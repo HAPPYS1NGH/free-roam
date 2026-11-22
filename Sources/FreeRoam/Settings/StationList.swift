@@ -110,7 +110,8 @@ final class StationList {
         return choice ?? Self.libraryOrder(library)
     }
 
-    /// Reads the app's playlists again. Does nothing while it isn't running.
+    /// Reads the app's playlists again. Does nothing while it isn't running,
+    /// or before Free Roam has been allowed or refused, so it never prompts.
     func reload() {
         load(launchingMusic: false)
     }
@@ -281,7 +282,7 @@ final class StationList {
 
     private func load(launchingMusic: Bool) {
         let loadingApp = app
-        guard loading == nil, launchingMusic || loadingApp.bridge.canReadPlaylists else { return }
+        guard loading == nil, launchingMusic || loadingApp.bridge.canReadPlaylistsWithoutAsking else { return }
         loading = Task {
             defer { if app == loadingApp { loading = nil } }
             do {

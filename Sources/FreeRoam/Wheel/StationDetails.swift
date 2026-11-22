@@ -120,7 +120,8 @@ final class StationDetails {
     }
 
     private func startLoading() {
-        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicApp.bridge.canReadPlaylists else { return }
+        // Never the first script to reach the app, so it doesn't prompt.
+        guard loading == nil, !queued.isEmpty || !requested.isEmpty, MusicApp.bridge.canReadPlaylistsWithoutAsking else { return }
         loading = Task {
             await loadQueued()
             loading = nil
