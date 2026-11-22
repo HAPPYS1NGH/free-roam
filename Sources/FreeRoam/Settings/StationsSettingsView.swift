@@ -10,21 +10,11 @@ struct StationsSettingsView: View {
     let style: WheelStyle?
     let selectApp: (MusicApp) -> Void
     @State private var search = ""
-    @State private var link = ""
-    @State private var isAdding = false
-    @State private var addError: String?
 
     var body: some View {
         StationPicker(
             app: stations.app,
             selectApp: selectApp,
-            tuning: SpotifyLibrary.shared.tuning,
-            link: $link,
-            isAdding: isAdding,
-            addError: addError,
-            addLink: addLink,
-            retune: retune,
-            removeFromLibrary: removeFromLibrary,
             phase: phase,
             library: stations.library ?? [],
             stations: stations.library == nil ? [] : stations.onWheel,
@@ -49,46 +39,6 @@ struct StationsSettingsView: View {
         // the window covers anything else that takes the pane away.
         .onDisappear { details.settingsClosed() }
         .background(WindowCloseObserver { details.settingsClosed() })
-    }
-
-    /// Reads the pasted or dropped link's playlist, then lists it, so it
-    /// joins the wheel like any new playlist.
-    private func addLink(_ text: String) {
-        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty, !isAdding else { return }
-        isAdding = true
-        addError = nil
-        Task {
-            do {
-                _ = try await SpotifyLibrary.shared.add(link: text)
-                link = ""
-                if stations.app == .spotify { stations.reload() }
-            } catch {
-                addError = error.localizedDescription
-            }
-            isAdding = false
-        }
-    }
-
-    private func retune(_ id: String) {
-        guard !isAdding else { return }
-        addError = nil
-        Task {
-            do {
-                try await SpotifyLibrary.shared.retune(id: id)
-                if stations.app == .spotify { stations.reload() }
-            } catch {
-                addError = error.localizedDescription
-            }
-        }
-    }
-
-    /// Takes it off the wheel first, so it doesn't stay behind as a station
-    /// Spotify didn't list.
-    private func removeFromLibrary(_ id: String) {
-        stations.setOn(false, id: id)
-        SpotifyLibrary.shared.remove(id: id)
-        stations.reload()
     }
 
     private var phase: StationPicker.Phase {
@@ -119,15 +69,6 @@ struct StationPicker: View {
 
     var app = MusicApp.music
     var selectApp: (MusicApp) -> Void = { _ in }
-    /// Spotify only: the playlist being tuned, the link field and what it
-    /// says went wrong.
-    var tuning: SpotifyLibrary.Tuning?
-    @Binding var link: String
-    var isAdding = false
-    var addError: String?
-    var addLink: (String) -> Void = { _ in }
-    var retune: (String) -> Void = { _ in }
-    var removeFromLibrary: (String) -> Void = { _ in }
 
     let phase: Phase
     /// The app's playlists in library order.
@@ -159,11 +100,6 @@ struct StationPicker: View {
             header
                 .padding(.horizontal, Self.margin)
                 .padding(.bottom, 12)
-            if app == .spotify, phase != .denied {
-                SpotifyLinkField(link: $link, tuning: tuning, isAdding: isAdding, errorMessage: addError, add: { addLink(link) })
-                    .padding(.horizontal, Self.margin)
-                    .padding(.bottom, 12)
-            }
             // Each state fills the rest of the window. Left to its own size, a
             // ContentUnavailableView sat in the top left corner.
             switch phase {
@@ -181,19 +117,11 @@ struct StationPicker: View {
                     Button("Try Again", action: reload)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .ready where library.isEmpty && app == .spotify:
-                // Spotify can't list its playlists, so there's nothing to check again.
-                ContentUnavailableView {
-                    Label("No Spotify Playlists Yet", systemImage: "music.note.list")
-                } description: {
-                    Text("Spotify doesn't let Free Roam list your playlists. Paste a playlist's link above and it becomes a station.")
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .ready where library.isEmpty:
                 ContentUnavailableView {
-                    Label("No Playlists in Music", systemImage: "music.note.list")
+                    Label("No Playlists in \(app.name)", systemImage: "music.note.list")
                 } description: {
-                    Text("Your stations are Music playlists. Make one in Music, then check again.")
+                    Text("Your stations are \(app.name) playlists. Make one in \(app.name), then check again.")
                 } actions: {
                     Button("Check Again", action: reload)
                 }
@@ -203,17 +131,6 @@ struct StationPicker: View {
             }
         }
         .frame(minWidth: Self.minWidth, idealWidth: Self.minWidth, maxWidth: .infinity, minHeight: 480, idealHeight: 600, maxHeight: .infinity, alignment: .top)
-        // A link dragged from the browser or Spotify arrives as a URL or as text.
-        .dropDestination(for: URL.self) { urls, _ in
-            guard app == .spotify, let url = urls.first else { return false }
-            addLink(url.absoluteString)
-            return true
-        }
-        .dropDestination(for: String.self) { texts, _ in
-            guard app == .spotify, let text = texts.first else { return false }
-            addLink(text)
-            return true
-        }
     }
 
     private var isFull: Bool {
@@ -319,8 +236,6 @@ struct StationPicker: View {
                     isFull: isFull,
                     ringColor: ringColor,
                     toggle: { playlist in animated { setOn(slots[playlist.id] == nil, playlist.id) } },
-                    retune: app == .spotify ? retune : nil,
-                    remove: app == .spotify ? removeFromLibrary : nil,
                     requestLogo: requestLogo,
                     cancelLogo: cancelLogo
                 )

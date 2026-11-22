@@ -253,14 +253,4 @@ struct StationListPickerTests {
         stations.setOn(false, id: library(26)[3].id)
         #expect(!stations.isFull)
     }
-
-    // MARK: Adding a Spotify playlist
-
-    @Test func theTuningNoteNamesThePlaylistAndHowManySongsAreFound() {
-        let muted = "Spotify is muted until it's done."
-        #expect(SpotifyLinkField.tuningText(.init(name: "Today's Top Hits", tracksFound: 34)) == "Tuning Today's Top Hits · 34 songs. \(muted)")
-        #expect(SpotifyLinkField.tuningText(.init(name: "Gym", tracksFound: 1)) == "Tuning Gym · 1 song. \(muted)")
-        #expect(SpotifyLinkField.tuningText(.init(name: "Gym", tracksFound: 0)) == "Tuning Gym. \(muted)")
-        #expect(SpotifyLinkField.tuningText(nil) == "Reading the playlist. \(muted)")
-    }
 }

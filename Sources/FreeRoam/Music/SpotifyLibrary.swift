@@ -1,132 +1,113 @@
 import Foundation
-import Observation
 import OSLog
 
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "music")
 
-/// A track as Spotify reported it while a playlist was tuned.
+/// A song as Spotify's command-line tool listed it.
 struct SpotifyTrack: Codable, Hashable, Sendable {
     /// `spotify:track:<22 base62>`.
     let uri: String
     let title: String
     let artist: String
     let album: String
-    /// Seconds. Spotify's AppleScript reports milliseconds.
+    /// Seconds.
     let duration: TimeInterval
     let artworkURL: URL?
 }
 
-/// A Spotify playlist you added in Settings, with the tracks Free Roam read
-/// by stepping through it, because Spotify's AppleScript can't list them.
+/// A playlist in your Spotify library, with its songs once they've been read.
 struct SpotifyPlaylist: Codable, Hashable, Identifiable, Sendable {
-    /// The 22-character base62 ID from the playlist's link.
+    /// The 22-character base62 ID from the playlist's URI.
     let id: String
     var name: String
-    var coverURL: URL?
-    var tracks: [SpotifyTrack]
-    var tunedAt: Date
+    /// Nil until the songs have been read.
+    var tracks: [SpotifyTrack]?
+    var readAt: Date?
 }
 
-enum SpotifyLibraryError: LocalizedError, Equatable {
-    case notAPlaylistLink
-    case playlistNotFound
-    case alreadyAdded
-    /// Another playlist is being tuned.
-    case busy
-    case empty
-
-    var errorDescription: String? {
-        switch self {
-        case .notAPlaylistLink: "That isn't a Spotify playlist link."
-        case .playlistNotFound: "Spotify couldn't find that playlist. Check it's public."
-        case .alreadyAdded: "That playlist is already in Free Roam."
-        case .busy: "Free Roam is still tuning another playlist."
-        case .empty: "That playlist has no songs Free Roam can play."
-        }
-    }
-}
-
-/// The Spotify playlists you added, saved with their tracks.
-@MainActor @Observable
+/// Your Spotify playlists and their songs, read with Spotify's command-line
+/// tool and saved, so the wheel has a station's songs as soon as it's tuned,
+/// and Free Roam still has them if a Spotify update takes the tool away.
+@MainActor
 final class SpotifyLibrary {
-    struct Tuning: Equatable {
-        let name: String
-        let tracksFound: Int
-    }
-
     static let shared = SpotifyLibrary()
 
+    /// Songs read longer ago than this are read again after the tune that
+    /// used them, so an edit in Spotify reaches the station by its next tune.
+    static let freshFor: TimeInterval = 5 * 60
+
     private(set) var playlists: [SpotifyPlaylist] = []
-    /// The playlist being stepped through, while Spotify is muted for it.
-    private(set) var tuning: Tuning?
+    /// One read per playlist at a time.
+    private var reads: [String: Task<(name: String, tracks: [SpotifyTrack]), any Error>] = [:]
+    private let fileURL: URL
 
-    /// Stepping through a playlist uses Spotify's one player, so one at a time.
-    @ObservationIgnored private var isTuning = false
-    @ObservationIgnored private let fileURL: URL
-
-    /// The playlists are kept in a file, not UserDefaults: 300 tracks with
-    /// their covers' links come to tens of kilobytes each.
+    /// Kept in a file, not UserDefaults: a few hundred songs with their
+    /// covers' links come to tens of kilobytes a playlist.
     init(fileURL: URL = SpotifyLibrary.defaultFileURL) {
         self.fileURL = fileURL
         playlists = Self.load(from: fileURL)
     }
 
-    /// Reads the playlist's name and cover, steps through its tracks with
-    /// Spotify muted, then puts back what you were playing, and saves it.
-    func add(link: String) async throws -> SpotifyPlaylist {
-        guard let id = Self.playlistID(fromLink: link) else { throw SpotifyLibraryError.notAPlaylistLink }
-        guard !playlists.contains(where: { $0.id == id }) else { throw SpotifyLibraryError.alreadyAdded }
-        guard !isTuning else { throw SpotifyLibraryError.busy }
-        isTuning = true
-        defer { isTuning = false; tuning = nil }
-        let details = try await SpotifyOEmbed.details(playlistID: id)
-        tuning = Tuning(name: details.title, tracksFound: 0)
-        let tracks = try await scan(playlistID: id, name: details.title)
-        let playlist = SpotifyPlaylist(
-            id: id, name: details.title, coverURL: details.coverURL, tracks: tracks, tunedAt: .now
-        )
-        playlists.append(playlist)
-        try save()
-        return playlist
-    }
-
-    /// Reads the tracks again, for a playlist edited in Spotify.
-    func retune(id: String) async throws {
-        guard let existing = playlists.first(where: { $0.id == id }) else { throw SpotifyLibraryError.playlistNotFound }
-        guard !isTuning else { throw SpotifyLibraryError.busy }
-        isTuning = true
-        defer { isTuning = false; tuning = nil }
-        tuning = Tuning(name: existing.name, tracksFound: 0)
-        let tracks = try await scan(playlistID: id, name: existing.name)
-        // The playlist may have been removed while it was read.
-        guard let index = playlists.firstIndex(where: { $0.id == id }) else { return }
-        playlists[index].tracks = tracks
-        playlists[index].tunedAt = .now
-        try save()
-    }
-
-    func remove(id: String) {
-        playlists.removeAll { $0.id == id }
+    /// Lists your playlists with the tool, keeping the songs already read.
+    /// Without the tool, the playlists last listed, if there are any.
+    func listPlaylists() async throws -> [Playlist] {
+        let listed: [SpotifyCLI.ListedPlaylist]
         do {
-            try save()
-        } catch {
-            log.error("Couldn't save the Spotify playlists: \(String(describing: error), privacy: .public)")
+            listed = try await SpotifyCLI.playlists()
+        } catch SpotifyCLI.Failure.missing where !playlists.isEmpty {
+            log.notice("Spotify has no command-line tool, so the stations are the playlists last listed")
+            return playlists.map { Playlist(id: $0.id, name: $0.name) }
+        }
+        playlists = Self.merging(listed, into: playlists)
+        save()
+        return listed.map { Playlist(id: $0.id, name: $0.name) }
+    }
+
+    /// The playlist's songs: the ones saved, or read now when there are none.
+    func tracks(of id: String) async throws -> [SpotifyTrack] {
+        guard let saved = playlists.first(where: { $0.id == id }), let tracks = saved.tracks else {
+            return try await read(id)
+        }
+        if let readAt = saved.readAt, Date().timeIntervalSince(readAt) > Self.freshFor, SpotifyCLI.executable != nil {
+            Task { [weak self] in
+                do {
+                    _ = try await self?.read(id)
+                } catch {
+                    log.error("Couldn't read the songs of \(id, privacy: .public) again: \(String(describing: error), privacy: .public)")
+                }
+            }
+        }
+        return tracks
+    }
+
+    /// The playlists already listed, kept in the new order, with their songs.
+    nonisolated static func merging(_ listed: [SpotifyCLI.ListedPlaylist], into saved: [SpotifyPlaylist]) -> [SpotifyPlaylist] {
+        let byID = Dictionary(saved.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        return listed.map { playlist in
+            var merged = byID[playlist.id] ?? SpotifyPlaylist(id: playlist.id, name: playlist.name)
+            merged.name = playlist.name
+            return merged
         }
     }
 
-    /// The playlist ID in an `open.spotify.com/playlist/…` link or a
-    /// `spotify:playlist:…` URI, or nil.
-    nonisolated static func playlistID(fromLink link: String) -> String? {
-        SpotifyURI.playlistID(fromLink: link)
-    }
-
-    private func scan(playlistID: String, name: String) async throws -> [SpotifyTrack] {
-        // A scan on a Spotify that's closed starts it hidden.
-        if !SpotifyBridge.isRunning { try await SpotifyBridge.launch() }
-        let tracks = try await SpotifyScan.run(playlistID: playlistID) { [weak self] found in
-            self?.tuning = Tuning(name: name, tracksFound: found)
+    private func read(_ id: String) async throws -> [SpotifyTrack] {
+        if let reading = reads[id] { return try await reading.value.tracks }
+        // Songs in several playlists, or read before, aren't looked up again.
+        let known = playlists.flatMap { $0.tracks ?? [] }.reduce(into: [String: SpotifyCLI.Details]()) { known, track in
+            known[track.uri] = SpotifyCLI.Details(duration: track.duration, artworkURL: track.artworkURL)
         }
-        guard !tracks.isEmpty else { throw SpotifyLibraryError.empty }
+        let reading = Task { try await SpotifyCLI.playlist(id: id, known: known) }
+        reads[id] = reading
+        defer { reads[id] = nil }
+        let (name, tracks) = try await reading.value
+        if let index = playlists.firstIndex(where: { $0.id == id }) {
+            playlists[index].tracks = tracks
+            playlists[index].readAt = .now
+        } else {
+            playlists.append(SpotifyPlaylist(id: id, name: name, tracks: tracks, readAt: .now))
+        }
+        save()
+        log.notice("Read \(tracks.count) songs of Spotify playlist \(id, privacy: .public)")
         return tracks
     }
 
@@ -138,9 +119,13 @@ final class SpotifyLibrary {
             .appending(path: "spotify-playlists.json")
     }
 
-    private func save() throws {
-        try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try JSONEncoder().encode(playlists).write(to: fileURL, options: .atomic)
+    private func save() {
+        do {
+            try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try JSONEncoder().encode(playlists).write(to: fileURL, options: .atomic)
+        } catch {
+            log.error("Couldn't save the Spotify playlists: \(String(describing: error), privacy: .public)")
+        }
     }
 
     private static func load(from fileURL: URL) -> [SpotifyPlaylist] {
@@ -148,40 +133,9 @@ final class SpotifyLibrary {
         do {
             return try JSONDecoder().decode([SpotifyPlaylist].self, from: data)
         } catch {
-            log.error("Couldn't read the saved Spotify playlists: \(String(describing: error), privacy: .public)")
+            // Saved by an earlier build that added playlists by link.
+            log.notice("Starting the Spotify playlists afresh: \(String(describing: error), privacy: .public)")
             return []
         }
-    }
-}
-
-/// A playlist's name and cover from Spotify's public oEmbed, which needs no sign-in.
-enum SpotifyOEmbed {
-    struct Details: Equatable {
-        let title: String
-        let coverURL: URL?
-    }
-
-    private struct Response: Decodable {
-        let title: String
-        let thumbnail_url: String?
-    }
-
-    static func details(playlistID: String, session: URLSession = .shared) async throws -> Details {
-        guard SpotifyURI.isBaseID(playlistID) else { throw SpotifyLibraryError.notAPlaylistLink }
-        var components = URLComponents(string: "https://open.spotify.com/oembed")!
-        components.queryItems = [URLQueryItem(name: "url", value: "https://open.spotify.com/playlist/\(playlistID)")]
-        var request = URLRequest(url: components.url!)
-        request.timeoutInterval = 10
-        let (data, response) = try await session.data(for: request)
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-        if status == 404 { throw SpotifyLibraryError.playlistNotFound }
-        guard status == 200 else { throw URLError(.badServerResponse) }
-        return try details(from: data)
-    }
-
-    static func details(from data: Data) throws -> Details {
-        let response = try JSONDecoder().decode(Response.self, from: data)
-        let cover = response.thumbnail_url.flatMap(URL.init(string:)).flatMap { $0.scheme == "https" ? $0 : nil }
-        return Details(title: response.title, coverURL: cover)
     }
 }

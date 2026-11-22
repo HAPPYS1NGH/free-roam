@@ -4,18 +4,20 @@ import os
 
 private let log = Logger(subsystem: "com.happys1ngh.freeroam", category: "music")
 
-/// Talks to the Spotify desktop app through AppleScript, the way
-/// `MusicBridge` talks to Music: every script runs one at a time and is sent
-/// to Spotify's process, so it can never start Spotify.
+/// Talks to the Spotify desktop app. Playlists come from Spotify's
+/// command-line tool through `SpotifyLibrary`, and a station plays through
+/// the tool too, because it starts a song without bringing Spotify forward.
+/// `SpotifyRelay` then keeps the station's next song in the queue.
 ///
-/// Spotify's AppleScript can play a track inside a playlist but can't list
-/// one, so playlists and their tracks come from `SpotifyLibrary`, which read
-/// them once by playing through. A station plays with repeat on, so Spotify
-/// itself carries on from track to track in the order the clock expects.
+/// Everything else goes through AppleScript, the way `MusicBridge` talks
+/// to Music: every script runs one at a time and is sent to Spotify's
+/// process, so it can never start Spotify. A Spotify without the tool plays
+/// stations through AppleScript too, which brings Spotify forward.
 enum SpotifyBridge: MusicAppBridge {
     static let bundleID = "com.spotify.client"
-    /// Spotify can't list playlists, so these are the ones you added.
-    static let listsSavedPlaylists = true
+    /// The tool lists playlists only while Spotify runs, and can list none
+    /// while Spotify is still signing in.
+    static let listsSavedPlaylists = false
 
     // AppleScript isn't thread-safe, and this keeps slow Apple Events off the
     // main thread. `MusicBridge.execute` also holds a lock across both apps.
@@ -23,6 +25,9 @@ enum SpotifyBridge: MusicAppBridge {
     /// The playlist `play(playlistID:track:)` last tuned. A track can be in
     /// several playlists, and this is the one `nowPlaying()` names.
     private static let lastTuned = OSAllocatedUnfairLock<String?>(initialState: nil)
+    /// Whether the last tune went through the command-line tool, which
+    /// plays a song on its own rather than inside its playlist.
+    private static let tunedWithTool = OSAllocatedUnfairLock(initialState: false)
 
     static var isRunning: Bool {
         !NSRunningApplication.runningApplications(withBundleIdentifier: bundleID).isEmpty
@@ -53,33 +58,45 @@ enum SpotifyBridge: MusicAppBridge {
         try await MusicBridge.retryWhileStarting(for: .seconds(20)) {
             try await run("return sound volume") { _ in }
         }
+        await waitForTool()
+    }
+
+    /// The tool reaches Spotify a moment after its scripts do.
+    private static func waitForTool() async {
+        guard SpotifyCLI.executable != nil else { return }
+        let deadline = ContinuousClock.now + .seconds(10)
+        while ContinuousClock.now < deadline {
+            if await SpotifyCLI.isReady() { return }
+            try? await Task.sleep(for: .milliseconds(250))
+        }
+        log.error("Spotify's command-line tool didn't answer within 10 s of the launch")
     }
 
     // MARK: - Library
 
     static func playlists() async throws -> [Playlist] {
-        await savedPlaylists().map { Playlist(id: $0.id, name: $0.name) }
+        try await SpotifyLibrary.shared.listPlaylists()
     }
 
     static func trackDurations(playlistID: String) async throws -> [TimeInterval] {
-        try await savedPlaylist(playlistID).tracks.map(\.duration)
+        try await savedTracks(playlistID).map(\.duration)
     }
 
     static func tracks(playlistID: String) async throws -> [Track] {
-        try await savedPlaylist(playlistID).tracks.map {
+        try await savedTracks(playlistID).map {
             Track(title: $0.title, artist: $0.artist, album: $0.album, duration: $0.duration)
         }
     }
 
     static func trackCountAndAlbums(playlistID: String) async throws -> (trackCount: Int, albums: [String]) {
-        let tracks = try await savedPlaylist(playlistID).tracks
+        let tracks = try await savedTracks(playlistID)
         return (tracks.count, tracks.prefix(MusicBridge.coverAlbumTracks).map(\.album))
     }
 
     /// The saved cover of a track, downloaded from Spotify's image host, or
     /// nil when it has none or the download fails.
     static func artwork(playlistID: String, track: Int) async throws -> Data? {
-        let tracks = try await savedPlaylist(playlistID).tracks
+        let tracks = try await savedTracks(playlistID)
         guard tracks.indices.contains(track - 1), let url = tracks[track - 1].artworkURL else { return nil }
         guard SpotifyURI.isTrustedArtwork(url) else {
             log.error("Not downloading artwork from \(url.host() ?? "?", privacy: .public)")
@@ -92,37 +109,42 @@ enum SpotifyBridge: MusicAppBridge {
         await MainActor.run { SpotifyLibrary.shared.playlists }
     }
 
-    private static func savedPlaylist(_ id: String) async throws -> SpotifyPlaylist {
+    private static func savedTracks(_ id: String) async throws -> [SpotifyTrack] {
         guard SpotifyURI.isBaseID(id) else { throw MusicBridgeError.invalidPersistentID(id) }
-        guard let playlist = await savedPlaylists().first(where: { $0.id == id }) else {
-            throw SpotifyLibraryError.playlistNotFound
-        }
-        return playlist
+        return try await SpotifyLibrary.shared.tracks(of: id)
     }
 
     // MARK: - Playing
 
-    /// Plays track `number` (1-based) inside its playlist and returns the
-    /// track's URI once Spotify says it's playing it, or nil when it didn't
-    /// within the wait. With repeat on, Spotify plays on through the
-    /// playlist in order by itself, so a station needs no relay.
+    /// Plays track `number` (1-based) of a playlist and returns the track's
+    /// URI once Spotify says it's playing it, or nil when it didn't within
+    /// the wait. Through the tool, the song plays on its own and
+    /// `SpotifyRelay` queues the rest. Through AppleScript, it plays inside
+    /// its playlist, and with repeat on Spotify plays on in order by itself.
     static func play(playlistID: String, track number: Int) async throws -> String? {
-        let tracks = try await savedPlaylist(playlistID).tracks
+        let tracks = try await savedTracks(playlistID)
         guard tracks.indices.contains(number - 1) else { return nil }
         let uri = tracks[number - 1].uri
-        guard SpotifyURI.isPlayableTrack(uri) else { throw MusicBridgeError.invalidPersistentID(uri) }
+        guard SpotifyURI.isTrack(uri) else { throw MusicBridgeError.invalidPersistentID(uri) }
         lastTuned.withLock { $0 = playlistID }
-        await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
-        try await run("""
-            set shuffling to false
-            set repeating to true
-            play track "\(uri)" in context "\(SpotifyURI.playlist(playlistID))"
-            """) { _ in }
+        await SpotifyRelay.shared.stop()
         let clock = ContinuousClock()
         let played = clock.now
-        let reached = try await waitUntilPlaying { $0 == uri }
+        let reached: Bool
+        if try await playWithTool(uri) {
+            reached = try await waitUntilPlaying(uri)
+            if reached { await SpotifyRelay.shared.air(playlistID: playlistID, index: number - 1, uris: tracks.map(\.uri)) }
+        } else {
+            await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
+            try await run("""
+                set shuffling to false
+                set repeating to true
+                play track "\(uri)" in context "\(SpotifyURI.playlist(playlistID))"
+                """) { _ in }
+            reached = try await waitUntilPlaying { $0 == uri } != nil
+        }
         let milliseconds = (clock.now - played) / .milliseconds(1)
-        guard reached != nil else {
+        guard reached else {
             log.error("""
                 Spotify didn't get to track \(number) of playlist \(playlistID, privacy: .public) \
                 within \(milliseconds, format: .fixed(precision: 0)) ms
@@ -136,22 +158,52 @@ enum SpotifyBridge: MusicAppBridge {
         return uri
     }
 
+    /// Plays `uri` through the tool, after taking out the songs queued for
+    /// the last station. False when the tool isn't there or failed, for
+    /// AppleScript to play it instead.
+    private static func playWithTool(_ uri: String) async throws -> Bool {
+        guard SpotifyCLI.executable != nil else {
+            tunedWithTool.withLock { $0 = false }
+            return false
+        }
+        do {
+            try await SpotifyCLI.clearQueue()
+            try await SpotifyCLI.play(uri)
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch MusicBridgeError.notRunning {
+            throw MusicBridgeError.notRunning
+        } catch {
+            log.error("Spotify's command-line tool couldn't play, so AppleScript will: \(String(describing: error), privacy: .public)")
+            tunedWithTool.withLock { $0 = false }
+            return false
+        }
+        tunedWithTool.withLock { $0 = true }
+        return true
+    }
+
     /// The fallback for when `play(playlistID:track:)` doesn't reach its
     /// track: the playlist on shuffle and repeat, which Spotify starts on
     /// whichever track it likes. Returns whether either was set otherwise,
     /// and the track (1-based) it started on, or 0 when it isn't one of the
     /// saved tracks.
     static func play(playlistID: String) async throws -> (orderChanged: Bool, track: Int) {
-        let tracks = try await savedPlaylist(playlistID).tracks
+        guard SpotifyURI.isBaseID(playlistID) else { throw MusicBridgeError.invalidPersistentID(playlistID) }
+        let tracks = try await savedTracks(playlistID)
         lastTuned.withLock { $0 = playlistID }
-        await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
+        await SpotifyRelay.shared.stop()
         let orderChanged = try await run("""
             set alreadyOnAir to shuffling is true and repeating is true
             set shuffling to true
             set repeating to true
-            play track "\(SpotifyURI.playlist(playlistID))"
             return not alreadyOnAir
             """) { $0.booleanValue }
+        if try await !playWithTool(SpotifyURI.playlist(playlistID)) {
+            await SpotifyWindow.keepHidden(for: SpotifyWindow.playWatch)
+            try await run("play track \"\(SpotifyURI.playlist(playlistID))\"") { _ in }
+        }
+        // The shuffle plays the playlist itself, so nothing is relayed.
+        tunedWithTool.withLock { $0 = false }
         let started = try await waitUntilPlaying { _ in true }
         // Spotify can read shuffle as changed back just after `play`.
         try await keepOnAir()
@@ -161,10 +213,16 @@ enum SpotifyBridge: MusicAppBridge {
         return (orderChanged, index + 1)
     }
 
-    /// Repeat on and shuffle off: the playlist plays on in its own order,
-    /// which is the order of the clock. A set just after `play` can be
-    /// undone, so this is sent again once the tune has settled.
+    /// Through the tool, repeat goes off, so a song on its own doesn't loop
+    /// instead of playing the queue's next song. Through AppleScript, repeat
+    /// on and shuffle off: the playlist plays on in its own order, which is
+    /// the order of the clock. A set just after `play` can be undone, so
+    /// this is sent again once the tune has settled.
     static func keepOnClock() async throws {
+        if tunedWithTool.withLock({ $0 }) {
+            try await run("set repeating to false") { _ in }
+            return
+        }
         try await run("""
             set shuffling to false
             set repeating to true
@@ -203,6 +261,41 @@ enum SpotifyBridge: MusicAppBridge {
         }
     }
 
+    /// Waits until Spotify plays `uri` from near its start, and returns
+    /// whether it did within `limit`. A play sent just after a pause can
+    /// leave the song loaded but paused, so that gets one `play`.
+    private static func waitUntilPlaying(_ uri: String, within limit: Duration = .seconds(3)) async throws -> Bool {
+        let clock = ContinuousClock()
+        let started = clock.now
+        var nudged = false
+        while true {
+            try Task.checkCancellation()
+            let reading = try await run("""
+                set stateText to player state as text
+                set trackURI to ""
+                set elapsed to 0
+                try
+                    set trackURI to id of current track
+                    set elapsed to player position
+                end try
+                return {stateText, trackURI, elapsed}
+                """) { result in
+                (result.atIndex(1)?.stringValue ?? "", result.atIndex(2)?.stringValue ?? "", result.atIndex(3)?.doubleValue ?? 0)
+            }
+            try Task.checkCancellation()
+            if reading.1 == uri {
+                if reading.0 == "playing", reading.2 < 5 { return true }
+                if reading.0 == "paused", !nudged, clock.now - started > .milliseconds(500) {
+                    nudged = true
+                    log.notice("Spotify loaded the song paused, so it's told to play")
+                    try await run("play") { _ in }
+                }
+            }
+            guard clock.now - started < limit else { return false }
+            try await Task.sleep(for: .milliseconds(100))
+        }
+    }
+
     /// Moves the current track to `position` seconds and returns where
     /// Spotify says it is afterwards. Until a track has loaded, Spotify
     /// refuses the position, which returns nil.
@@ -233,6 +326,7 @@ enum SpotifyBridge: MusicAppBridge {
     }
 
     static func pause() async throws {
+        await SpotifyRelay.shared.stop()
         try await run("pause") { _ in }
     }
 
@@ -252,8 +346,8 @@ enum SpotifyBridge: MusicAppBridge {
     static func nowPlaying(trackURI: String, in playlists: [SpotifyPlaylist], preferring preferredID: String?) -> NowPlaying? {
         let preferred = playlists.filter { $0.id == preferredID }
         for playlist in preferred + playlists {
-            guard let index = playlist.tracks.firstIndex(where: { $0.uri == trackURI }) else { continue }
-            return NowPlaying(playlistID: playlist.id, trackIndex: index, trackCount: playlist.tracks.count)
+            guard let tracks = playlist.tracks, let index = tracks.firstIndex(where: { $0.uri == trackURI }) else { continue }
+            return NowPlaying(playlistID: playlist.id, trackIndex: index, trackCount: tracks.count)
         }
         return nil
     }

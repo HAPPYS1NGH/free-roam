@@ -4,11 +4,11 @@ import Testing
 
 @MainActor
 struct SpotifyLibraryTests {
-    private func playlist(_ id: String, tracks: [String]) -> SpotifyPlaylist {
+    private func playlist(_ id: String, tracks: [String]?) -> SpotifyPlaylist {
         SpotifyPlaylist(
-            id: id, name: id, coverURL: nil,
-            tracks: tracks.map { SpotifyTrack(uri: $0, title: $0, artist: "", album: "", duration: 1, artworkURL: nil) },
-            tunedAt: Date(timeIntervalSince1970: 0)
+            id: id, name: id,
+            tracks: tracks?.map { SpotifyTrack(uri: $0, title: $0, artist: "", album: "", duration: 1, artworkURL: nil) },
+            readAt: Date(timeIntervalSince1970: 0)
         )
     }
 
@@ -34,25 +34,22 @@ struct SpotifyLibraryTests {
 
     @Test func isNilForATrackNoPlaylistHas() {
         #expect(SpotifyBridge.nowPlaying(trackURI: t3, in: [playlist(a, tracks: [t1])], preferring: a) == nil)
+        #expect(SpotifyBridge.nowPlaying(trackURI: t1, in: [playlist(b, tracks: nil)], preferring: b) == nil)
         #expect(SpotifyBridge.nowPlaying(trackURI: t1, in: [], preferring: nil) == nil)
     }
 
-    @Test func keepsPlaylistsBetweenLaunches() throws {
-        let file = FileManager.default.temporaryDirectory
-            .appending(path: UUID().uuidString, directoryHint: .isDirectory)
-            .appending(path: "spotify-playlists.json")
-        defer { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+    @Test func aNewListKeepsTheSongsReadAndPicksUpRenamesAndOrder() {
+        let saved = [playlist(a, tracks: [t1]), playlist(b, tracks: [t2])]
+        let merged = SpotifyLibrary.merging([.init(id: b, name: "Gym"), .init(id: a, name: a)], into: saved)
+        #expect(merged.map(\.id) == [b, a])
+        #expect(merged[0].name == "Gym")
+        #expect(merged[0].tracks == saved[1].tracks)
+        #expect(merged[1].tracks == saved[0].tracks)
+    }
 
-        let library = SpotifyLibrary(fileURL: file)
-        #expect(library.playlists.isEmpty)
-        let saved = playlist(a, tracks: [t1, t2])
-        try saveForTest(saved, to: file)
-        #expect(SpotifyLibrary(fileURL: file).playlists == [saved])
-
-        let reloaded = SpotifyLibrary(fileURL: file)
-        reloaded.remove(id: a)
-        #expect(reloaded.playlists.isEmpty)
-        #expect(SpotifyLibrary(fileURL: file).playlists.isEmpty)
+    @Test func aNewPlaylistHasNoSongsUntilTheyreReadAndAnUnlistedOneGoes() {
+        let merged = SpotifyLibrary.merging([.init(id: b, name: "New")], into: [playlist(a, tracks: [t1])])
+        #expect(merged == [SpotifyPlaylist(id: b, name: "New")])
     }
 
     @Test func startsEmptyFromAnUnreadableFile() throws {
@@ -62,24 +59,117 @@ struct SpotifyLibraryTests {
         #expect(SpotifyLibrary(fileURL: file).playlists.isEmpty)
     }
 
-    @Test func refusesLinksThatArentPlaylists() async {
-        let library = SpotifyLibrary(fileURL: FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).json"))
-        await #expect(throws: SpotifyLibraryError.notAPlaylistLink) {
-            _ = try await library.add(link: "https://open.spotify.com/album/\(a)")
-        }
+    @Test func readsThePlaylistsSavedLastTime() throws {
+        let file = FileManager.default.temporaryDirectory.appending(path: "\(UUID().uuidString).json")
+        defer { try? FileManager.default.removeItem(at: file) }
+        let saved = [playlist(a, tracks: [t1, t2]), playlist(b, tracks: nil)]
+        try JSONEncoder().encode(saved).write(to: file)
+        #expect(SpotifyLibrary(fileURL: file).playlists == saved)
+    }
+}
+
+struct SpotifyCLITests {
+    private func decode<Value: Decodable>(_ type: Value.Type, _ json: String) throws -> Value {
+        try JSONDecoder().decode(type, from: Data(json.utf8))
     }
 
-    @Test func readsTheNameAndCoverFromOEmbed() throws {
-        let json = Data(#"{"title":"Today’s Top Hits","thumbnail_url":"https://i.scdn.co/image/x","html":"<iframe>"}"#.utf8)
-        let details = try SpotifyOEmbed.details(from: json)
-        #expect(details == .init(title: "Today’s Top Hits", coverURL: URL(string: "https://i.scdn.co/image/x")))
-        let insecure = Data(#"{"title":"T","thumbnail_url":"http://example.com/x.jpg"}"#.utf8)
-        #expect(try SpotifyOEmbed.details(from: insecure).coverURL == nil)
+    @Test func listsOnlyPlaylists() throws {
+        let page = try decode(SpotifyCLI.LibraryPage.self, """
+            {"items":[
+              {"uri":"spotify:playlist:2PJciHGfJOgxiVQOY9JYJC","name":"GYM","type":"playlist","artists":[]},
+              {"uri":"spotify:folder:abc","name":"Folder","type":"folder"},
+              {"uri":"spotify:playlist:short","name":"Bad","type":"playlist"},
+              {"uri":"spotify:playlist:2PJciHGfJOgxiVQOY9JYJC\\"; beep","name":"Bad","type":"playlist"}
+            ],"total":4,"has_more":false}
+            """)
+        #expect(SpotifyCLI.playlists(in: page) == [.init(id: "2PJciHGfJOgxiVQOY9JYJC", name: "GYM")])
     }
 
-    /// A save through `add` needs Spotify, so the file is written the way `add` writes it.
-    private func saveForTest(_ playlist: SpotifyPlaylist, to file: URL) throws {
-        try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        try JSONEncoder().encode([playlist]).write(to: file)
+    @Test func readsLengthsInSecondsWithBiggerCovers() throws {
+        let lookup = try decode(SpotifyCLI.Lookup.self, """
+            {"entities":[
+              {"uri":"spotify:track:1jFtGMCWES8Z9UfivWVhuy","type":"Song","name":"ASTARR",
+               "image_url":"https://i.scdn.co/image/ab67616d000048514cadfcf434bb64da26040f93",
+               "metadata":[{"field":"duration","value":"195000"}]},
+              {"uri":"spotify:track:46rkcCiXR478qcWERtneL7","image_url":"https://evil.example/x.jpg",
+               "metadata":[{"field":"duration","value":"182000"}]},
+              {"uri":"spotify:track:3z9y6N0U84V1tAF0kaFylH","metadata":[]},
+              {"uri":"spotify:track:7vUfIIQiH3K3J5tmN46HE5","metadata":[{"field":"duration","value":"0"}]}
+            ]}
+            """)
+        let details = SpotifyCLI.details(in: lookup)
+        #expect(details.count == 2)
+        #expect(details["spotify:track:1jFtGMCWES8Z9UfivWVhuy"] == .init(
+            duration: 195,
+            artworkURL: URL(string: "https://i.scdn.co/image/ab67616d00001e024cadfcf434bb64da26040f93")
+        ))
+        #expect(details["spotify:track:46rkcCiXR478qcWERtneL7"] == .init(duration: 182, artworkURL: nil))
+    }
+
+    @Test func leavesOutSongsWithoutALength() throws {
+        let page = try decode(SpotifyCLI.PlaylistPage.self, """
+            {"uri":"spotify:playlist:61JX6jLHrIaT57YeiJgKlF","name":"Repeat","track_count":2,"tracks":[
+              {"type":"track","uri":"spotify:track:46rkcCiXR478qcWERtneL7","name":"Shining Koka",
+               "artists":["Dilpreet Dhillon","Mehar Vaani"],"album":"Next Chapter","position":0},
+              {"type":"track","uri":"spotify:track:3z9y6N0U84V1tAF0kaFylH","name":"Bullet","artists":[],"position":1}
+            ]}
+            """)
+        let tracks = SpotifyCLI.tracks(page.tracks, details: ["spotify:track:46rkcCiXR478qcWERtneL7": .init(duration: 182, artworkURL: nil)])
+        #expect(tracks == [SpotifyTrack(
+            uri: "spotify:track:46rkcCiXR478qcWERtneL7", title: "Shining Koka",
+            artist: "Dilpreet Dhillon, Mehar Vaani", album: "Next Chapter", duration: 182, artworkURL: nil
+        )])
+    }
+
+    @Test func countsOnlyTheSongsAddedToTheQueue() throws {
+        let queue = try decode(SpotifyCLI.Queue.self, """
+            {"currently_playing":{"uri":"spotify:track:46rkcCiXR478qcWERtneL7","provider":"context"},
+             "next_tracks":[
+               {"uri":"spotify:track:3z9y6N0U84V1tAF0kaFylH","provider":"queue"},
+               {"uri":"spotify:track:1jFtGMCWES8Z9UfivWVhuy","provider":"queue"},
+               {"uri":"spotify:track:46rkcCiXR478qcWERtneL7","provider":"context"},
+               {"uri":"spotify:track:7vUfIIQiH3K3J5tmN46HE5","provider":"queue"}
+             ],"revision":"1"}
+            """)
+        #expect(SpotifyCLI.queuedCount(in: queue) == 2)
+        #expect(SpotifyCLI.queuedCount(in: try decode(SpotifyCLI.Queue.self, "{}")) == 0)
+    }
+
+    @Test func tellsSpotifyNotRunningFromOtherFailures() {
+        #expect(SpotifyCLI.failure(message: "Spotify desktop client is not running") as? MusicBridgeError == .notRunning)
+        #expect(SpotifyCLI.failure(message: "playlist get failed: client connection failed") as? SpotifyCLI.Failure
+            == .failed("playlist get failed: client connection failed"))
+    }
+}
+
+struct SpotifyRelayTests {
+    private let songs = [
+        "spotify:track:46rkcCiXR478qcWERtneL7",
+        "spotify:track:3z9y6N0U84V1tAF0kaFylH",
+        "spotify:track:1jFtGMCWES8Z9UfivWVhuy",
+    ]
+
+    private func airing(at index: Int) -> SpotifyRelay.Airing {
+        SpotifyRelay.Airing(playlistID: "61JX6jLHrIaT57YeiJgKlF", index: index, uris: songs, tune: UUID())
+    }
+
+    @Test func movesOnWhenTheQueuedSongStarts() {
+        #expect(SpotifyRelay.event(state: "Playing", trackID: songs[1], airing: airing(at: 0)) == .advanced)
+    }
+
+    @Test func goesRoundToTheTopAfterTheLastSong() {
+        #expect(airing(at: 2).nextIndex == 0)
+        #expect(SpotifyRelay.event(state: "Playing", trackID: songs[0], airing: airing(at: 2)) == .advanced)
+    }
+
+    @Test func ignoresPausesSeeksAndAds() {
+        #expect(SpotifyRelay.event(state: "Paused", trackID: songs[1], airing: airing(at: 0)) == .ignored)
+        #expect(SpotifyRelay.event(state: "Playing", trackID: songs[0], airing: airing(at: 0)) == .ignored)
+        #expect(SpotifyRelay.event(state: "Playing", trackID: "spotify:ad:000000012bd5e4de", airing: airing(at: 0)) == .ignored)
+        #expect(SpotifyRelay.event(state: "Playing", trackID: nil, airing: airing(at: 0)) == .ignored)
+    }
+
+    @Test func stopsFollowingASongItDidntQueue() {
+        #expect(SpotifyRelay.event(state: "Playing", trackID: songs[2], airing: airing(at: 0)) == .otherTrack)
     }
 }
