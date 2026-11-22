@@ -105,7 +105,7 @@ function Caption({ live: liveAudio }: { live: LiveAudio }) {
     <span aria-hidden="true">·</span>
     {liveAudio.kind === "silent" && playing ? <span>{playing.playlist.name} has no audio here</span>
       : live ? <span className="ta-caption-track">{note && <span className="ta-caption-note">{note} </span>}{live.track.title} — {live.track.artist} <span className="ta-caption-time">{formatClock(live.position)}</span></span>
-      : <span>Radio off</span>}
+      : <span>Radio off<span className="ta-hover"> · hold ⌥Q to tune in</span><span className="ta-touch"> · touch and hold to tune in</span></span>}
     <span aria-hidden="true">·</span>
     <SoundToggle />
   </p>

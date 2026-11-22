@@ -24,14 +24,6 @@ export const linkGroups: { title: string; links: FooterLink[] }[] = [
     ],
   },
   {
-    title: "This page",
-    links: [
-      { label: "Stations", href: "#stations", external: false },
-      { label: "How it works", href: "#how-it-works", external: false },
-      { label: "Questions", href: "#faq-title", external: false },
-    ],
-  },
-  {
     title: "Follow",
     links: [
       { label: "X", href: "https://x.com/HAPPYS1NGH", external: true, note: "@HAPPYS1NGH" },
@@ -44,6 +36,6 @@ export function FooterBase() {
   return <div className="fx-base p-wrap">
     <Brand />
     <p className="p-footer-line">Hold ⌥Q anywhere.</p>
-    <p className="fx-small">Free and open source · Music&nbsp;or&nbsp;Spotify · macOS&nbsp;14&nbsp;or&nbsp;later</p>
+    <p className="fx-small">Free and open source · Spotify&nbsp;or&nbsp;Apple&nbsp;Music · macOS&nbsp;14&nbsp;or&nbsp;later</p>
   </div>
 }

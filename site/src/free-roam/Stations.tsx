@@ -13,7 +13,7 @@ export function Stations() {
     <div className="p-section-head">
       <p className="p-eyebrow">On the dial</p>
       <h2 id="dial-title">Every station is already playing.</h2>
-      <p>Each playlist runs on its own clock. Tune in and you land mid-song, right where it would be if it had been on all along. Leave, come back, it kept going.</p>
+      <p>Each playlist runs on its own clock. Tune in and you land mid-song, right where it would be if it had been on all along. Leave, come back, it kept going. These are my playlists. In the app, the stations are your own playlists.</p>
     </div>
     <ul className="p-dial-list">
       {demoSlots.map((slot, index) => {

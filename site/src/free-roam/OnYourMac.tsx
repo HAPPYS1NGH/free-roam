@@ -39,7 +39,7 @@ export function OnYourMac() {
     <div className="p-section-head">
       <p className="p-eyebrow">On your Mac</p>
       <h2 id="mac-title">Hold <Keycap>⌥</Keycap><Keycap>Q</Keycap> in any app.</h2>
-      <p>Your editor, your browser, a video. The wheel opens over whatever you’re doing, you flick to a station, and you never leave your work. It plays from Music or Spotify.</p>
+      <p>Your editor, your browser, a video. The wheel opens over whatever you’re doing, you flick to a station, and you never leave your work. It plays from Spotify or Apple Music.</p>
     </div>
     <video ref={video} className="p-mac-video" src="/free-roam/demo/anywhere.mp4" poster={poster}
       width={720} height={1280} muted loop playsInline preload="none" controls={manual}

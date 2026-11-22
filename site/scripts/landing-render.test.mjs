@@ -29,9 +29,9 @@ test('landing prerender stays identical across times and time zones, and has the
   for (const name of ['God&#x27;s Favorite', 'High', 'Vibe', 'Culture Truth', 'Serbian', 'Right Eyebrow']) {
     assert.ok(built.includes(`>${name}</span>`), name)
   }
-  for (const question of ['Does it work with Spotify?', 'Do I need Apple Music or Spotify Premium?', 'Why use it instead of Music or Spotify?', 'Can I choose my own stations?', 'Does this page play music?', 'What can it see on my Mac?', 'How does it update?']) {
+  for (const question of ['Which music apps does it work with?', 'Isn&#x27;t this just Spotify Radio?', 'Why would it want Screen Recording?', 'Can I choose my own stations?']) {
     assert.ok(built.includes(question), question)
   }
-  assert.ok(built.includes('Free and open source. For Music or Spotify, on macOS 14 or later.'), 'closing line')
+  assert.ok(built.includes('Free and open source. For Spotify or Apple Music, on macOS 14 or later.'), 'closing line')
   assert.ok(!/notari[sz]ed/i.test(built), 'no signed-and-notarized claims')
 })
