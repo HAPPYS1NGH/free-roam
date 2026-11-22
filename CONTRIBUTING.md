@@ -60,19 +60,20 @@ Everything comes from the badge, `site/public/free-roam/app-icon.png`, and the c
 
 ## Release build
 
-`scripts/release.sh` makes `dist/Free Roam-<version>.dmg` and a `.sha256` checksum. The version comes from `CFBundleShortVersionString` in `Sources/FreeRoam/Info.plist`. The build number is the commit count.
+`scripts/release.sh` makes `dist/Free Roam-<version>.dmg`, a `.sha256` checksum, a copy named `dist/FreeRoam.dmg` and `dist/appcast.xml`, the feed Sparkle checks for updates. The version comes from `CFBundleShortVersionString` in `Sources/FreeRoam/Info.plist`. The build number is the commit count, and it's what Sparkle compares, so release from `main`.
 
 You need, once per Mac:
 
 - The Developer ID Application certificate for team R5NM7593WP in your login keychain.
 - A notarytool keychain profile called `freeroam-notary`: `xcrun notarytool store-credentials freeroam-notary`, with an app-specific password from account.apple.com. The credentials stay in the keychain.
+- Sparkle's EdDSA signing key in your login keychain, under the account `com.happys1ngh.freeroam`. Its public half is `SUPublicEDKey` in `Info.plist`. On a new Mac, import your backup with `.build/artifacts/sparkle/Sparkle/bin/generate_keys --account com.happys1ngh.freeroam -f <file>` (run `swift build` first to download the tool). Make the backup with `-x <file>` and keep it somewhere safe: without the key, nobody who installed Free Roam can be sent another update.
 
 Commit first. The script won't build with uncommitted changes to the app's files unless you set `ALLOW_DIRTY=1`. It:
 
-1. Builds arm64 and x86_64 with `bundle.sh --release` and signs with Developer ID, the hardened runtime and `scripts/FreeRoam.entitlements`. That file has one entitlement, Apple Events, for Music. Screen Recording is a privacy permission and needs no entitlement.
-2. Fails if the bundle has a file that isn't on its allowlist, a copy of anything in `site/public/library/`, `site/public/wallpaper/` or `site/public/sounds/local/`, or a `/Users/` path in the binary.
+1. Builds arm64 and x86_64 with `bundle.sh --release`, embeds `Sparkle.framework` without its XPC services (only sandboxed apps need them), and signs Sparkle's helpers, then the app, with Developer ID, the hardened runtime and `scripts/FreeRoam.entitlements`. That file has one entitlement, Apple Events, for Music. Screen Recording is a privacy permission and needs no entitlement.
+2. Fails if the bundle has a file that isn't on its allowlist (Sparkle's files are checked against the framework SwiftPM downloaded), a copy of anything in `site/public/library/`, `site/public/wallpaper/` or `site/public/sounds/local/`, or a `/Users/` path in the binary.
 3. Notarizes and staples the app, so a copy dragged out of the DMG opens offline, then signs, notarizes and staples the DMG. If Apple rejects a submission, it prints Apple's log.
-4. Writes the checksum.
+4. Writes the checksum, signs `FreeRoam.dmg` with the Sparkle key and writes `appcast.xml` with only this release in it.
 
 Then check:
 
@@ -85,10 +86,11 @@ codesign --verify --deep --strict --verbose=2 "dist/Free Roam.app"
 
 ### Publish
 
-The site and README link to `releases/latest/download/FreeRoam.dmg`, so every release must include the DMG under that exact name. Tag the commit the DMG was built from:
+The site and README link to `releases/latest/download/FreeRoam.dmg`, and the app reads `releases/latest/download/appcast.xml`. So every release must include both files under those exact names, and it must not be a pre-release, which `latest` skips. Tag the commit the DMG was built from:
 
 ```sh
-cp "dist/Free Roam-0.1.0.dmg" dist/FreeRoam.dmg
 gh release create v0.1.0 --target <commit> --title "Free Roam 0.1.0" \
-  dist/FreeRoam.dmg "dist/Free Roam-0.1.0.dmg" "dist/Free Roam-0.1.0.dmg.sha256"
+  dist/FreeRoam.dmg dist/appcast.xml "dist/Free Roam-0.1.0.dmg" "dist/Free Roam-0.1.0.dmg.sha256"
 ```
+
+Copies of 0.1.0 and earlier have no updater, so tell those people to download the new DMG once.

@@ -48,7 +48,7 @@ The app is signed and notarized by Apple, so it opens without a warning. Older v
 
 **Requirements:** macOS 14 or later, and the Music app or the Spotify desktop app. In Music, songs you own play without a subscription and Apple Music songs need one. Spotify works with Free and Premium.
 
-**Updating:** Free Roam doesn't update itself yet. Download the new DMG and replace the app in Applications. Your stations and permissions carry over.
+**Updating:** The second time you open Free Roam, it asks whether to check for updates on its own. Say yes and it checks once a day. Or choose **Check for Updates…** in the menu bar menu. Your stations and permissions carry over.
 
 ## Permissions and privacy
 
@@ -60,7 +60,7 @@ Free Roam asks for at most two things:
 What it doesn't do:
 
 - It never saves or sends what's on your screen. It uses the capture only to draw the backdrop.
-- It has no analytics, and makes no network requests except to download Spotify song covers from Spotify's image server.
+- It has no analytics. Its only network requests download Spotify song covers from Spotify's image server and check GitHub for a new version, if you let it. The update check sends GitHub only Free Roam's version number.
 - It doesn't need Accessibility or Input Monitoring. ⌥Q is a standard macOS global shortcut, so other keys never pass through Free Roam.
 
 ## FAQ
@@ -106,6 +106,7 @@ swift test
 
 ## Credits
 
+- Updates come through [Sparkle](https://sparkle-project.org), under the MIT License.
 - The wheel's type is [Sofia Sans Extra Condensed](https://github.com/lettersoup/Sofia-Sans), under the SIL Open Font License.
 - Inspired by the radio wheels in open-world driving games. Free Roam isn't affiliated with any game or with Apple.
 
