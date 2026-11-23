@@ -1,7 +1,9 @@
 /* The footer: the billboard (billboard.css), then the coast road in pixels
    rising out of the page, the brand line on its soil. */
 /* The hero scopes --sodium to .ta; the footer's lamps use the same tube colour. */
-.fx-footer { --sodium: oklch(0.8 0.14 66); position: relative; margin-top: clamp(32px, 6vw, 80px); border-top: 1px solid var(--line); background: var(--bg); }
+/* overflow-x: clip trims the billboard catwalk's overhang where the board
+   meets the viewport edge, without making the footer a scroll container. */
+.fx-footer { --sodium: oklch(0.8 0.14 66); position: relative; margin-top: clamp(32px, 6vw, 80px); border-top: 1px solid var(--line); background: var(--bg); overflow-x: clip; }
 
 .fx-base {
   position: relative; z-index: 1;
