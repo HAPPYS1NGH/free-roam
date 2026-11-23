@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { useReducedMotion } from "motion/react"
 import { track } from "./analytics"
 
 // The Mac app on film: the wheel over an editor, a browser, a design tool and
@@ -12,34 +13,46 @@ type Clip = typeof portraitDemo
 // Each placement is shown by CSS for one kind of device, so `media` must match
 // that CSS: the clip and its poster load only where it's shown, and play only
 // while it's in view.
+// Share of the clip that must be on screen for it to play (and start loading).
+const VISIBLE_RATIO = 0.4
+
 export function MacDemoVideo({ clip, media, placement, className }: { clip: Clip; media: string; placement: string; className: string }) {
   const video = useRef<HTMLVideoElement>(null)
-  // Reduced motion gets the poster and the player's own controls instead of autoplay.
-  const [manual, setManual] = useState(false)
+  const reducedMotion = useReducedMotion() ?? false
+  // Reduced motion, or a browser that refuses autoplay, gets the poster and the
+  // player's own controls instead.
+  const [blocked, setBlocked] = useState(false)
   const [poster, setPoster] = useState<string>()
+  const played = useRef(false)
+  const manual = reducedMotion || blocked
 
   useEffect(() => {
     const element = video.current
     if (!element || !matchMedia(media).matches) return
     setPoster(clip.poster)
-    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setManual(true)
+    if (manual) {
+      element.pause()
       return
     }
-    let played = false
     const observer = new IntersectionObserver(([entry]) => {
-      if (!entry.isIntersecting) return element.pause()
-      element.play().then(() => {
-        if (played) return
-        played = true
-        track("mac_demo_played", { placement })
-      }, (error: Error) => console.warn("The Mac demo didn't autoplay:", error))
-    }, { threshold: 0.4 })
+      if (entry.intersectionRatio < VISIBLE_RATIO) return element.pause()
+      element.play().catch((error: Error) => {
+        console.warn("The Mac demo didn't autoplay:", error)
+        setBlocked(true)
+      })
+    }, { threshold: [0, VISIBLE_RATIO] })
     observer.observe(element)
     return () => observer.disconnect()
-  }, [clip.poster, media, placement])
+  }, [clip.poster, media, manual])
+
+  // Counted on the first real play, so plays from the controls count too.
+  const onPlay = () => {
+    if (played.current) return
+    played.current = true
+    track("mac_demo_played", { placement })
+  }
 
   return <video ref={video} className={className} src={clip.src} poster={poster}
-    width={clip.width} height={clip.height} muted loop playsInline preload="none" controls={manual}
+    width={clip.width} height={clip.height} muted loop playsInline preload="none" controls={manual} onPlay={onPlay}
     aria-label="Free Roam on a Mac: holding ⌥Q opens the radio wheel over a code editor, a browser, a design tool and a video" />
 }
