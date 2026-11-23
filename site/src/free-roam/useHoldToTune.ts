@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react"
+import { requestTuneIn } from "./live/LiveRadio"
 import type { TrackedWheel } from "./useRadioTracking"
 
 // How long a still finger rests before the wheel opens: past a tap and the
@@ -18,22 +19,30 @@ export function useHoldToTune(area: RefObject<HTMLElement | null>, wheel: Tracke
     const element = area.current
     if (!element) return
     let timer = 0
+    // The finger that started the hold. Other fingers are ignored, so a second
+    // touch can't strand the wheel open.
+    let touchId: number | null = null
     // Where the finger went down, then (once holding) where it last was.
     let origin: { x: number; y: number } | null = null
     let holding = false
 
     const reset = () => {
       window.clearTimeout(timer)
+      touchId = null
       origin = null
       holding = false
     }
 
+    const find = (touches: TouchList) => Array.from(touches).find(touch => touch.identifier === touchId)
+
     const start = (event: TouchEvent) => {
+      if (holding) return
       reset()
       if (event.touches.length !== 1) return
       // Links keep their own long press (preview, share) and the sound toggle stays a toggle.
       if (event.target instanceof Element && event.target.closest("a, .p-sound")) return
       const touch = event.touches[0]
+      touchId = touch.identifier
       origin = { x: touch.clientX, y: touch.clientY }
       timer = window.setTimeout(() => {
         holding = true
@@ -44,7 +53,8 @@ export function useHoldToTune(area: RefObject<HTMLElement | null>, wheel: Tracke
 
     const move = (event: TouchEvent) => {
       if (!origin) return
-      const touch = event.touches[0]
+      const touch = find(event.touches)
+      if (!touch) return
       const dx = touch.clientX - origin.x
       const dy = touch.clientY - origin.y
       if (!holding) {
@@ -58,16 +68,19 @@ export function useHoldToTune(area: RefObject<HTMLElement | null>, wheel: Tracke
     }
 
     const end = (event: TouchEvent) => {
+      if (!find(event.changedTouches)) return
       if (holding) {
         // Stops the click that would follow, so a hold that started on
         // "Try the wheel" doesn't open the wheel again.
         event.preventDefault()
         latest.current.commit()
+        requestTuneIn()
       }
       reset()
     }
 
-    const cancel = () => {
+    const cancel = (event: TouchEvent) => {
+      if (!find(event.changedTouches)) return
       if (holding) latest.current.hide()
       reset()
     }

@@ -69,6 +69,12 @@ const isTextField = (target: EventTarget | null) =>
   target instanceof HTMLElement && (/^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName) || target.isContentEditable)
 const closest = (target: EventTarget | null, selector: string) => target instanceof Element && !!target.closest(selector)
 
+// Touch gestures that tune without a click (the hero hold, the wheel's
+// trackpad) send this from their release handler, which still counts as the
+// visitor's own input.
+const TUNE_IN_EVENT = "free-roam:tune-in"
+export const requestTuneIn = () => window.dispatchEvent(new Event(TUNE_IN_EVENT))
+
 type Loaded = { stationId: string; track: LiveTrack; override: boolean; startedAt: number }
 
 type Props = {
@@ -173,18 +179,22 @@ export function LiveRadio({ playing, muted, onChange }: Props) {
       if (closest(event.target, PRIME_TARGETS)) prime()
       resume()
     }
-    const onClick = (event: MouseEvent) => {
-      if (!closest(event.target, TUNE_TARGETS)) return
+    const tuneIn = () => {
       prime()
       setTunedIn(true)
     }
+    const onClick = (event: MouseEvent) => {
+      if (closest(event.target, TUNE_TARGETS)) tuneIn()
+    }
     const onBlur = () => { altQHeld = false }
+    window.addEventListener(TUNE_IN_EVENT, tuneIn)
     window.addEventListener("keydown", onKeyDown, true)
     window.addEventListener("keyup", onKeyUp, true)
     window.addEventListener("pointerdown", onPointerDown, true)
     window.addEventListener("click", onClick, true)
     window.addEventListener("blur", onBlur)
     return () => {
+      window.removeEventListener(TUNE_IN_EVENT, tuneIn)
       window.removeEventListener("keydown", onKeyDown, true)
       window.removeEventListener("keyup", onKeyUp, true)
       window.removeEventListener("pointerdown", onPointerDown, true)

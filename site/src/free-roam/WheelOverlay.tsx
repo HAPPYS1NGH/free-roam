@@ -2,6 +2,7 @@ import { useRef, type CSSProperties, type PointerEvent } from "react"
 import { AnimatePresence, motion } from "motion/react"
 import tokens from "../../tokens.json"
 import { WheelFace } from "./WheelFace"
+import { requestTuneIn } from "./live/LiveRadio"
 
 type Props = {
   open: boolean
@@ -80,7 +81,9 @@ function TouchPad({ onMove, onCommit }: { onMove: Props["onMove"]; onCommit: Pro
     delete event.currentTarget.dataset.touched
     if (!last.current) return
     last.current = null
-    if (commit) onCommit()
+    if (!commit) return
+    onCommit()
+    requestTuneIn()
   }
   return <div className="wheel-pad" aria-hidden="true" onPointerDown={down} onPointerMove={drag}
     onPointerUp={event => release(event, true)} onPointerCancel={event => release(event, false)}>
