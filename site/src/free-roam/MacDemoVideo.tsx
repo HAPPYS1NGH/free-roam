@@ -10,12 +10,12 @@ export const landscapeDemo = { src: "/free-roam/demo/anywhere-wide.mp4", poster:
 
 type Clip = typeof portraitDemo
 
-// Each placement is shown by CSS for one kind of device, so `media` must match
-// that CSS: the clip and its poster load only where it's shown, and play only
-// while it's in view.
 // Share of the clip that must be on screen for it to play (and start loading).
 const VISIBLE_RATIO = 0.4
 
+// Each placement is shown by CSS for one kind of device, so `media` must match
+// that CSS: the clip and its poster load only where it's shown, and play only
+// while it's in view.
 export function MacDemoVideo({ clip, media, placement, className }: { clip: Clip; media: string; placement: string; className: string }) {
   const video = useRef<HTMLVideoElement>(null)
   const reducedMotion = useReducedMotion() ?? false
@@ -37,6 +37,8 @@ export function MacDemoVideo({ clip, media, placement, className }: { clip: Clip
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.intersectionRatio < VISIBLE_RATIO) return element.pause()
       element.play().catch((error: Error) => {
+        // A pause from scrolling away also rejects play(), as an AbortError.
+        if (error.name !== "NotAllowedError") return
         console.warn("The Mac demo didn't autoplay:", error)
         setBlocked(true)
       })
