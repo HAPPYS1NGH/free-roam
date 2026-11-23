@@ -79,12 +79,6 @@
 .ta :is(.ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: ta-fade 400ms var(--ease-out) 450ms both; }
 :root[data-intro="seen"] .ta :is(.ta-scene-img, .ta-line, .ta-sub, .ta-actions, .ta-caption, .ta-nav) { animation: none; }
 
-/* Closing */
-.ta-closing { display: grid; justify-items: start; gap: 22px; }
-.ta-closing h2 { font-size: clamp(64px, 9.5vw, 148px); line-height: 0.86; }
-.ta-closing h2 span { color: var(--accent); transition: color 400ms var(--ease-out); }
-.ta-closing p { color: var(--muted); font-size: 16px; }
-
 @media (max-width: 740px) {
   .ta-nav .p-tally { display: none; }
   .ta-line { font-size: clamp(52px, 15vw, 88px); }
@@ -108,12 +102,6 @@
    the whole page shows the closed hand and text can't be selected. */
 .ta-hero[data-sky="grab"] { cursor: grab; }
 :root[data-sky-drag], :root[data-sky-drag] * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }
-
-/* Works with: muted, one size down from the buttons, so it reads as a fact
-   about the download rather than another action. */
-.ta-works { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; margin-top: 2px; font-size: 13px; color: var(--faint); }
-.ta-works-app { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-weight: 500; }
-.ta-works-app svg { flex: none; }
 /* Desktop's try: the page answers ⌥Q, which nothing else on it says. */
 .ta-hint { font-size: 14px; color: var(--muted); }
 .ta-hint .keycap { color: var(--ink); }
