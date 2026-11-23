@@ -1,7 +1,10 @@
 import type { CSSProperties } from "react"
 import { Details } from "./Details"
 import { Hero } from "./Hero"
+import { HowItWorks, RadioOff } from "./HowItWorks"
+import { OnYourMac } from "./OnYourMac"
 import { RadioProvider, useRadio } from "./RadioProvider"
+import { SendNudge } from "./SendNudge"
 import { Stations } from "./Stations"
 
 export function LandingPage() {
@@ -16,7 +19,11 @@ function Page() {
   const { stationRgb } = useRadio()
   return <main className="p-page ta" id="top" style={stationRgb ? { "--station": stationRgb } as CSSProperties : undefined}>
     <Hero />
+    <OnYourMac />
+    <HowItWorks />
+    <RadioOff />
     <Stations />
     <Details />
+    <SendNudge />
   </main>
 }

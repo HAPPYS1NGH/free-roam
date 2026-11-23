@@ -12,8 +12,8 @@ export function Stations() {
   return <section className="p-section p-dial" id="stations" aria-labelledby="dial-title">
     <div className="p-section-head">
       <p className="p-eyebrow">On the dial</p>
-      <h2 id="dial-title">Every station is already playing.</h2>
-      <p>Each playlist runs on its own clock. Tune in and you land mid-song, right where it would be if it had been on all along. Leave, come back, it kept going.</p>
+      <h2 id="dial-title">Tune in mid-song, like real radio.</h2>
+      <p>Each playlist keeps playing on its own clock, so you land wherever it's got to. These are my stations. Yours will be your own playlists.</p>
     </div>
     <ul className="p-dial-list">
       {demoSlots.map((slot, index) => {

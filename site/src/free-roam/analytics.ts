@@ -25,10 +25,12 @@ function visitorOptedOut() {
 // Sections are named by their heading id, so rewording the copy doesn't rename them.
 const sectionNames: Record<string, string> = {
   "ta-title": "hero",
+  "mac-title": "on-your-mac",
   "dial-title": "stations",
   "how-title": "how-it-works",
   "faq-title": "faq",
-  "ta-closing-title": "closing",
+  "radio-off-title": "radio-off",
+  "nudge-title": "nudge",
 }
 
 export function sectionName(element: Element | null) {
@@ -45,14 +47,6 @@ function watchPage() {
     const link = (event.target as Element).closest(`a[href="${downloadUrl}"]`)
     if (link) track("download_clicked", { placement: sectionName(link.closest("header, footer, section")) })
   })
-
-  // toggle doesn't bubble, so listen in the capture phase.
-  document.addEventListener("toggle", (event) => {
-    const details = event.target
-    if (!(details instanceof HTMLDetailsElement) || !details.open) return
-    const question = details.querySelector("summary")?.firstChild?.textContent ?? "unknown"
-    track("faq_opened", { question })
-  }, true)
 
   // How far down the page people get, by section, for the drop-off funnel.
   const seen = new IntersectionObserver((entries) => {

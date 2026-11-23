@@ -1,0 +1,163 @@
+/* Billboard: one dark roadside board over the coast road, its copy the
+   footer's links, lit from below by floodlights on a catwalk. */
+
+/* The board runs past the page's wrap by its own padding, so the copy lines up
+   with the wrap's edges; on phones that padding is the gutter and the board
+   goes edge to edge. */
+.bb-scene {
+  --bb-pad: min(40px, var(--gutter));
+  --bb-face: oklch(0.112 0.012 255);
+  --bb-face-lit: oklch(0.15 0.016 245);
+  --bb-frame: oklch(0.19 0.012 255);
+  --bb-steel: oklch(0.085 0.01 255);
+  /* Light on the copy is warm: ink with a little of the sodium in it. */
+  --bb-lit: color-mix(in oklch, var(--ink) 86%, var(--sodium));
+  position: relative; z-index: 1;
+  width: min(100%, calc(min(var(--max), 100% - 2 * var(--gutter)) + 2 * var(--bb-pad)));
+  margin: clamp(24px, 3vw, 40px) auto 0;
+  /* Room under the board for the catwalk; the legs carry on down into the road. */
+  padding-bottom: 26px;
+}
+
+/* A physical board: lit from below so the face darkens as it climbs, a solid
+   hairline frame (alpha borders glow on dark), a top lip catching the moon
+   and the faint seams between its panels. */
+.bb-board {
+  position: relative; overflow: hidden; isolation: isolate;
+  border-radius: 2px;
+  background:
+    linear-gradient(90deg, transparent calc(25% - 0.5px), var(--bb-steel) calc(25% - 0.5px) calc(25% + 0.5px), transparent calc(25% + 0.5px) calc(50% - 0.5px), var(--bb-steel) calc(50% - 0.5px) calc(50% + 0.5px), transparent calc(50% + 0.5px) calc(75% - 0.5px), var(--bb-steel) calc(75% - 0.5px) calc(75% + 0.5px), transparent calc(75% + 0.5px)),
+    linear-gradient(0deg, var(--bb-face-lit), var(--bb-face) 62%);
+  box-shadow:
+    inset 0 0 0 1px var(--bb-frame),
+    inset 0 1px 0 1px oklch(0.25 0.014 250),
+    0 24px 48px -24px oklch(0 0 0 / 0.6);
+}
+
+/* Light on the face: beams, the moving pool, passing headlights. Never blocks a click. */
+.bb-light { position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+
+.bb-beam {
+  position: absolute; bottom: 0;
+  width: 34%; height: 140%; margin-left: -17%;
+  transform-origin: 50% 100%;
+  will-change: transform;
+}
+/* A soft-edged cone from the lens (conic), fading as it climbs the face (mask). */
+.bb-beam::before, .bb-beam::after {
+  content: ""; position: absolute; inset: 0;
+  background: conic-gradient(from -30deg at 50% 100%, transparent, var(--bb-cone) 16deg, var(--bb-cone) 44deg, transparent 60deg);
+}
+/* At rest each lamp lifts only the bottom of its quarter; lit, it reaches up. */
+.bb-beam::before { --bb-cone: oklch(from var(--sodium) l c h / 0.09); -webkit-mask-image: linear-gradient(0deg, #000, transparent 40%); mask-image: linear-gradient(0deg, #000, transparent 40%); }
+.bb-beam::after { --bb-cone: oklch(from var(--sodium) l c h / 0.24); opacity: var(--bb-power, 0); -webkit-mask-image: linear-gradient(0deg, #000, oklch(0 0 0 / 0.35) 50%, transparent 85%); mask-image: linear-gradient(0deg, #000, oklch(0 0 0 / 0.35) 50%, transparent 85%); }
+
+.bb-pool {
+  position: absolute; left: 0; top: 0;
+  width: 440px; height: 190px; margin: -95px 0 0 -220px;
+  background: radial-gradient(closest-side, oklch(from var(--sodium) l c h / 0.2), oklch(from var(--sodium) l c h / 0.07) 55%, transparent);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* Headlight wash: a soft spill ahead of the car (scaleX flips it for the far lane). */
+.bb-sweep {
+  position: absolute; left: 0; bottom: 0;
+  width: 44%; height: 55%;
+  transform-origin: 0 100%;
+  background: radial-gradient(ellipse 50% 100% at 50% 100%, oklch(from var(--ink) l c h / 0.075), oklch(from var(--ink) l c h / 0.025) 55%, transparent);
+  opacity: 0;
+  will-change: transform;
+}
+
+/* The copy */
+/* The download is the headline and takes the widest column; the rest are the
+   small print beside it. */
+.bb-copy {
+  display: grid; grid-template-columns: minmax(0, 1.9fr) repeat(2, minmax(0, 1fr)); gap: 28px 32px;
+  padding: clamp(32px, 3.6vw, 48px) var(--bb-pad) clamp(44px, 4.4vw, 60px);
+}
+.bb-title {
+  display: flex; gap: 10px; margin: 0 0 14px;
+  font: 500 11px/1.2 var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--faint);
+}
+.bb-title-num { color: oklch(from var(--sodium) 0.62 calc(c * 0.6) h); }
+
+.bb-list { list-style: none; margin: 0; padding: 0; }
+
+/* Outranks .p-page a { color: inherit }. */
+.bb-board .bb-link {
+  display: inline-flex; align-items: baseline; flex-wrap: wrap; column-gap: 8px;
+  min-height: 44px; padding-block: 3px;
+  font: 600 clamp(24px, 2.2vw, 32px)/0.98 var(--font-display); text-transform: uppercase; letter-spacing: 0.01em;
+  font-kerning: normal;
+  color: oklch(from var(--muted) 0.58 c h);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.bb-label { position: relative; display: inline-block; transform-origin: left center; transition: transform 150ms var(--ease-out); }
+/* Lights in 120ms, cools over 260ms, like the lamps on the road below. */
+.bb-label-lit { position: absolute; inset: 0; color: var(--bb-lit); opacity: 0; transition: opacity 260ms ease-out; }
+/* The headline: the one primary line, a step brighter at rest and well under
+   the closing headline above. */
+.bb-board .bb-link[data-hero] { font-size: clamp(44px, 4.4vw, 64px); white-space: nowrap; line-height: 0.9; letter-spacing: -0.005em; color: oklch(from var(--muted) 0.7 c h); padding-bottom: 6px; }
+.bb-link[data-hero] .bb-note { padding-top: 8px; }
+.bb-arrow { font: 500 max(12px, 0.42em)/1 var(--font-body); color: var(--faint); transition: transform 150ms var(--ease-out), color 150ms ease-out; }
+.bb-note { flex-basis: 100%; padding-top: 4px; font: 500 11px/1 var(--font-mono); letter-spacing: 0.04em; text-transform: none; color: var(--faint); }
+
+.bb-link:focus-visible .bb-label-lit { opacity: 1; transition-duration: 120ms; }
+.bb-link:active .bb-label { transform: scale(0.97); }
+@media (hover: hover) and (pointer: fine) {
+  .bb-link:hover .bb-label-lit { opacity: 1; transition-duration: 120ms; }
+  .bb-link:hover .bb-arrow { transform: translate(2px, -2px); color: var(--accent); }
+}
+
+/* The structure */
+.bb-rig { position: absolute; inset: auto 0 0; height: 26px; pointer-events: none; }
+.bb-catwalk {
+  position: absolute; inset: 0 -6px auto; height: 16px;
+  border-top: 3px solid var(--bb-steel);
+  border-bottom: 1px solid var(--bb-steel);
+  background: repeating-linear-gradient(90deg, var(--bb-steel) 0 1px, transparent 1px 14px);
+}
+/* A floodlight on a short arm, its lens tipped up at the face. */
+.bb-lamp {
+  position: absolute; top: -9px;
+  width: 22px; height: 7px; margin-left: -11px;
+  border-radius: 2px 2px 1px 1px;
+  background: var(--bb-steel);
+}
+.bb-lamp::after { content: ""; position: absolute; left: 50%; top: 100%; width: 2px; height: 6px; margin-left: -1px; background: var(--bb-steel); }
+.bb-lens {
+  position: absolute; inset: 0 3px auto; height: 2px; border-radius: 1px;
+  background: oklch(from var(--sodium) 0.86 c h);
+  box-shadow: 0 -2px 6px oklch(from var(--sodium) l c h / 0.5);
+  opacity: 0.35;
+}
+.bb-leg {
+  position: absolute; top: 16px; width: 6px; height: 150px;
+  background: linear-gradient(180deg, var(--bb-steel) 55%, transparent);
+}
+.bb-leg[data-side="left"] { left: 20%; }
+.bb-leg[data-side="right"] { right: 20%; }
+
+@media (max-width: 900px) {
+  .bb-copy { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 32px; }
+  /* The headline gets the full width. */
+  .bb-group:first-child { grid-column: 1 / -1; }
+  /* A tall board: at rest the lamps only warm its bottom edge. */
+  .bb-beam::before { -webkit-mask-image: linear-gradient(0deg, #000, transparent 22%); mask-image: linear-gradient(0deg, #000, transparent 22%); }
+}
+@media (max-width: 599px) {
+  .bb-board .bb-link { font-size: 24px; }
+  .bb-board .bb-link[data-hero] { font-size: 48px; }
+  .bb-copy { column-gap: 16px; }
+  .bb-leg { height: 120px; width: 5px; }
+  .bb-catwalk { inset-inline: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-label, .bb-label-lit, .bb-arrow { transition: none; }
+  .bb-link:active .bb-label { transform: none; }
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { onAir, useNow } from "../broadcast"
 import { useMounted } from "../useMounted"
 import { LazyDrive } from "./drive/LazyDrive"
@@ -7,14 +7,18 @@ import { LiveRadio, type LiveAudio } from "./live/LiveRadio"
 import { track } from "./analytics"
 import { useRadio } from "./RadioProvider"
 import { Brand, DownloadButton, OnAirTally, SoundToggle } from "./Shared"
+import { useHoldToTune } from "./useHoldToTune"
+import { WorksWith } from "./WorksWith"
 
 // The hero: one line, a coast road at the visitor's hour, and the live drive
 // over it where the machine can afford it. Tuning in plays the station through
-// a hidden YouTube player.
+// a hidden YouTube player. On touch, holding anywhere in the hero opens the wheel.
 export function Hero() {
   const q = useKeyHeld("q")
   const alt = useAltHeld()
-  const { retunes, playing, audio } = useRadio()
+  const { retunes, playing, audio, wheel } = useRadio()
+  const hero = useRef<HTMLElement>(null)
+  useHoldToTune(hero, wheel)
   // Nothing is requested from YouTube until the visitor starts choosing a station.
   const [liveAudio, setLiveAudio] = useState<LiveAudio>({ kind: "idle" })
   // Analytics: whether the YouTube music actually plays, gets held back by the browser, or fails.
@@ -23,27 +27,29 @@ export function Hero() {
     track("youtube_audio", { state: liveAudio.kind, station: playing?.playlist.name ?? "Radio Off" })
   }, [liveAudio.kind])
   useTimeOfDay()
-  return <section className="ta-hero" data-lift={q && alt ? "" : undefined} aria-labelledby="ta-title">
+  return <section ref={hero} className="ta-hero" data-lift={q && alt ? "" : undefined} aria-labelledby="ta-title">
     <div className="ta-scene" aria-hidden="true">
       <div className="ta-scene-img" />
-      <LazyDrive className="ta-drive" label="A coupe drives a coastal highway beside the sea" />
+      <LazyDrive className="ta-drive" />
       <div className="ta-grade" />
       {retunes > 0 && <div key={retunes} className="ta-retune" />}
     </div>
     <header className="p-nav ta-nav">
       <Brand />
       <OnAirTally />
+      <WorksWith />
       <DownloadButton size="sm" className="ta-nav-cta" />
     </header>
     <div className="ta-copy p-wrap">
       <h1 id="ta-title" className="p-display ta-line">
         <span className="ta-hover">Hold <Keycap size="xl" down={alt}>⌥</Keycap><Keycap size="xl" down={q}>Q</Keycap> anywhere.</span>
-        <span className="ta-touch">The radio’s on.</span>
+        <span className="ta-touch">Radio for your Mac.</span>
       </h1>
-      <p className="ta-sub">Your playlists, as <span>radio stations.</span></p>
+      <p className="ta-sub">Like the radio when you free roam, <span>except every station is your playlist.</span></p>
       <div className="ta-actions">
         <DownloadButton size="md" />
         <TryButton />
+        <span className="ta-hint ta-hover">or hold <Keycap size="sm" down={alt}>⌥</Keycap><Keycap size="sm" down={q}>Q</Keycap> to try it here</span>
       </div>
     </div>
     <LiveRadio playing={playing} muted={!audio.enabled} onChange={setLiveAudio} />
@@ -74,10 +80,11 @@ function useTimeOfDay() {
   }, [])
 }
 
-// Desktop visitors can hold ⌥Q right here, so the button is for touch only.
+// Desktop visitors can hold ⌥Q right here, so the button is for touch only,
+// where it's the first thing to press (see .ta-actions in hero.css).
 function TryButton() {
   const { wheel } = useRadio()
-  return <button className="ta-try ta-touch" onClick={wheel.show} aria-expanded={wheel.open}>Try the wheel</button>
+  return <button className="ta-try ta-touch" onClick={() => wheel.show()} aria-expanded={wheel.open}>Try the radio</button>
 }
 
 const formatClock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, "0")}`
@@ -101,7 +108,7 @@ function Caption({ live: liveAudio }: { live: LiveAudio }) {
     <span aria-hidden="true">·</span>
     {liveAudio.kind === "silent" && playing ? <span>{playing.playlist.name} has no audio here</span>
       : live ? <span className="ta-caption-track">{note && <span className="ta-caption-note">{note} </span>}{live.track.title} — {live.track.artist} <span className="ta-caption-time">{formatClock(live.position)}</span></span>
-      : <span>Radio off</span>}
+      : <span>Radio off<span className="ta-hover"> · hold ⌥Q to tune in</span><span className="ta-touch"> · touch and hold to tune in</span></span>}
     <span aria-hidden="true">·</span>
     <SoundToggle />
   </p>

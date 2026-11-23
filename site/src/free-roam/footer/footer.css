@@ -1,0 +1,24 @@
+/* The footer: the billboard (billboard.css), then the coast road in pixels
+   rising out of the page, the brand line on its soil. */
+/* The hero scopes --sodium to .ta; the footer's lamps use the same tube colour. */
+/* overflow-x: clip trims the billboard catwalk's overhang where the board
+   meets the viewport edge, without making the footer a scroll container. */
+.fx-footer { --sodium: oklch(0.8 0.14 66); position: relative; margin-top: clamp(32px, 6vw, 80px); border-top: 1px solid var(--line); background: var(--bg); overflow-x: clip; }
+
+.fx-base {
+  position: relative; z-index: 1;
+  display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+  padding-block: 24px max(32px, env(safe-area-inset-bottom));
+  border-top: 1px solid oklch(1 0 0 / 0.08);
+}
+.fx-base .fx-small { margin-left: auto; font: 400 12px/1.4 var(--font-mono); color: var(--faint); }
+
+@media (max-width: 740px) { .fx-base { gap: 12px; } .fx-base .fx-small { margin-left: 0; width: 100%; } }
+/* 72 rows of 4px pixels (3px under 600px), held before the canvas arrives. */
+.fx-road { display: block; width: 100%; min-height: 288px; margin: -8px 0 0; cursor: pointer; touch-action: pan-y; overflow: hidden; }
+/* The sky has no edge: stars and the horizon glow come up out of the page. */
+.fx-road canvas { display: block; image-rendering: pixelated; -webkit-mask-image: linear-gradient(180deg, transparent, #000 26%); mask-image: linear-gradient(180deg, transparent, #000 26%); }
+
+/* The brand line sits on the soil as it dithers out, so it reads over the dark. */
+.fx-footer .fx-base { margin-top: -40px; border-top-color: transparent; }
+@media (max-width: 599px) { .fx-road { min-height: 216px; } }

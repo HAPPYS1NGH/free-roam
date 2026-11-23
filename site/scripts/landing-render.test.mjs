@@ -25,13 +25,13 @@ test('landing prerender stays identical across times and time zones, and has the
   assert.equal(renderToString(createElement(LandingPage)), built)
 
   assert.ok(built.includes('anywhere.</span>'), 'headline')
-  assert.ok(built.includes('Your playlists, as <span>radio stations.</span>'), 'lede')
+  assert.ok(built.includes('Like the radio when you free roam, <span>except every station is your playlist.</span>'), 'lede')
   for (const name of ['God&#x27;s Favorite', 'High', 'Vibe', 'Culture Truth', 'Serbian', 'Right Eyebrow']) {
     assert.ok(built.includes(`>${name}</span>`), name)
   }
-  for (const question of ['Do I need Apple Music?', 'Why use it instead of the Music app?', 'Can I choose my own stations?', 'Does this page play music?', 'What can it see on my Mac?']) {
+  for (const question of ['I use Spotify. Does it work?', 'Do I have to pay for Apple Music?', 'How is this different from Spotify Radio?', 'Why would it want Screen Recording?', 'Is it free?']) {
     assert.ok(built.includes(question), question)
   }
-  assert.ok(built.includes('Free and open source. macOS 14 or later.'), 'closing line')
+  assert.ok(built.includes('Call starting? Silence in a flick.'), 'Radio Off use case')
   assert.ok(!/notari[sz]ed/i.test(built), 'no signed-and-notarized claims')
 })

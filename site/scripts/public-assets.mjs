@@ -12,6 +12,12 @@ export const publicAssets = [
   // The hero's coast photo for each time of day; the page loads only the current one.
   ...['dawn', 'day', 'dusk', 'night'].map(time => `free-roam/scenes/coast-${time}.jpg`),
   'free-roam/badge.png',
+  // The Mac app on film: portrait for phones ("On your Mac"), landscape for
+  // desktops (How it works), each with its poster frame.
+  'free-roam/demo/anywhere.mp4',
+  'free-roam/demo/anywhere.jpg',
+  'free-roam/demo/anywhere-wide.mp4',
+  'free-roam/demo/anywhere-wide.jpg',
   'free-roam/og-image.jpg',
   ...['night', 'indie', 'rap', 'punjabi', 'electronic', 'road', 'currents', 'gods-favorite-0', 'high-0', 'vibe-0', 'vibe-1', 'vibe-2', 'vibe-3', 'culture-truth-0', 'culture-truth-1', 'serbian-0', 'right-eyebrow-0', 'right-eyebrow-1', 'right-eyebrow-2', 'right-eyebrow-3'].map(name => `free-roam/albums/${name}.jpg`),
   ...['open', 'close', 'hover', 'retune'].map(name => `sounds/${name}.wav`),

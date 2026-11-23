@@ -38,8 +38,8 @@ for (const file of files) {
 }
 for (const file of allowed) assert.ok(files.includes(file), `Missing release asset: ${file}`)
 const landing = readFileSync(`${dist}/index.html`, 'utf8')
-assert.ok(landing.includes('anywhere.</span>') && landing.includes('Your playlists, as <span>radio stations.</span>'), 'Landing-page headline must exist without JavaScript')
-assert.ok(landing.includes('Pick Radio Off'), 'Product copy must be statically rendered')
+assert.ok(landing.includes('anywhere.</span>') && landing.includes('Like the radio when you free roam, <span>except every station is your playlist.</span>'), 'Landing-page headline must exist without JavaScript')
+assert.ok(landing.includes('flick to Radio Off'), 'Product copy must be statically rendered')
 // The prerender has no WebGL scene and nothing from YouTube: those start in the browser.
 for (const marker of ['<canvas', 'youtube.com', 'youtube-nocookie.com', '<iframe']) {
   assert.ok(!landing.includes(marker), `Prerendered landing page includes ${marker}`)

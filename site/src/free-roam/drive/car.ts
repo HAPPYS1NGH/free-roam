@@ -1,6 +1,6 @@
 import {
   BoxGeometry, BufferGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Group, LatheGeometry, Mesh,
-  MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, PointLight, SpotLight, TorusGeometry, Vector2, Vector3,
+  MeshBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Object3D, PlaneGeometry, SpotLight, TorusGeometry, Vector2, Vector3,
   type Material,
 } from "three"
 import { contactShadow } from "./textures"
@@ -273,16 +273,19 @@ export function buildCar(paint: Paint) {
   const beam = new SpotLight("#fff2de", 0, 90, 0.42, 0.55, 1.4)
   beam.position.set(0, 0.62, 2.2)
   beam.target.position.set(0, 0, 26)
-  const tailGlow = new PointLight("#ff2a18", 0, 5, 2)
-  tailGlow.position.set(0, 0.3, -3.1)
-  body.add(beam, beam.target, tailGlow)
+  // A spot, not a point light: the ground ignores point lights (they are the
+  // streetlights' stand-ins for lighting the car).
+  const tailGlow = new SpotLight("#ff2a18", 0, 6, 1.25, 1, 2)
+  tailGlow.position.set(0, 0.7, -2.2)
+  tailGlow.target.position.set(0, 0, -4.2)
+  body.add(beam, beam.target, tailGlow, tailGlow.target)
 
   return {
     root, body, wheels, wheelRadius: WHEEL_R,
     setPaint(p: Paint) { paintMat.color.set(PAINTS[p]) },
     // 0 = daylight running, 1 = full night.
     setLights(f: number) {
-      tailMat.emissiveIntensity = 0.5 + 3.6 * f
+      tailMat.emissiveIntensity = 0.5 + 1.7 * f
       headMat.emissiveIntensity = 0.3 + 6 * f
       plateMat.emissiveIntensity = 0.12 * f
       beam.intensity = 220 * f

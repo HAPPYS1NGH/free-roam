@@ -37,6 +37,13 @@ export function unlockAudio() {
   }
 }
 
+// For sounds made on the fly (the footer's breaking lamp) rather than played
+// from a file. Call inside a user gesture; null if audio can't start.
+export function liveAudio() {
+  unlockAudio()
+  return context
+}
+
 // Volumes are in dB so the quiet end, where these sounds live, gets most of
 // the slider. At SILENT_DB a sound is off.
 export const SILENT_DB = -60

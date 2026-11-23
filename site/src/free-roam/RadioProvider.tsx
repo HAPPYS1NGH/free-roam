@@ -6,10 +6,10 @@ import { useWheel } from "../useWheel"
 import { WheelOverlay } from "./WheelOverlay"
 import { demoSlots } from "./demo-stations"
 import { useProductAudio } from "./useProductAudio"
-import { useRadioTracking } from "./useRadioTracking"
+import { useRadioTracking, type TrackedWheel } from "./useRadioTracking"
 
 type Radio = {
-  wheel: ReturnType<typeof useWheel>
+  wheel: TrackedWheel
   audio: ReturnType<typeof useProductAudio>
   playing: Extract<Slot, { kind: "playlist" }> | undefined
   // Bumps on every retune, so the hero can key its one-shot wash off it.
@@ -26,8 +26,8 @@ export function useRadio() {
   return radio
 }
 
-// One wheel for the whole page: ⌥Q, the station list and the touch button all
-// tune it, and the overlay renders once, above everything.
+// One wheel for the whole page: ⌥Q, the station list, the touch button and a
+// touch hold all tune it, and the overlay renders once, above everything.
 export function RadioProvider({ children }: { children: ReactNode }) {
   const audio = useProductAudio()
   const wheel = useWheel({
@@ -53,18 +53,43 @@ export function RadioProvider({ children }: { children: ReactNode }) {
     setRetunes(count => count + 1)
   }, [wheel.playingId])
 
-  // Focus goes back to whatever opened the wheel: it's either still inside the
-  // fading wheel or on the body after a click on the pick layer.
-  const opener = useRef<Element | null>(null)
+  // While the wheel is open nothing on the page can be selected, so a resting
+  // finger on touch never starts an iOS text selection (see page.css).
   useEffect(() => {
-    if (wheel.open) { opener.current = document.activeElement; return }
+    document.documentElement.toggleAttribute("data-wheel-open", wheel.open)
+  }, [wheel.open])
+
+  // Focus goes back to whatever opened the wheel: it's either still inside the
+  // fading wheel or on the body after a click on the pick layer. The opener is
+  // the last focus outside the wheel, tracked as focus moves, because the
+  // wheel takes focus (in its own effect) before this component's effects run.
+  const opener = useRef<HTMLElement | null>(null)
+  useEffect(() => {
+    const inWheel = (target: EventTarget | null) => target instanceof Element && !!target.closest(".wheel-layer")
+    const remember = (event: FocusEvent) => {
+      if (!inWheel(event.target) && event.target instanceof HTMLElement) opener.current = event.target
+    }
+    // Focus dropped to the body (a click on nothing): there's no opener to return to.
+    const forget = (event: FocusEvent) => {
+      if (!event.relatedTarget && !inWheel(event.target)) opener.current = null
+    }
+    document.addEventListener("focusin", remember)
+    document.addEventListener("focusout", forget)
+    return () => {
+      document.removeEventListener("focusin", remember)
+      document.removeEventListener("focusout", forget)
+    }
+  }, [])
+  useEffect(() => {
+    if (wheel.open) return
     const lost = document.activeElement === document.body || document.querySelector(".wheel-layer")?.contains(document.activeElement)
-    if (lost && opener.current instanceof HTMLElement) opener.current.focus({ preventScroll: true })
+    if (lost) opener.current?.focus({ preventScroll: true })
   }, [wheel.open])
 
   return <RadioContext.Provider value={{ wheel: trackedWheel, audio, playing, retunes, stationRgb }}>
     {children}
-    <WheelOverlay open={wheel.open} highlighted={wheel.highlighted} onChoose={wheel.choose} onClose={wheel.hide} />
+    <WheelOverlay open={wheel.open} highlighted={wheel.highlighted} onChoose={wheel.choose} onClose={wheel.hide}
+      onMove={wheel.move} onCommit={wheel.commit} />
   </RadioContext.Provider>
 }
 

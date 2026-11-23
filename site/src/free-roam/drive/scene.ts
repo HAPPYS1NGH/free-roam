@@ -9,10 +9,12 @@ import { buildCar, type Paint } from "./car"
 import { hourRate, lightAt, moonDirection, newLight, nightDome, sunDirection } from "./daylight"
 import { buildFar } from "./far"
 import { LANE_U, LOOP, SEA, curvature, pointAt, roadY, tangent } from "./path"
+import { createRig, speedAt } from "./camera"
 import { createPost } from "./post"
+import { skyDrag } from "./sky-drag"
 import { smoothstep } from "./noise"
 import { waterNormals } from "./textures"
-import { LAMP_OFFSET, LAMP_SPACING, buildWorld, lampHead } from "./world"
+import { buildWorld } from "./world"
 
 export type DriveOptions = {
   paint: Paint
@@ -26,10 +28,8 @@ export type DriveOptions = {
 }
 export type Drive = { setOptions(next: Partial<DriveOptions>): void; dispose(): void }
 
-const SPEED = 27 // m/s, about 60 mph
-const DEG = Math.PI / 180
-
-export function createDrive(container: HTMLElement, initial: DriveOptions, startHour: number, onHour: (hour: number) => void): Drive {
+// `grabArea` is the element that catches drags on the sun and moon; without it the sky is hands-off.
+export function createDrive(container: HTMLElement, initial: DriveOptions, startHour: number, onHour: (hour: number) => void, grabArea?: HTMLElement): Drive {
   const opts = { ...initial }
   const canvas = document.createElement("canvas")
   canvas.className = "drive-canvas"
@@ -111,8 +111,9 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
   car.root.rotation.order = "YXZ"
   scene.add(car.root)
 
-  // The two streetlights nearest the car actually light it as it passes.
-  const lampLights = [0, 1].map(() => new PointLight("#ffa04a", 0, 40, 2))
+  // The three streetlights nearest the car light it as it passes (the ground
+  // has its own lamp pools); each fades out before it hops to the next lamp.
+  const lampLights = [0, 1, 2].map(() => new PointLight("#ffa04a", 0, 80, 2))
   scene.add(...lampLights)
 
   const post = createPost(renderer, scene, camera)
@@ -136,20 +137,24 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
   // ------------------------------------------------------------ frame
   const L = newLight()
   const carScreen = new Vector3()
-  const sunDir = new Vector3(), moonDir = new Vector3(), carPos = new Vector3(), camPos = new Vector3(), look = new Vector3()
-  const lampPos = new Vector3(), moonColour = new Color("#8da6d6"), waterSun = new Color(), tint = new Color()
-  const tan = { x: 0, z: 0 }, camTan = { x: 0, z: 0 }
-  let s = 160
+  const rig = createRig(camera)
+  const sunDir = new Vector3(), moonDir = new Vector3(), carPos = new Vector3(), camPos = new Vector3()
+  const moonColour = new Color("#8da6d6"), waterSun = new Color(), tint = new Color()
+  const tan = { x: 0, z: 0 }
+  let s = 160, v = speedAt(s), accel = 0, blur = 0
   let hour = startHour
-  let simTime = 0, spin = 0, camYaw: number | null = null
+  // Degrees the moon was dragged off its path; `resume` ramps the clock back up after a drag.
+  let moonLift = 0, resume = 1
+  const drag = grabArea ? skyDrag(grabArea, canvas, camera, domeMat, () => !opts.still) : null
+  let simTime = 0, spin = 0
   let envHour = -99, envAge = 99, hourAge = 99
   let last = performance.now(), frameAvg = 16, frames = 0
   let raf = 0, visible = true, onScreen = true
 
   const updateLight = (dt: number) => {
     lightAt(hour, L)
-    sunDirection(hour, sunDir)
-    moonDirection(hour, moonDir)
+    sunDirection(hour, sunDir, drag?.turn.sun)
+    moonDirection(hour, moonDir, moonLift, drag?.turn.moon)
     const day = smoothstep(-0.03, 0.05, sunDir.y)
 
     su.sunPosition.value.copy(sunDir)
@@ -178,8 +183,12 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     moon.intensity = L.moonI
     renderer.toneMappingExposure = L.exposure
     post.bloom.strength = L.bloom
-    // Threshold in display terms, so daylight sky never blooms but lamps do.
-    post.bloom.threshold = 3.2 / L.exposure
+    // Threshold in display terms, so lamps bloom. Once the sun is well up the
+    // sky itself runs past that (and the sun's halo far past it), which veiled
+    // the whole frame: lift the threshold over the sky and cap the hot spots.
+    const sunHigh = smoothstep(0.1, 0.3, sunDir.y)
+    post.bloom.threshold = (3.2 + 9.6 * sunHigh) / L.exposure
+    post.bloomCap.value = 2 + 400 * (1 - sunHigh)
 
     const wu = water.material.uniforms
     const sunUp = sunDir.y > -0.02
@@ -188,11 +197,10 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     wu.waterColor.value.copy(L.water)
     wu.time.value += dt * 0.5
 
-    world.lamps.lens.emissiveIntensity = L.lamps * 14
-    world.lamps.pool.opacity = L.lamps * 0.55
-    world.lamps.halo.opacity = L.lamps * 0.3
+    world.lamps.update(L.lamps, dt, simTime)
     world.windows.opacity = L.lamps
     far.lightMat.opacity = L.lamps
+    far.update(simTime, sunDir, sun.color, sun.intensity)
     car.setLights(Math.min(1, L.lamps * 1.15))
     envGroundMat.color.copy(L.ground).multiplyScalar(0.5)
     // Foam is lit like a white diffuse surface: sun plus sky, a touch of moon.
@@ -221,36 +229,15 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     car.root.position.copy(carPos)
     car.root.rotation.y = Math.atan2(tan.x, tan.z)
     car.root.rotation.x = -Math.atan(roadY(s + 1) - roadY(s - 1)) / 2
-    const lateral = opts.still ? 0 : SPEED * SPEED * curvature(s)
+    const lateral = opts.still ? 0 : v * v * curvature(s)
     car.body.rotation.z += (lateral * 0.011 - car.body.rotation.z) * Math.min(1, dt * 4)
+    // Squats under power, dips its nose as it lifts.
+    car.body.rotation.x = -accel * 0.004
     car.body.position.y = opts.still ? 0 : 0.005 * Math.sin(simTime * 11) + 0.003 * Math.sin(simTime * 17.3 + 1)
     car.wheels.forEach(w => { w.rotation.x = spin })
 
-    // Chase camera on the centre line, yawed so the car sits right of frame.
-    const camS = s - 13
-    pointAt(camS, -0.4, 3.5, camPos)
-    camPos.x += Math.sin(simTime * 0.7) * 0.06
-    camPos.y += Math.sin(simTime * 0.53 + 1) * 0.05
-    tangent(camS, camTan)
-    const rx = carPos.x - camPos.x, rz = carPos.z - camPos.z
-    const fwd = rx * camTan.x + rz * camTan.z, right = rx * -camTan.z + rz * camTan.x
-    const aCar = Math.atan2(right, fwd)
-    const aspect = width / height
-    const halfH = Math.atan(Math.tan((camera.fov / 2) * DEG) * aspect)
-    const fx = aspect >= 1.3 ? 0.76 : 0.6 + 0.16 * smoothstep(0.55, 1.3, aspect)
-    const target = aCar - Math.atan((2 * fx - 1) * Math.tan(halfH))
-    camYaw = camYaw === null ? target : camYaw + (target - camYaw) * Math.min(1, dt * 3)
-    // Pitch so the car sits about two thirds down the visible part of the hero.
-    const visibleH = Math.min(height, window.innerHeight || height)
-    const fy = (visibleH * 0.68) / height
-    const dist = Math.hypot(rx, rz)
-    const aV = Math.atan2(carPos.y + 0.6 - camPos.y, dist)
-    const pitch = aV - Math.atan((1 - 2 * fy) * Math.tan((camera.fov / 2) * DEG))
-    const dx = camTan.x * Math.cos(camYaw) - camTan.z * Math.sin(camYaw)
-    const dz = camTan.z * Math.cos(camYaw) + camTan.x * Math.sin(camYaw)
-    look.set(camPos.x + dx * Math.cos(pitch) * 100, camPos.y + Math.sin(pitch) * 100, camPos.z + dz * Math.cos(pitch) * 100)
-    camera.position.copy(camPos)
-    camera.lookAt(look)
+    blur = rig.update(dt, s, v * opts.speed, accel, opts.still, carPos, tan, width, height)
+    camPos.copy(camera.position)
 
     far.group.position.set(camPos.x, 0, camPos.z)
     dome.position.copy(camPos)
@@ -264,12 +251,7 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     moon.target.position.copy(carPos)
     moon.position.copy(carPos).addScaledVector(moonDir, 300)
 
-    const k = Math.floor((s - LAMP_OFFSET) / LAMP_SPACING)
-    lampLights.forEach((light, i) => {
-      lampHead(k + i, lampPos)
-      light.position.copy(lampPos)
-      light.intensity = L.lamps * 260
-    })
+    world.lamps.place(s, lampLights)
   }
 
   const frame = (now: number) => {
@@ -281,13 +263,23 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     envAge += real
     hourAge += real
 
-    if (!opts.still) {
-      s += SPEED * dt
-      spin += (SPEED * dt) / car.wheelRadius
+    if (opts.still) { v = 0; accel = 0 } else {
+      // Pulls away gently after a reduced-motion pause; otherwise tracks the baked profile.
+      const dv = Math.max(-6 * dt, Math.min(5 * dt, speedAt(s) - v))
+      v += dv
+      if (dt > 0) accel += (dv / dt - accel) * Math.min(1, dt * 3)
+      s += v * dt
+      spin += (v * dt) / car.wheelRadius
       if (s > LOOP + 200) s -= LOOP
     }
-    if (opts.lockHour === null) {
-      if (!opts.still) hour = (hour + hourRate(hour, opts.cycleSeconds) * dt) % 24
+    const held = drag?.scrub(real, hour, moonLift)
+    if (held) {
+      hour = held.hour
+      moonLift = held.lift
+      resume = 0
+    } else if (opts.lockHour === null) {
+      resume = Math.min(1, resume + real / 1.5)
+      if (!opts.still) hour = (hour + hourRate(hour, opts.cycleSeconds) * dt * resume) % 24
     } else {
       const d = ((opts.lockHour - hour + 36) % 24) - 12
       hour = (hour + d * Math.min(1, dt * 1.6) + 24) % 24
@@ -295,8 +287,11 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
     updateLight(dt)
     place(dt)
     updateEnv()
+    // A dragged moon goes back on its path while it's out of sight.
+    if (!held && L.moonI === 0) moonLift = 0
+    drag?.track(real, sunDir, moonDir, sunDir.y > -0.015, L.moonI > 0.06 && moonDir.y > 0.005)
     carScreen.copy(carPos).setY(carPos.y + 0.6).project(camera)
-    post.render(simTime, carScreen.x * 0.5 + 0.5, carScreen.y * 0.5 + 0.5, (opts.still ? 0 : 1) * Math.min(1, opts.speed))
+    post.render(simTime, carScreen.x * 0.5 + 0.5, carScreen.y * 0.5 + 0.5, rig.vp.x, rig.vp.y, blur)
     if (hourAge > 0.25) { hourAge = 0; onHour(hour) }
 
     // Drop resolution if the machine can't keep up.
@@ -342,6 +337,7 @@ export function createDrive(container: HTMLElement, initial: DriveOptions, start
       envTarget?.dispose()
       pmrem.dispose()
       post.dispose()
+      drag?.dispose()
       renderer.dispose()
       canvas.remove()
     },
