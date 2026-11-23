@@ -60,12 +60,30 @@ export function RadioProvider({ children }: { children: ReactNode }) {
   }, [wheel.open])
 
   // Focus goes back to whatever opened the wheel: it's either still inside the
-  // fading wheel or on the body after a click on the pick layer.
-  const opener = useRef<Element | null>(null)
+  // fading wheel or on the body after a click on the pick layer. The opener is
+  // the last focus outside the wheel, tracked as focus moves, because the
+  // wheel takes focus (in its own effect) before this component's effects run.
+  const opener = useRef<HTMLElement | null>(null)
   useEffect(() => {
-    if (wheel.open) { opener.current = document.activeElement; return }
+    const inWheel = (target: EventTarget | null) => target instanceof Element && !!target.closest(".wheel-layer")
+    const remember = (event: FocusEvent) => {
+      if (!inWheel(event.target) && event.target instanceof HTMLElement) opener.current = event.target
+    }
+    // Focus dropped to the body (a click on nothing): there's no opener to return to.
+    const forget = (event: FocusEvent) => {
+      if (!event.relatedTarget && !inWheel(event.target)) opener.current = null
+    }
+    document.addEventListener("focusin", remember)
+    document.addEventListener("focusout", forget)
+    return () => {
+      document.removeEventListener("focusin", remember)
+      document.removeEventListener("focusout", forget)
+    }
+  }, [])
+  useEffect(() => {
+    if (wheel.open) return
     const lost = document.activeElement === document.body || document.querySelector(".wheel-layer")?.contains(document.activeElement)
-    if (lost && opener.current instanceof HTMLElement) opener.current.focus({ preventScroll: true })
+    if (lost) opener.current?.focus({ preventScroll: true })
   }, [wheel.open])
 
   return <RadioContext.Provider value={{ wheel: trackedWheel, audio, playing, retunes, stationRgb }}>
