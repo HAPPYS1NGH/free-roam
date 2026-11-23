@@ -242,15 +242,15 @@ export function Billboard({ onLink, onPress, headlights }: BillboardProps) {
                 onPointerUp: () => surge(false),
                 onPointerCancel: () => surge(false),
               }
+              const note = link.note && <span className="bb-note">{link.note}</span>
               const content = <>
                 {label(link.label)}
                 {link.external && <span className="bb-arrow" aria-hidden="true">↗</span>}
-                {link.note && <span className="bb-note">{link.note}</span>}
               </>
               return <li key={link.label} className="bb-item">
                 {link.elsewhere
-                  ? <DownloadLink {...anchor} elsewhere={label(link.elsewhere)}>{content}</DownloadLink>
-                  : <a {...anchor} href={link.href} {...(link.external && { target: "_blank", rel: "noreferrer" })}>{content}</a>}
+                  ? <DownloadLink {...anchor} elsewhere={label(link.elsewhere)} note={note}>{content}</DownloadLink>
+                  : <a {...anchor} href={link.href} {...(link.external && { target: "_blank", rel: "noreferrer" })}>{content}{note}</a>}
               </li>
             })}
           </ul>

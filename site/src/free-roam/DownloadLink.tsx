@@ -7,12 +7,15 @@ import { downloadUrl, releaseUrl } from "./content"
 const onMacDesktop = () => /Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints === 0
 
 // Other anchor props (pointer and focus handlers, data attributes) pass through.
-type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick" | "children"> & { children: ReactNode; elsewhere: ReactNode }
+// `note` stays under the label in both versions, so hydrating doesn't change the link's height.
+type Props = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick" | "children"> & { children: ReactNode; elsewhere: ReactNode; note?: ReactNode }
 
 // On a Mac this downloads the DMG. Anywhere else a DMG is a dead end, so it
 // hands the page to the share sheet (AirDrop, Messages) or copies the link.
-// The prerender is the Mac version; the label switches once the page hydrates.
-export function DownloadLink({ children, elsewhere, ...anchor }: Props) {
+// The prerender shows the Mac label but links to the release page, so a tap
+// before hydration off a Mac doesn't fetch a DMG; the label switches once the
+// page hydrates.
+export function DownloadLink({ children, elsewhere, note, ...anchor }: Props) {
   const mounted = useMounted()
   const [copied, setCopied] = useState(false)
   useEffect(() => {
@@ -20,7 +23,8 @@ export function DownloadLink({ children, elsewhere, ...anchor }: Props) {
     const id = window.setTimeout(() => setCopied(false), 2000)
     return () => window.clearTimeout(id)
   }, [copied])
-  if (!mounted || onMacDesktop()) return <a {...anchor} href={downloadUrl}>{children}</a>
+  if (!mounted) return <a {...anchor} href={releaseUrl}>{children}{note}</a>
+  if (onMacDesktop()) return <a {...anchor} href={downloadUrl}>{children}{note}</a>
 
   const send = async (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault()
@@ -47,5 +51,6 @@ export function DownloadLink({ children, elsewhere, ...anchor }: Props) {
   }
   return <a {...anchor} href={releaseUrl} onClick={send}>
     <span className="p-download-label" aria-live="polite">{copied ? "Link copied" : elsewhere}</span>
+    {note}
   </a>
 }
