@@ -43,7 +43,7 @@ export function Hero() {
     <div className="ta-copy p-wrap">
       <h1 id="ta-title" className="p-display ta-line">
         <span className="ta-hover">Hold <Keycap size="xl" down={alt}>⌥</Keycap><Keycap size="xl" down={q}>Q</Keycap> anywhere.</span>
-        <span className="ta-touch">Radio for your Mac.</span>
+        <span className="ta-touch">Hold <Keycap size="xl">⌥</Keycap><Keycap size="xl">Q</Keycap> on your Mac.</span>
       </h1>
       <p className="ta-sub">Like the radio when you free roam, <span>except every station is your playlist.</span></p>
       <div className="ta-actions">
@@ -51,6 +51,7 @@ export function Hero() {
         <TryButton />
         <span className="ta-hint ta-hover">or hold <Keycap size="sm" down={alt}>⌥</Keycap><Keycap size="sm" down={q}>Q</Keycap> to try it here</span>
       </div>
+      <WorksWith />
     </div>
     <LiveRadio playing={playing} muted={!audio.enabled} onChange={setLiveAudio} />
     <Caption live={liveAudio} />

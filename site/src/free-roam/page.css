@@ -136,12 +136,18 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
 .p-tally-light { width: 7px; height: 7px; border-radius: 50%; background: var(--faint); flex: none; }
 /* Works with: a quiet fact beside the download, not another action. Pushes
    itself and the download to the right; drops out where the nav runs short. */
-.p-nav .p-works { display: flex; align-items: center; gap: 16px; margin: 0 0 0 auto; font: 500 13px/1 var(--font-body); color: var(--faint); white-space: nowrap; }
+.p-works { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 16px; font: 500 13px/1 var(--font-body); color: var(--faint); white-space: nowrap; }
+.p-nav .p-works { flex-wrap: nowrap; margin: 0 0 0 auto; }
+.ta-copy .p-works { display: none; }
 .p-works-app { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); }
 .p-works-app svg { flex: none; }
 .p-works + .ta-nav-cta { margin-left: 4px; }
-@media (max-width: 1000px) { .p-works-label { display: none; } }
-@media (max-width: 860px) { .p-nav .p-works { display: none; } .p-works + .ta-nav-cta { margin-left: auto; } }
+@media (max-width: 1000px) { .p-nav .p-works-label { display: none; } }
+@media (max-width: 860px) {
+  .p-nav .p-works { display: none; }
+  .p-works + .ta-nav-cta { margin-left: auto; }
+  .ta-copy .p-works { display: flex; }
+}
 .p-tally[data-live] .p-tally-light { background: var(--live); box-shadow: 0 0 0 3px oklch(from var(--live) l c h / 0.22), 0 0 10px var(--live); }
 
 /* ---------------------------------------------------------------- sections */
@@ -230,7 +236,6 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
 /* ---------------------------------------------------------------- on your Mac (touch only; see OnYourMac.tsx) */
 .p-mac { display: none; }
 @media (hover: none) { .p-mac { display: grid; gap: 28px; justify-items: start; } }
-.p-mac h2 .keycap { font-size: 0.5em; font-family: var(--font-display); }
 .p-mac-video { display: block; width: min(100%, 420px); height: auto; aspect-ratio: 9 / 16; justify-self: center; border-radius: 22px; background: var(--bg-raised); box-shadow: 0 0 0 1px var(--line), 0 24px 60px oklch(0 0 0 / 0.45); object-fit: cover; }
 
 /* ---------------------------------------------------------------- send nudge (touch only; see SendNudge.tsx) */
@@ -242,7 +247,6 @@ body { margin: 0; background: oklch(0.165 0.018 255); }
     box-shadow: 0 0 0 1px oklch(1 0 0 / 0.1), 0 12px 32px oklch(0 0 0 / 0.45); }
 }
 .p-nudge p { flex: 1; min-width: 0; font-size: 13px; line-height: 1.35; color: var(--muted); }
-.p-nudge .keycap { color: var(--ink); }
 .p-nudge .p-button { flex: none; }
 .p-nudge-close { flex: none; display: grid; place-items: center; width: 40px; height: 40px; margin-left: -4px; border: 0; border-radius: 50%; background: none; color: var(--faint); }
 
