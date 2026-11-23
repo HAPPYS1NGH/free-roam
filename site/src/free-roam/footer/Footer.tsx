@@ -165,7 +165,7 @@ export function Footer() {
     const canvas = canvasRef.current
     if (!scene || !canvas) return
     if (!element) { lightLampNear(scene, null); redrawRef.current(); return }
-    const link = (element.querySelector(".fx-link-label") ?? element).getBoundingClientRect()
+    const link = (element.querySelector(".bb-label") ?? element).getBoundingClientRect()
     const box = canvas.getBoundingClientRect()
     const column = (link.left + link.width / 2 - box.left) / pixelRef.current
     lightLampNear(scene, column)
